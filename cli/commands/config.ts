@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { t, setLanguage } from '../i18n';
 
 /**
@@ -35,7 +35,7 @@ function getEnvPath(): string {
  * Get config profiles file path
  */
 function getProfilesPath(): string {
-  return path.join(process.cwd(), '.quartz-profiles.json');
+  return path.join(process.cwd(), 'quartz.json');
 }
 
 /**
@@ -47,17 +47,19 @@ function readEnvFile(): Map<string, string> {
 
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf-8');
-    content.split('\n').forEach(line => {
+    const lines = content.split('\n');
+    for (const line of lines) {
       const trimmedLine = line.trim();
       if (trimmedLine && !trimmedLine.startsWith('#')) {
-        const match = trimmedLine.match(/^([^=]+)=(.*)$/);
+        const regex = /^([^=]+)=(.*)$/;
+        const match = regex.exec(trimmedLine);
         if (match) {
           const key = match[1].trim();
           const value = match[2].trim();
           config.set(key, value);
         }
       }
-    });
+    }
   }
 
   return config;
@@ -68,9 +70,7 @@ function readEnvFile(): Map<string, string> {
  */
 function writeEnvFile(config: Map<string, string>) {
   const envPath = getEnvPath();
-  const lines: string[] = [
-    '# Quartz Configuration - OpenAI API',
-  ];
+  const lines: string[] = ['# Quartz Configuration - OpenAI API'];
 
   // OpenAI configs
   if (config.has('OPENAI_API_KEY')) {
@@ -83,16 +83,14 @@ function writeEnvFile(config: Map<string, string>) {
     lines.push(`OPENAI_MODEL=${config.get('OPENAI_MODEL')}`);
   }
 
-  lines.push('');
-  lines.push('# GitHub Configuration');
+  lines.push('', '# GitHub Configuration');
 
   // GitHub configs
   if (config.has('GITHUB_TOKEN')) {
     lines.push(`GITHUB_TOKEN=${config.get('GITHUB_TOKEN')}`);
   }
 
-  lines.push('');
-  lines.push('# Quartz UI Configuration');
+  lines.push('', '# Quartz UI Configuration');
 
   // Quartz configs
   if (config.has('QUARTZ_LANG')) {
@@ -170,7 +168,7 @@ function listConfig() {
     { key: 'PROMPT_LANG', label: t('config.keys.promptLanguage') },
   ];
 
-  configItems.forEach(item => {
+  for (const item of configItems) {
     const value = config.get(item.key);
     const icon = getConfigIcon(item.key);
     
@@ -188,7 +186,7 @@ function listConfig() {
       console.log(`     \x1b[2m\x1b[31m${t('config.notConfigured')}\x1b[0m`);
     }
     console.log(''); // Empty line between items
-  });
+  }
   
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
   console.log('\x1b[2m%s\x1b[0m', `💾 ${getEnvPath()}`); // Show .env file path
@@ -226,9 +224,7 @@ async function askQuestion(
       console.log('\x1b[2m%s\x1b[0m', description); // Dim description
     }
     
-    const prompt = defaultValue
-      ? `\x1b[32m❯\x1b[0m ` // Green arrow
-      : `\x1b[32m❯\x1b[0m `; // Green arrow
+    const prompt = `\x1b[32m❯\x1b[0m `; // Green arrow
     
     readline.question(prompt, (answer: string) => {
       resolve(answer);
@@ -272,7 +268,8 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
       console.log('');
 
       // Render options
-      languages.forEach((lang, index) => {
+      for (let index = 0; index < languages.length; index++) {
+        const lang = languages[index];
         if (index === selectedIndex) {
           // Highlighted option
           stdout.write(`  \x1b[32m❯ ${lang.label}\x1b[0m\n`);
@@ -280,7 +277,7 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
           // Normal option
           stdout.write(`    ${lang.label}\n`);
         }
-      });
+      }
 
       console.log('');
       console.log('\x1b[2m%s\x1b[0m', '↑↓: Navigate  Enter: Select  Esc: Skip');
@@ -329,7 +326,7 @@ async function setupWizard() {
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
   
   const config = readEnvFile();
-  const readline = require('readline').createInterface({
+  const readline = require('node:readline').createInterface({
     input: process.stdin,
     output: process.stdout,
   });
@@ -351,7 +348,7 @@ async function setupWizard() {
     config.set('PROMPT_LANG', promptLang);
 
     // Reopen readline for text input questions
-    const readline2 = require('readline').createInterface({
+    const readline2 = require('node:readline').createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -418,6 +415,7 @@ async function setupWizard() {
     console.log('');
 
   } catch (error) {
+    console.error('Setup wizard error:', error);
     throw error;
   }
 }
@@ -525,6 +523,7 @@ function loadProfiles(): Record<string, any> {
     try {
       return JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
     } catch (error) {
+      console.error('Failed to load profiles:', error);
       return {};
     }
   }
@@ -566,13 +565,13 @@ function listProfiles() {
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   console.log('');
   
-  profileNames.forEach(name => {
+  for (const name of profileNames) {
     const profile = profiles[name];
     console.log(`  📦 \x1b[36m${name}\x1b[0m`);
     const configCount = Object.keys(profile.configs).length;
     console.log(`     \x1b[2m${configCount} ${t('config.configItems')}\x1b[0m`);
     console.log('');
-  });
+  }
 }
 
 /**
