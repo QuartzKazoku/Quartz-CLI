@@ -35,7 +35,7 @@ function getEnvPath(): string {
  * Get config profiles file path
  */
 function getProfilesPath(): string {
-  return path.join(process.cwd(), '.quartz-profiles.json');
+  return path.join(process.cwd(), 'quartz.json');
 }
 
 /**
