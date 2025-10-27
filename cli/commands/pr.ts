@@ -123,21 +123,34 @@ async function selectBranch(currentBranch: string): Promise<string> {
  * Get remote repository information
  * @returns Repository owner and name, or null if not found
  */
-async function getRepoInfo(): Promise<{ owner: string; repo: string } | null> {
+async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
   try {
     const remoteUrl = (await $`git remote get-url origin`.text()).trim();
 
     // Parse GitHub URL
     // Support formats: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-    const sshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const httpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const sshMatch = sshRegex.exec(remoteUrl);
-    const httpsMatch = httpsRegex.exec(remoteUrl);
+    const githubSshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const githubSshMatch = githubSshRegex.exec(remoteUrl);
+    const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
 
-    if (sshMatch) {
-      return { owner: sshMatch[1], repo: sshMatch[2] };
-    } else if (httpsMatch) {
-      return { owner: httpsMatch[1], repo: httpsMatch[2] };
+    if (githubSshMatch) {
+      return { owner: githubSshMatch[1], repo: githubSshMatch[2], platform: 'github' };
+    } else if (githubHttpsMatch) {
+      return { owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: 'github' };
+    }
+
+    // Parse GitLab URL
+    // Support formats: git@gitlab.com:owner/repo.git or https://gitlab.com/owner/repo.git
+    const gitlabSshRegex = /git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
+    const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
+
+    if (gitlabSshMatch && gitlabSshMatch[1].includes('gitlab')) {
+      return { owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab' };
+    } else if (gitlabHttpsMatch && gitlabHttpsMatch[1].includes('gitlab')) {
+      return { owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab' };
     }
 
     return null;
@@ -345,6 +358,72 @@ async function createGitHubPR(
 }
 
 /**
+ * Create GitLab MR using API
+ * @param token - GitLab token
+ * @param gitlabUrl - GitLab server URL
+ * @param owner - Project namespace
+ * @param repo - Project name
+ * @param title - MR title
+ * @param body - MR description
+ * @param head - Source branch
+ * @param base - Target branch
+ * @returns Created MR object
+ */
+async function createGitLabMR(
+  token: string,
+  gitlabUrl: string,
+  owner: string,
+  repo: string,
+  title: string,
+  body: string,
+  head: string,
+  base: string
+) {
+  try {
+    // Check if head branch exists on remote
+    const isHeadOnRemote = await isBranchOnRemote(head);
+    if (!isHeadOnRemote) {
+      console.log(t('pr.pushingBranch', { branch: head }));
+      await pushBranchToRemote(head);
+      console.log(t('pr.branchPushed'));
+    }
+
+    // Encode project path for GitLab API
+    const projectPath = encodeURIComponent(`${owner}/${repo}`);
+    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/merge_requests`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'PRIVATE-TOKEN': token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_branch: head,
+        target_branch: base,
+        title,
+        description: body,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      let errorMessage = `GitLab API error: ${error.message || response.statusText}`;
+      if (error.error) {
+        errorMessage += '\nDetails: ' + error.error;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const mr = await response.json();
+    return mr;
+  } catch (error) {
+    console.error(t('pr.failed'), error);
+    process.exit(1);
+  }
+}
+
+/**
  * Create PR using GitHub CLI
  * @param title - PR title
  * @param body - PR body
@@ -471,25 +550,55 @@ export async function generatePR(args: string[]) {
   console.log('━'.repeat(60));
   console.log('');
 
-  // Auto create PR (default behavior)
+  // Auto create PR/MR (default behavior)
   console.log(t('pr.creating'));
 
   if (useGH) {
     // Use GitHub CLI
     await createPRWithGH(title, body, baseBranch);
-  } else if (config.githubToken && repoInfo) {
-    // Use GitHub API
-    const pr = await createGitHubPR(
-      config.githubToken,
-      repoInfo.owner,
-      repoInfo.repo,
-      title,
-      body,
-      currentBranch,
-      baseBranch
-    );
-    console.log(t('pr.success'));
-    console.log(`🔗 ${pr.html_url}`);
+  } else if (repoInfo) {
+    const platform = config.gitPlatform || repoInfo.platform;
+    
+    if (platform === 'github') {
+      if (config.githubToken) {
+        // Use GitHub API
+        const pr = await createGitHubPR(
+          config.githubToken,
+          repoInfo.owner,
+          repoInfo.repo,
+          title,
+          body,
+          currentBranch,
+          baseBranch
+        );
+        console.log(t('pr.success'));
+        console.log(`🔗 ${pr.html_url}`);
+      } else {
+        console.error(t('pr.noToken'));
+        console.error(t('pr.useGHTip'));
+        process.exit(1);
+      }
+    } else if (platform === 'gitlab') {
+      if (config.gitlabToken) {
+        // Use GitLab API
+        const mr = await createGitLabMR(
+          config.gitlabToken,
+          config.gitlabUrl,
+          repoInfo.owner,
+          repoInfo.repo,
+          title,
+          body,
+          currentBranch,
+          baseBranch
+        );
+        console.log(t('pr.success'));
+        console.log(`🔗 ${mr.web_url}`);
+      } else {
+        console.error(t('pr.noToken'));
+        console.error('   Please set GITLAB_TOKEN in configuration');
+        process.exit(1);
+      }
+    }
   } else {
     console.error(t('pr.noToken'));
     console.error(t('pr.useGHTip'));

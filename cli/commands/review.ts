@@ -20,63 +20,36 @@ interface ReviewResult {
 }
 
 /**
- * Parse environment variable line from .env file
- * @param line - Line from .env file
- * @returns Object with key and value, or null if invalid
- */
-function parseEnvLine(line: string): { key: string; value: string } | null {
-  const envRegex = /^([^=]+)=(.*)$/;
-  const match = envRegex.exec(line);
-  
-  if (!match) {
-    return null;
-  }
-  
-  return {
-    key: match[1].trim(),
-    value: match[2].trim(),
-  };
-}
-
-/**
- * Update config from parsed environment variable
- * @param config - Configuration object to update
- * @param key - Environment variable key
- * @param value - Environment variable value
- */
-function updateConfigFromEnv(
-  config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string },
-  key: string,
-  value: string
-): void {
-  if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-    config.openaiApiKey = value;
-  } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-    config.openaiBaseUrl = value;
-  } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-    config.openaiModel = value;
-  }
-}
-
-/**
- * Load environment variables from .env file
+ * Load configuration from quartz.json
  * @param config - Configuration object to update
  */
-function loadEnvFile(config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string }): void {
-  const envPath = path.join(process.cwd(), '.env');
+function loadQuartzConfig(config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string }): void {
+  const quartzPath = path.join(process.cwd(), 'quartz.json');
   
-  if (!fs.existsSync(envPath)) {
+  if (!fs.existsSync(quartzPath)) {
     return;
   }
   
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  const lines = envContent.split('\n');
-  
-  for (const line of lines) {
-    const parsed = parseEnvLine(line);
-    if (parsed) {
-      updateConfigFromEnv(config, parsed.key, parsed.value);
+  try {
+    const content = fs.readFileSync(quartzPath, 'utf-8');
+    const data = JSON.parse(content);
+    
+    // Read from default profile
+    if (data.default && data.default.configs) {
+      const configs = data.default.configs;
+      
+      if (configs.OPENAI_API_KEY && !config.openaiApiKey) {
+        config.openaiApiKey = configs.OPENAI_API_KEY;
+      }
+      if (configs.OPENAI_BASE_URL && process.env.OPENAI_BASE_URL === undefined) {
+        config.openaiBaseUrl = configs.OPENAI_BASE_URL;
+      }
+      if (configs.OPENAI_MODEL && process.env.OPENAI_MODEL === undefined) {
+        config.openaiModel = configs.OPENAI_MODEL;
+      }
     }
+  } catch (error) {
+    console.error('Failed to parse quartz.json:', error);
   }
 }
 
@@ -93,7 +66,7 @@ function validateConfig(config: { openaiApiKey: string }): void {
 }
 
 /**
- * Load configuration from environment variables and .env file
+ * Load configuration from environment variables and quartz.json
  * @returns Configuration object
  */
 function loadConfig() {
@@ -103,7 +76,7 @@ function loadConfig() {
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
   };
 
-  loadEnvFile(config);
+  loadQuartzConfig(config);
   validateConfig(config);
 
   return config;
