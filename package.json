@@ -1,0 +1,68 @@
+{
+  "name": "quartz-cli",
+  "version": "0.0.1",
+  "description": "AI-powered Git workflow automation for humans.Streamline your development workflow with intelligent commit messages, pull requests, and code reviews",
+  "type": "module",
+  "module": "index.ts",
+  "main": "index.ts",
+  "bin": {
+    "quartz": "cli/index.ts"
+  },
+  "scripts": {
+    "review": "bun run scripts/review.ts",
+    "cli": "bun run cli/index.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "test:specific": "bun test",
+    "start": "bun run cli/index.ts",
+    "build": "bun build ./cli/index.ts --outdir ./dist --target bun",
+    "dev": "bun --watch cli/index.ts",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "release": "bun run build && npm publish",
+    "prepublishOnly": "bun run build"
+  },
+  "files": [
+    "dist",
+    "cli",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/creedchung/quartz.git"
+  },
+  "bugs": {
+    "url": "https://github.com/creedchung/quartz/issues"
+  },
+  "homepage": "https://github.com/creedchung/quartz#readme",
+  "keywords": [
+    "github-action",
+    "code-review",
+    "quartz",
+    "openai",
+    "automation",
+    "cli",
+    "commit-message",
+    "pull-request",
+    "bun"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "openai": "^4.28.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "bun-types": "latest",
+    "vitepress": "^2.0.0-alpha.12",
+    "vitepress-plugin-tabs": "^0.7.3"
+  },
+  "packageManager": "bun@1.0.0"
+}
