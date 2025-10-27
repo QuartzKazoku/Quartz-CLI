@@ -9,7 +9,10 @@ const CONFIG_KEYS = {
   OPENAI_API_KEY: 'OPENAI_API_KEY',
   OPENAI_BASE_URL: 'OPENAI_BASE_URL',
   OPENAI_MODEL: 'OPENAI_MODEL',
+  GIT_PLATFORM: 'GIT_PLATFORM',
   GITHUB_TOKEN: 'GITHUB_TOKEN',
+  GITLAB_TOKEN: 'GITLAB_TOKEN',
+  GITLAB_URL: 'GITLAB_URL',
   QUARTZ_LANG: 'QUARTZ_LANG',
   PROMPT_LANG: 'PROMPT_LANG',
 } as const;
@@ -83,11 +86,20 @@ function writeEnvFile(config: Map<string, string>) {
     lines.push(`OPENAI_MODEL=${config.get('OPENAI_MODEL')}`);
   }
 
-  lines.push('', '# GitHub Configuration');
+  lines.push('', '# Git Platform Configuration');
 
-  // GitHub configs
+  // Git platform configs
+  if (config.has('GIT_PLATFORM')) {
+    lines.push(`GIT_PLATFORM=${config.get('GIT_PLATFORM')}`);
+  }
   if (config.has('GITHUB_TOKEN')) {
     lines.push(`GITHUB_TOKEN=${config.get('GITHUB_TOKEN')}`);
+  }
+  if (config.has('GITLAB_TOKEN')) {
+    lines.push(`GITLAB_TOKEN=${config.get('GITLAB_TOKEN')}`);
+  }
+  if (config.has('GITLAB_URL')) {
+    lines.push(`GITLAB_URL=${config.get('GITLAB_URL')}`);
   }
 
   lines.push('', '# Quartz UI Configuration');
@@ -138,7 +150,10 @@ function getConfigIcon(key: string): string {
     'OPENAI_API_KEY': '🔑',
     'OPENAI_BASE_URL': '🌐',
     'OPENAI_MODEL': '🤖',
+    'GIT_PLATFORM': '🔧',
     'GITHUB_TOKEN': '🔐',
+    'GITLAB_TOKEN': '🔐',
+    'GITLAB_URL': '🌐',
     'QUARTZ_LANG': '🌍',
     'PROMPT_LANG': '🗣️',
   };
@@ -163,7 +178,10 @@ function listConfig() {
     { key: 'OPENAI_API_KEY', label: t('config.keys.apiKey') },
     { key: 'OPENAI_BASE_URL', label: t('config.keys.baseUrl') },
     { key: 'OPENAI_MODEL', label: t('config.keys.model') },
+    { key: 'GIT_PLATFORM', label: t('config.keys.gitPlatform') },
     { key: 'GITHUB_TOKEN', label: t('config.keys.githubToken') },
+    { key: 'GITLAB_TOKEN', label: t('config.keys.gitlabToken') },
+    { key: 'GITLAB_URL', label: t('config.keys.gitlabUrl') },
     { key: 'QUARTZ_LANG', label: t('config.keys.language') },
     { key: 'PROMPT_LANG', label: t('config.keys.promptLanguage') },
   ];
@@ -229,6 +247,84 @@ async function askQuestion(
     readline.question(prompt, (answer: string) => {
       resolve(answer);
     });
+  });
+}
+
+/**
+ * Interactive platform selector with arrow keys
+ */
+async function selectPlatform(currentPlatform?: string): Promise<string> {
+  const platforms = [
+    { value: 'github', label: 'GitHub' },
+    { value: 'gitlab', label: 'GitLab' },
+  ];
+
+  let selectedIndex = platforms.findIndex(p => p.value === currentPlatform);
+  if (selectedIndex === -1) selectedIndex = 0;
+
+  return new Promise((resolve) => {
+    const stdin = process.stdin;
+    const stdout = process.stdout;
+
+    // Enable raw mode to capture key presses
+    if (stdin.isTTY) {
+      stdin.setRawMode(true);
+    }
+    stdin.resume();
+    stdin.setEncoding('utf8');
+
+    const render = () => {
+      // Clear previous output
+      stdout.write('\x1B[2J\x1B[0f'); // Clear screen and move cursor to top
+      
+      console.log(''); // Empty line
+      console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform')); // Bold label
+      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || 'github' })); // Description
+      console.log('');
+
+      // Render options
+      for (let index = 0; index < platforms.length; index++) {
+        const platform = platforms[index];
+        if (index === selectedIndex) {
+          // Highlighted option
+          stdout.write(`  \x1b[32m❯ ${platform.label}\x1b[0m\n`);
+        } else {
+          // Normal option
+          stdout.write(`    ${platform.label}\n`);
+        }
+      }
+
+      console.log('');
+      console.log('\x1b[2m%s\x1b[0m', '↑↓: Navigate  Enter: Select  Esc: Skip');
+    };
+
+    const onData = (key: string) => {
+      // Handle key presses
+      if (key === '\u001B[A') { // Up arrow
+        selectedIndex = (selectedIndex - 1 + platforms.length) % platforms.length;
+        render();
+      } else if (key === '\u001B[B') { // Down arrow
+        selectedIndex = (selectedIndex + 1) % platforms.length;
+        render();
+      } else if (key === '\r' || key === '\n') { // Enter
+        cleanup();
+        resolve(platforms[selectedIndex].value);
+      } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
+        cleanup();
+        resolve(currentPlatform || 'github'); // Return current/default platform
+      }
+    };
+
+    const cleanup = () => {
+      stdin.removeListener('data', onData);
+      if (stdin.isTTY) {
+        stdin.setRawMode(false);
+      }
+      stdin.pause();
+    };
+
+    stdin.on('data', onData);
+    render();
   });
 }
 
@@ -347,6 +443,11 @@ async function setupWizard() {
     const promptLang = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
     config.set('PROMPT_LANG', promptLang);
 
+    // Git Platform - Use interactive selector
+    const currentPlatform = config.get('GIT_PLATFORM') || 'github';
+    const platform = await selectPlatform(currentPlatform);
+    config.set('GIT_PLATFORM', platform);
+
     // Reopen readline for text input questions
     const readline2 = require('node:readline').createInterface({
       input: process.stdin,
@@ -391,16 +492,42 @@ async function setupWizard() {
       config.set('OPENAI_MODEL', defaultModel);
     }
 
-    // GitHub Token (optional)
-    const currentGithubToken = config.get('GITHUB_TOKEN');
-    const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
-    const githubTokenDesc = currentGithubToken
-      ? t('config.wizard.githubTokenWithCurrent', { current: currentGithubToken.substring(0, 8) + '***' })
-      : t('config.wizard.githubToken');
-    
-    const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
-    if (githubToken.trim()) {
-      config.set('GITHUB_TOKEN', githubToken.trim());
+    // Git Token (based on selected platform)
+    if (platform === 'github') {
+      const currentGithubToken = config.get('GITHUB_TOKEN');
+      const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
+      const githubTokenDesc = currentGithubToken
+        ? t('config.wizard.githubTokenWithCurrent', { current: currentGithubToken.substring(0, 8) + '***' })
+        : t('config.wizard.githubToken');
+      
+      const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
+      if (githubToken.trim()) {
+        config.set('GITHUB_TOKEN', githubToken.trim());
+      }
+    } else if (platform === 'gitlab') {
+      const currentGitlabToken = config.get('GITLAB_TOKEN');
+      const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
+      const gitlabTokenDesc = currentGitlabToken
+        ? t('config.wizard.gitlabTokenWithCurrent', { current: currentGitlabToken.substring(0, 8) + '***' })
+        : t('config.wizard.gitlabToken');
+      
+      const gitlabToken = await askQuestion(readline2, gitlabTokenLabel, gitlabTokenDesc);
+      if (gitlabToken.trim()) {
+        config.set('GITLAB_TOKEN', gitlabToken.trim());
+      }
+
+      // GitLab URL
+      const currentGitlabUrl = config.get('GITLAB_URL');
+      const defaultGitlabUrl = currentGitlabUrl || 'https://gitlab.com';
+      const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
+      const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
+      
+      const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
+      if (gitlabUrl.trim()) {
+        config.set('GITLAB_URL', gitlabUrl.trim());
+      } else if (!currentGitlabUrl) {
+        config.set('GITLAB_URL', defaultGitlabUrl);
+      }
     }
 
     readline2.close();
@@ -461,8 +588,17 @@ function showHelp() {
   console.log('  ' + getConfigIcon('OPENAI_MODEL') + '  \x1b[33mOPENAI_MODEL\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.model') + '\x1b[0m');
   console.log('');
+  console.log('  ' + getConfigIcon('GIT_PLATFORM') + '  \x1b[33mGIT_PLATFORM\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitPlatform') + '\x1b[0m');
+  console.log('');
   console.log('  ' + getConfigIcon('GITHUB_TOKEN') + '  \x1b[33mGITHUB_TOKEN\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.githubToken') + '\x1b[0m');
+  console.log('');
+  console.log('  ' + getConfigIcon('GITLAB_TOKEN') + '  \x1b[33mGITLAB_TOKEN\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitlabToken') + '\x1b[0m');
+  console.log('');
+  console.log('  ' + getConfigIcon('GITLAB_URL') + '  \x1b[33mGITLAB_URL\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitlabUrl') + '\x1b[0m');
   console.log('');
   console.log('  ' + getConfigIcon('QUARTZ_LANG') + '  \x1b[33mQUARTZ_LANG\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.language') + '\x1b[0m');
