@@ -133,7 +133,10 @@ export interface Translations {
       apiKey: string;
       baseUrl: string;
       model: string;
+      gitPlatform: string;
       githubToken: string;
+      gitlabToken: string;
+      gitlabUrl: string;
       language: string;
       promptLanguage: string;
     };
@@ -143,8 +146,12 @@ export interface Translations {
       apiKeyWithCurrent: string;
       baseUrl: string;
       model: string;
+      gitPlatform: string;
       githubToken: string;
       githubTokenWithCurrent: string;
+      gitlabToken: string;
+      gitlabTokenWithCurrent: string;
+      gitlabUrl: string;
       language: string;
       success: string;
       saved: string;
@@ -304,7 +311,10 @@ export const zhCN: Translations = {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API 基础 URL',
       model: 'OpenAI 模型名称',
+      gitPlatform: 'Git 平台',
       githubToken: 'GitHub Personal Access Token (可选)',
+      gitlabToken: 'GitLab Personal Access Token (可选)',
+      gitlabUrl: 'GitLab 服务器 URL',
       language: '界面语言',
       promptLanguage: 'AI 提示语言',
     },
@@ -314,8 +324,12 @@ export const zhCN: Translations = {
       apiKeyWithCurrent: '请输入你的 OpenAI API Key (当前: {current}, 回车跳过): ',
       baseUrl: 'OpenAI API 基础 URL (默认: {default}, 回车使用默认值): ',
       model: 'OpenAI 模型 (默认: {default}, 回车使用默认值): ',
+      gitPlatform: '选择 Git 平台 [github/gitlab] (当前: {default}, 使用方向键选择): ',
       githubToken: 'GitHub Token (可选, 用于创建 PR, 回车跳过): ',
       githubTokenWithCurrent: 'GitHub Token (当前: {current}, 回车跳过): ',
+      gitlabToken: 'GitLab Token (可选, 用于创建 MR, 回车跳过): ',
+      gitlabTokenWithCurrent: 'GitLab Token (当前: {current}, 回车跳过): ',
+      gitlabUrl: 'GitLab 服务器 URL (默认: {default}, 回车使用默认值): ',
       language: '选择界面语言 [zh-CN/zh-TW/ja/ko/en] (默认: {default}, 回车使用默认值): ',
       success: '✅ 配置保存成功!',
       saved: '💾 配置文件已保存到: {path}',
@@ -341,7 +355,7 @@ export const zhCN: Translations = {
 
   errors: {
     noApiKey: '❌ 错误: 未设置 OPENAI_API_KEY',
-    setApiKey: '   请设置环境变量或在项目根目录创建 .env 文件',
+    setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.json 文件',
     apiFailed: '❌ API 调用失败',
     fileNotFound: '❌ 文件不存在',
     gitError: '❌ Git 操作失败',
@@ -473,7 +487,10 @@ export const zhTW: Translations = {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API 基礎 URL',
       model: 'OpenAI 模型名稱',
+      gitPlatform: 'Git 平台',
       githubToken: 'GitHub Personal Access Token (可選)',
+      gitlabToken: 'GitLab Personal Access Token (可選)',
+      gitlabUrl: 'GitLab 伺服器 URL',
       language: '介面語言',
       promptLanguage: 'AI 提示語言',
     },
@@ -483,8 +500,12 @@ export const zhTW: Translations = {
       apiKeyWithCurrent: '請輸入你的 OpenAI API Key (當前: {current}, 回車跳過): ',
       baseUrl: 'OpenAI API 基礎 URL (預設: {default}, 回車使用預設值): ',
       model: 'OpenAI 模型 (預設: {default}, 回車使用預設值): ',
+      gitPlatform: '選擇 Git 平台 [github/gitlab] (當前: {default}, 使用方向鍵選擇): ',
       githubToken: 'GitHub Token (可選, 用於建立 PR, 回車跳過): ',
       githubTokenWithCurrent: 'GitHub Token (當前: {current}, 回車跳過): ',
+      gitlabToken: 'GitLab Token (可選, 用於建立 MR, 回車跳過): ',
+      gitlabTokenWithCurrent: 'GitLab Token (當前: {current}, 回車跳過): ',
+      gitlabUrl: 'GitLab 伺服器 URL (預設: {default}, 回車使用預設值): ',
       language: '選擇介面語言 [zh-CN/zh-TW/ja/ko/en] (預設: {default}, 回車使用預設值): ',
       success: '✅ 配置儲存成功!',
       saved: '💾 配置檔案已儲存到: {path}',
@@ -511,7 +532,7 @@ export const zhTW: Translations = {
 
   errors: {
     noApiKey: '❌ 錯誤: 未設定 OPENAI_API_KEY',
-    setApiKey: '   請設定環境變數或在專案根目錄建立 .env 檔案',
+    setApiKey: '   請執行 quartz config init 或在專案根目錄建立 quartz.json 檔案',
     apiFailed: '❌ API 呼叫失敗',
     fileNotFound: '❌ 檔案不存在',
     gitError: '❌ Git 操作失敗',
@@ -637,7 +658,10 @@ export const ja: Translations = {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API ベース URL',
       model: 'OpenAI モデル名',
+      gitPlatform: 'Git プラットフォーム',
       githubToken: 'GitHub Personal Access Token (オプション)',
+      gitlabToken: 'GitLab Personal Access Token (オプション)',
+      gitlabUrl: 'GitLab サーバー URL',
       language: 'インターフェース言語',
       promptLanguage: 'AI プロンプト言語',
     },
@@ -647,8 +671,12 @@ export const ja: Translations = {
       apiKeyWithCurrent: 'OpenAI API Key を入力してください (現在: {current}, Enter でスキップ): ',
       baseUrl: 'OpenAI API ベース URL (デフォルト: {default}, Enter でデフォルト使用): ',
       model: 'OpenAI モデル (デフォルト: {default}, Enter でデフォルト使用): ',
+      gitPlatform: 'Git プラットフォームを選択 [github/gitlab] (現在: {default}, 矢印キーで選択): ',
       githubToken: 'GitHub Token (オプション, PR作成用, Enter でスキップ): ',
       githubTokenWithCurrent: 'GitHub Token (現在: {current}, Enter でスキップ): ',
+      gitlabToken: 'GitLab Token (オプション, MR作成用, Enter でスキップ): ',
+      gitlabTokenWithCurrent: 'GitLab Token (現在: {current}, Enter でスキップ): ',
+      gitlabUrl: 'GitLab サーバー URL (デフォルト: {default}, Enter でデフォルト使用): ',
       language: 'インターフェース言語を選択 [zh-CN/zh-TW/ja/ko/en] (デフォルト: {default}, Enter でデフォルト使用): ',
       success: '✅ 設定を保存しました!',
       saved: '💾 設定ファイルを保存しました: {path}',
@@ -681,7 +709,7 @@ export const ja: Translations = {
 
   errors: {
     noApiKey: '❌ エラー: OPENAI_API_KEY が設定されていません',
-    setApiKey: '   環境変数を設定するか、プロジェクトルートに .env ファイルを作成してください',
+    setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.json ファイルを作成してください',
     apiFailed: '❌ API 呼び出し失敗',
     fileNotFound: '❌ ファイルが見つかりません',
     gitError: '❌ Git 操作失敗',
@@ -807,7 +835,10 @@ export const ko: Translations = {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API 베이스 URL',
       model: 'OpenAI 모델명',
+      gitPlatform: 'Git 플랫폼',
       githubToken: 'GitHub Personal Access Token (선택사항)',
+      gitlabToken: 'GitLab Personal Access Token (선택사항)',
+      gitlabUrl: 'GitLab 서버 URL',
       language: '인터페이스 언어',
       promptLanguage: 'AI 프롬프트 언어',
     },
@@ -817,8 +848,12 @@ export const ko: Translations = {
       apiKeyWithCurrent: 'OpenAI API Key를 입력하세요 (현재: {current}, Enter로 건너뛰기): ',
       baseUrl: 'OpenAI API 베이스 URL (기본값: {default}, Enter로 기본값 사용): ',
       model: 'OpenAI 모델 (기본값: {default}, Enter로 기본값 사용): ',
+      gitPlatform: 'Git 플랫폼 선택 [github/gitlab] (현재: {default}, 화살표 키로 선택): ',
       githubToken: 'GitHub Token (선택사항, PR 생성용, Enter로 건너뛰기): ',
       githubTokenWithCurrent: 'GitHub Token (현재: {current}, Enter로 건너뛰기): ',
+      gitlabToken: 'GitLab Token (선택사항, MR 생성용, Enter로 건너뛰기): ',
+      gitlabTokenWithCurrent: 'GitLab Token (현재: {current}, Enter로 건너뛰기): ',
+      gitlabUrl: 'GitLab 서버 URL (기본값: {default}, Enter로 기본값 사용): ',
       language: '인터페이스 언어 선택 [zh-CN/zh-TW/ja/ko/en] (기본값: {default}, Enter로 기본값 사용): ',
       success: '✅ 설정이 저장되었습니다!',
       saved: '💾 설정 파일이 저장되었습니다: {path}',
@@ -851,7 +886,7 @@ export const ko: Translations = {
 
   errors: {
     noApiKey: '❌ 오류: OPENAI_API_KEY가 설정되지 않았습니다',
-    setApiKey: '   환경 변수를 설정하거나 프로젝트 루트에 .env 파일을 생성하세요',
+    setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.json 파일을 생성하세요',
     apiFailed: '❌ API 호출 실패',
     fileNotFound: '❌ 파일을 찾을 수 없습니다',
     gitError: '❌ Git 작업 실패',
@@ -984,7 +1019,10 @@ export const en: Translations = {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API Base URL',
       model: 'OpenAI Model Name',
+      gitPlatform: 'Git Platform',
       githubToken: 'GitHub Personal Access Token (optional)',
+      gitlabToken: 'GitLab Personal Access Token (optional)',
+      gitlabUrl: 'GitLab Server URL',
       language: 'Interface Language',
       promptLanguage: 'AI Prompt Language',
     },
@@ -994,8 +1032,12 @@ export const en: Translations = {
       apiKeyWithCurrent: 'Enter your OpenAI API Key (current: {current}, press Enter to skip): ',
       baseUrl: 'OpenAI API Base URL (default: {default}, press Enter for default): ',
       model: 'OpenAI Model (default: {default}, press Enter for default): ',
+      gitPlatform: 'Choose Git platform [github/gitlab] (current: {default}, use arrow keys to select): ',
       githubToken: 'GitHub Token (optional, for creating PRs, press Enter to skip): ',
       githubTokenWithCurrent: 'GitHub Token (current: {current}, press Enter to skip): ',
+      gitlabToken: 'GitLab Token (optional, for creating MRs, press Enter to skip): ',
+      gitlabTokenWithCurrent: 'GitLab Token (current: {current}, press Enter to skip): ',
+      gitlabUrl: 'GitLab Server URL (default: {default}, press Enter for default): ',
       language: 'Choose interface language [zh-CN/zh-TW/ja/ko/en] (default: {default}, press Enter for default): ',
       success: '✅ Configuration saved successfully!',
       saved: '💾 Configuration saved to: {path}',
@@ -1021,7 +1063,7 @@ export const en: Translations = {
 
   errors: {
     noApiKey: '❌ Error: OPENAI_API_KEY is not set',
-    setApiKey: '   Please set environment variable or create .env file',
+    setApiKey: '   Please run quartz config init or create quartz.json file',
     apiFailed: '❌ API call failed',
     fileNotFound: '❌ File not found',
     gitError: '❌ Git operation failed',
