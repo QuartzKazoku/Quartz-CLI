@@ -378,9 +378,8 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
  * @param args - Command line arguments array
  * @returns Parsed arguments object
  */
-function parseArgs(args: string[]): { auto: boolean; base: string | null; useGH: boolean; interactive: boolean } {
+function parseArgs(args: string[]): { base: string | null; useGH: boolean; interactive: boolean } {
   const result = {
-    auto: args.includes('--auto') || args.includes('-a'),
     base: null as string | null,
     useGH: args.includes('--gh'),
     interactive: args.includes('--select') || args.includes('-s'),
@@ -402,7 +401,7 @@ export async function generatePR(args: string[]) {
   console.log(t('pr.starting'));
 
   const config = loadConfig();
-  const { auto, base: specifiedBase, useGH, interactive } = parseArgs(args);
+  const { base: specifiedBase, useGH, interactive } = parseArgs(args);
 
   // Get current branch
   const currentBranch = await getCurrentBranch();
@@ -469,41 +468,28 @@ export async function generatePR(args: string[]) {
   console.log('━'.repeat(60));
   console.log('');
 
-  if (auto) {
-    // Auto create PR
-    console.log(t('pr.creating'));
+  // Auto create PR (default behavior)
+  console.log(t('pr.creating'));
 
-    if (useGH) {
-      // Use GitHub CLI
-      await createPRWithGH(title, body, baseBranch);
-    } else if (config.githubToken && repoInfo) {
-      // Use GitHub API
-      const pr = await createGitHubPR(
-        config.githubToken,
-        repoInfo.owner,
-        repoInfo.repo,
-        title,
-        body,
-        currentBranch,
-        baseBranch
-      );
-      console.log(t('pr.success'));
-      console.log(`🔗 ${pr.html_url}`);
-    } else {
-      console.error(t('pr.failed'));
-      process.exit(1);
-    }
+  if (useGH) {
+    // Use GitHub CLI
+    await createPRWithGH(title, body, baseBranch);
+  } else if (config.githubToken && repoInfo) {
+    // Use GitHub API
+    const pr = await createGitHubPR(
+      config.githubToken,
+      repoInfo.owner,
+      repoInfo.repo,
+      title,
+      body,
+      currentBranch,
+      baseBranch
+    );
+    console.log(t('pr.success'));
+    console.log(`🔗 ${pr.html_url}`);
   } else {
-    // Save to file
-    const prFile = path.join(process.cwd(), '.ai-pr-description.md');
-    fs.writeFileSync(prFile, `# ${title}\n\n${body}`);
-    console.log(t('pr.saved', { path: prFile }));
-
-    console.log(t('pr.tips'));
-    console.log(t('pr.autoTip'));
-    console.log(t('pr.ghTip'));
-    console.log(t('pr.selectTip'));
-    console.log(t('pr.baseTip'));
-    console.log(t('pr.manualTip'));
+    console.error(t('pr.noToken'));
+    console.error(t('pr.useGHTip'));
+    process.exit(1);
   }
 }
