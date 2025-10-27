@@ -83,6 +83,7 @@ export interface Translations {
     tips: string;
     autoTip: string;
     ghTip: string;
+    selectTip: string;
     baseTip: string;
     manualTip: string;
     saved: string;
@@ -93,6 +94,8 @@ export interface Translations {
     switchBranch: string;
     noDiff: string;
     ensureBranch: string;
+    selectBranch: string;
+    noBranches: string;
   };
 
   // Score levels
@@ -244,7 +247,8 @@ export const zhCN: Translations = {
     tips: '💡 提示:',
     autoTip: '   - 使用 --auto 或 -a 自动创建 PR',
     ghTip: '   - 使用 --gh 选项通过 GitHub CLI 创建',
-    baseTip: '   - 使用 --base <branch> 指定目标分支 (默认: main)',
+    selectTip: '   - 使用 --select 或 -s 交互式选择目标分支',
+    baseTip: '   - 使用 --base <branch> 指定目标分支',
     manualTip: '   - 或手动复制上述描述到 GitHub 创建 PR\n',
     saved: '💾 PR 描述已保存到: {path}\n',
     creating: '⚡ 自动创建 PR...\n',
@@ -254,6 +258,8 @@ export const zhCN: Translations = {
     switchBranch: '   请切换到功能分支后再创建 PR',
     noDiff: '❌ 当前分支与 {base} 分支没有差异',
     ensureBranch: '   请确保 {base} 分支存在',
+    selectBranch: '请选择目标分支',
+    noBranches: '❌ 没有可用的分支',
   },
 
   scoreLevel: {
@@ -402,7 +408,8 @@ export const zhTW: Translations = {
     tips: '💡 提示:',
     autoTip: '   - 使用 --auto 或 -a 自動建立 PR',
     ghTip: '   - 使用 --gh 選項透過 GitHub CLI 建立',
-    baseTip: '   - 使用 --base <branch> 指定目標分支 (預設: main)',
+    selectTip: '   - 使用 --select 或 -s 交互式選擇目標分支',
+    baseTip: '   - 使用 --base <branch> 指定目標分支',
     manualTip: '   - 或手動複製上述描述到 GitHub 建立 PR\n',
     saved: '💾 PR 描述已儲存到: {path}\n',
     creating: '⚡ 自動建立 PR...\n',
@@ -412,6 +419,8 @@ export const zhTW: Translations = {
     switchBranch: '   請切換到功能分支後再建立 PR',
     noDiff: '❌ 當前分支與 {base} 分支沒有差異',
     ensureBranch: '   請確保 {base} 分支存在',
+    selectBranch: '請選擇目標分支',
+    noBranches: '❌ 沒有可用的分支',
   },
 
   scoreLevel: {
@@ -560,7 +569,8 @@ export const ja: Translations = {
     tips: '💡 ヒント:',
     autoTip: '   - --auto または -a で PR を自動作成',
     ghTip: '   - --gh オプションで GitHub CLI を使用',
-    baseTip: '   - --base <branch> でターゲットブランチを指定 (デフォルト: main)',
+    selectTip: '   - --select または -s で対話的にターゲットブランチを選択',
+    baseTip: '   - --base <branch> でターゲットブランチを指定',
     manualTip: '   - または上記の説明を GitHub に手動でコピー\n',
     saved: '💾 PR 説明を保存しました: {path}\n',
     creating: '⚡ PR を自動作成中...\n',
@@ -570,6 +580,8 @@ export const ja: Translations = {
     switchBranch: '   機能ブランチに切り替えてから PR を作成してください',
     noDiff: '❌ 現在のブランチと {base} ブランチに差分がありません',
     ensureBranch: '   {base} ブランチが存在することを確認してください',
+    selectBranch: 'ターゲットブランチを選択してください',
+    noBranches: '❌ 利用可能なブランチがありません',
   },
 
   config: {
@@ -718,7 +730,8 @@ export const ko: Translations = {
     tips: '💡 힌트:',
     autoTip: '   - --auto 또는 -a로 PR 자동 생성',
     ghTip: '   - --gh 옵션으로 GitHub CLI 사용',
-    baseTip: '   - --base <branch>로 대상 브랜치 지정 (기본값: main)',
+    selectTip: '   - --select 또는 -s로 대화형으로 대상 브랜치 선택',
+    baseTip: '   - --base <branch>로 대상 브랜치 지정',
     manualTip: '   - 또는 위 설명을 GitHub에 수동으로 복사\n',
     saved: '💾 PR 설명 저장됨: {path}\n',
     creating: '⚡ PR 자동 생성 중...\n',
@@ -728,6 +741,8 @@ export const ko: Translations = {
     switchBranch: '   기능 브랜치로 전환한 후 PR을 생성하세요',
     noDiff: '❌ 현재 브랜치와 {base} 브랜치 간 차이가 없습니다',
     ensureBranch: '   {base} 브랜치가 존재하는지 확인하세요',
+    selectBranch: '대상 브랜치를 선택하세요',
+    noBranches: '❌ 사용 가능한 브랜치가 없습니다',
   },
 
   config: {
@@ -876,7 +891,8 @@ export const en: Translations = {
     tips: '💡 Tips:',
     autoTip: '   - Use --auto or -a to create PR automatically',
     ghTip: '   - Use --gh option to create via GitHub CLI',
-    baseTip: '   - Use --base <branch> to specify target (default: main)',
+    selectTip: '   - Use --select or -s to interactively select target branch',
+    baseTip: '   - Use --base <branch> to specify target branch',
     manualTip: '   - Or manually copy the description to GitHub\n',
     saved: '💾 PR description saved to: {path}\n',
     creating: '⚡ Creating PR automatically...\n',
@@ -886,6 +902,8 @@ export const en: Translations = {
     switchBranch: '   Please switch to a feature branch first',
     noDiff: '❌ No difference between current and {base} branch',
     ensureBranch: '   Please ensure {base} branch exists',
+    selectBranch: 'Select target branch',
+    noBranches: '❌ No available branches',
   },
 
   scoreLevel: {
