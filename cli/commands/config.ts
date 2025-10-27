@@ -9,7 +9,10 @@ const CONFIG_KEYS = {
   OPENAI_API_KEY: 'OPENAI_API_KEY',
   OPENAI_BASE_URL: 'OPENAI_BASE_URL',
   OPENAI_MODEL: 'OPENAI_MODEL',
+  GIT_PLATFORM: 'GIT_PLATFORM',
   GITHUB_TOKEN: 'GITHUB_TOKEN',
+  GITLAB_TOKEN: 'GITLAB_TOKEN',
+  GITLAB_URL: 'GITLAB_URL',
   QUARTZ_LANG: 'QUARTZ_LANG',
   PROMPT_LANG: 'PROMPT_LANG',
 } as const;
@@ -25,40 +28,32 @@ interface ConfigProfile {
 }
 
 /**
- * Get .env file path
+ * Get quartz.json file path
  */
-function getEnvPath(): string {
-  return path.join(process.cwd(), '.env');
-}
-
-/**
- * Get config profiles file path
- */
-function getProfilesPath(): string {
+function getQuartzPath(): string {
   return path.join(process.cwd(), 'quartz.json');
 }
 
 /**
- * Read existing .env file
+ * Read existing quartz.json file
  */
-function readEnvFile(): Map<string, string> {
-  const envPath = getEnvPath();
+function readQuartzConfig(): Map<string, string> {
+  const quartzPath = getQuartzPath();
   const config = new Map<string, string>();
 
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, 'utf-8');
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine && !trimmedLine.startsWith('#')) {
-        const regex = /^([^=]+)=(.*)$/;
-        const match = regex.exec(trimmedLine);
-        if (match) {
-          const key = match[1].trim();
-          const value = match[2].trim();
-          config.set(key, value);
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      const data = JSON.parse(content);
+      
+      // Read from default profile
+      if (data.default && data.default.configs) {
+        for (const [key, value] of Object.entries(data.default.configs)) {
+          config.set(key, value as string);
         }
       }
+    } catch (error) {
+      console.error('Failed to parse quartz.json:', error);
     }
   }
 
@@ -66,50 +61,46 @@ function readEnvFile(): Map<string, string> {
 }
 
 /**
- * Write config to .env file
+ * Write config to quartz.json file
  */
-function writeEnvFile(config: Map<string, string>) {
-  const envPath = getEnvPath();
-  const lines: string[] = ['# Quartz Configuration - OpenAI API'];
+function writeQuartzConfig(config: Map<string, string>) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
 
-  // OpenAI configs
-  if (config.has('OPENAI_API_KEY')) {
-    lines.push(`OPENAI_API_KEY=${config.get('OPENAI_API_KEY')}`);
-  }
-  if (config.has('OPENAI_BASE_URL')) {
-    lines.push(`OPENAI_BASE_URL=${config.get('OPENAI_BASE_URL')}`);
-  }
-  if (config.has('OPENAI_MODEL')) {
-    lines.push(`OPENAI_MODEL=${config.get('OPENAI_MODEL')}`);
-  }
-
-  lines.push('', '# GitHub Configuration');
-
-  // GitHub configs
-  if (config.has('GITHUB_TOKEN')) {
-    lines.push(`GITHUB_TOKEN=${config.get('GITHUB_TOKEN')}`);
+  // Read existing data if file exists
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      // If parse fails, start with empty object
+      data = {};
+    }
   }
 
-  lines.push('', '# Quartz UI Configuration');
-
-  // Quartz configs
-  if (config.has('QUARTZ_LANG')) {
-    lines.push(`QUARTZ_LANG=${config.get('QUARTZ_LANG')}`);
+  // Ensure default profile exists
+  if (!data.default) {
+    data.default = { configs: {} };
   }
-  if (config.has('PROMPT_LANG')) {
-    lines.push(`PROMPT_LANG=${config.get('PROMPT_LANG')}`);
+  if (!data.default.configs) {
+    data.default.configs = {};
   }
 
-  fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf-8');
+  // Update configs
+  for (const [key, value] of config.entries()) {
+    data.default.configs[key] = value;
+  }
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 /**
  * Set a configuration value
  */
 function setConfig(key: string, value: string) {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   config.set(key, value);
-  writeEnvFile(config);
+  writeQuartzConfig(config);
   console.log(t('config.set', { key, value: key.includes('KEY') || key.includes('TOKEN') ? '***' : value }));
 }
 
@@ -117,12 +108,12 @@ function setConfig(key: string, value: string) {
  * Get a configuration value
  */
 function getConfig(key: string) {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   const value = config.get(key);
   
   if (value) {
-    const displayValue = key.includes('KEY') || key.includes('TOKEN') 
-      ? value.substring(0, 8) + '***' 
+    const displayValue = key.includes('KEY') || key.includes('TOKEN')
+      ? value.substring(0, 8) + '***'
       : value;
     console.log(`${key}=${displayValue}`);
   } else {
@@ -138,7 +129,10 @@ function getConfigIcon(key: string): string {
     'OPENAI_API_KEY': '🔑',
     'OPENAI_BASE_URL': '🌐',
     'OPENAI_MODEL': '🤖',
+    'GIT_PLATFORM': '🔧',
     'GITHUB_TOKEN': '🔐',
+    'GITLAB_TOKEN': '🔐',
+    'GITLAB_URL': '🌐',
     'QUARTZ_LANG': '🌍',
     'PROMPT_LANG': '🗣️',
   };
@@ -149,7 +143,7 @@ function getConfigIcon(key: string): string {
  * List all configurations
  */
 function listConfig() {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   
   console.log('');
   printLogo();
@@ -163,7 +157,10 @@ function listConfig() {
     { key: 'OPENAI_API_KEY', label: t('config.keys.apiKey') },
     { key: 'OPENAI_BASE_URL', label: t('config.keys.baseUrl') },
     { key: 'OPENAI_MODEL', label: t('config.keys.model') },
+    { key: 'GIT_PLATFORM', label: t('config.keys.gitPlatform') },
     { key: 'GITHUB_TOKEN', label: t('config.keys.githubToken') },
+    { key: 'GITLAB_TOKEN', label: t('config.keys.gitlabToken') },
+    { key: 'GITLAB_URL', label: t('config.keys.gitlabUrl') },
     { key: 'QUARTZ_LANG', label: t('config.keys.language') },
     { key: 'PROMPT_LANG', label: t('config.keys.promptLanguage') },
   ];
@@ -189,7 +186,7 @@ function listConfig() {
   }
   
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
-  console.log('\x1b[2m%s\x1b[0m', `💾 ${getEnvPath()}`); // Show .env file path
+  console.log('\x1b[2m%s\x1b[0m', `💾 ${getQuartzPath()}`); // Show quartz.json file path
   console.log('');
 }
 
@@ -229,6 +226,84 @@ async function askQuestion(
     readline.question(prompt, (answer: string) => {
       resolve(answer);
     });
+  });
+}
+
+/**
+ * Interactive platform selector with arrow keys
+ */
+async function selectPlatform(currentPlatform?: string): Promise<string> {
+  const platforms = [
+    { value: 'github', label: 'GitHub' },
+    { value: 'gitlab', label: 'GitLab' },
+  ];
+
+  let selectedIndex = platforms.findIndex(p => p.value === currentPlatform);
+  if (selectedIndex === -1) selectedIndex = 0;
+
+  return new Promise((resolve) => {
+    const stdin = process.stdin;
+    const stdout = process.stdout;
+
+    // Enable raw mode to capture key presses
+    if (stdin.isTTY) {
+      stdin.setRawMode(true);
+    }
+    stdin.resume();
+    stdin.setEncoding('utf8');
+
+    const render = () => {
+      // Clear previous output
+      stdout.write('\x1B[2J\x1B[0f'); // Clear screen and move cursor to top
+      
+      console.log(''); // Empty line
+      console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform')); // Bold label
+      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || 'github' })); // Description
+      console.log('');
+
+      // Render options
+      for (let index = 0; index < platforms.length; index++) {
+        const platform = platforms[index];
+        if (index === selectedIndex) {
+          // Highlighted option
+          stdout.write(`  \x1b[32m❯ ${platform.label}\x1b[0m\n`);
+        } else {
+          // Normal option
+          stdout.write(`    ${platform.label}\n`);
+        }
+      }
+
+      console.log('');
+      console.log('\x1b[2m%s\x1b[0m', '↑↓: Navigate  Enter: Select  Esc: Skip');
+    };
+
+    const onData = (key: string) => {
+      // Handle key presses
+      if (key === '\u001B[A') { // Up arrow
+        selectedIndex = (selectedIndex - 1 + platforms.length) % platforms.length;
+        render();
+      } else if (key === '\u001B[B') { // Down arrow
+        selectedIndex = (selectedIndex + 1) % platforms.length;
+        render();
+      } else if (key === '\r' || key === '\n') { // Enter
+        cleanup();
+        resolve(platforms[selectedIndex].value);
+      } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
+        cleanup();
+        resolve(currentPlatform || 'github'); // Return current/default platform
+      }
+    };
+
+    const cleanup = () => {
+      stdin.removeListener('data', onData);
+      if (stdin.isTTY) {
+        stdin.setRawMode(false);
+      }
+      stdin.pause();
+    };
+
+    stdin.on('data', onData);
+    render();
   });
 }
 
@@ -325,7 +400,7 @@ async function setupWizard() {
   console.log('');
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
   
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   const readline = require('node:readline').createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -346,6 +421,11 @@ async function setupWizard() {
     const currentPromptLang = config.get('PROMPT_LANG') || lang;
     const promptLang = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
     config.set('PROMPT_LANG', promptLang);
+
+    // Git Platform - Use interactive selector
+    const currentPlatform = config.get('GIT_PLATFORM') || 'github';
+    const platform = await selectPlatform(currentPlatform);
+    config.set('GIT_PLATFORM', platform);
 
     // Reopen readline for text input questions
     const readline2 = require('node:readline').createInterface({
@@ -391,27 +471,53 @@ async function setupWizard() {
       config.set('OPENAI_MODEL', defaultModel);
     }
 
-    // GitHub Token (optional)
-    const currentGithubToken = config.get('GITHUB_TOKEN');
-    const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
-    const githubTokenDesc = currentGithubToken
-      ? t('config.wizard.githubTokenWithCurrent', { current: currentGithubToken.substring(0, 8) + '***' })
-      : t('config.wizard.githubToken');
-    
-    const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
-    if (githubToken.trim()) {
-      config.set('GITHUB_TOKEN', githubToken.trim());
+    // Git Token (based on selected platform)
+    if (platform === 'github') {
+      const currentGithubToken = config.get('GITHUB_TOKEN');
+      const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
+      const githubTokenDesc = currentGithubToken
+        ? t('config.wizard.githubTokenWithCurrent', { current: currentGithubToken.substring(0, 8) + '***' })
+        : t('config.wizard.githubToken');
+      
+      const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
+      if (githubToken.trim()) {
+        config.set('GITHUB_TOKEN', githubToken.trim());
+      }
+    } else if (platform === 'gitlab') {
+      const currentGitlabToken = config.get('GITLAB_TOKEN');
+      const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
+      const gitlabTokenDesc = currentGitlabToken
+        ? t('config.wizard.gitlabTokenWithCurrent', { current: currentGitlabToken.substring(0, 8) + '***' })
+        : t('config.wizard.gitlabToken');
+      
+      const gitlabToken = await askQuestion(readline2, gitlabTokenLabel, gitlabTokenDesc);
+      if (gitlabToken.trim()) {
+        config.set('GITLAB_TOKEN', gitlabToken.trim());
+      }
+
+      // GitLab URL
+      const currentGitlabUrl = config.get('GITLAB_URL');
+      const defaultGitlabUrl = currentGitlabUrl || 'https://gitlab.com';
+      const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
+      const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
+      
+      const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
+      if (gitlabUrl.trim()) {
+        config.set('GITLAB_URL', gitlabUrl.trim());
+      } else if (!currentGitlabUrl) {
+        config.set('GITLAB_URL', defaultGitlabUrl);
+      }
     }
 
     readline2.close();
 
     // Save configuration
-    writeEnvFile(config);
+    writeQuartzConfig(config);
     console.log('');
     console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
     console.log('');
     console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success')); // Green success message
-    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getEnvPath() })); // Dim path
+    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() })); // Dim path
     console.log('');
 
   } catch (error) {
@@ -461,8 +567,17 @@ function showHelp() {
   console.log('  ' + getConfigIcon('OPENAI_MODEL') + '  \x1b[33mOPENAI_MODEL\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.model') + '\x1b[0m');
   console.log('');
+  console.log('  ' + getConfigIcon('GIT_PLATFORM') + '  \x1b[33mGIT_PLATFORM\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitPlatform') + '\x1b[0m');
+  console.log('');
   console.log('  ' + getConfigIcon('GITHUB_TOKEN') + '  \x1b[33mGITHUB_TOKEN\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.githubToken') + '\x1b[0m');
+  console.log('');
+  console.log('  ' + getConfigIcon('GITLAB_TOKEN') + '  \x1b[33mGITLAB_TOKEN\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitlabToken') + '\x1b[0m');
+  console.log('');
+  console.log('  ' + getConfigIcon('GITLAB_URL') + '  \x1b[33mGITLAB_URL\x1b[0m');
+  console.log('     \x1b[2m' + t('config.keys.gitlabUrl') + '\x1b[0m');
   console.log('');
   console.log('  ' + getConfigIcon('QUARTZ_LANG') + '  \x1b[33mQUARTZ_LANG\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.language') + '\x1b[0m');
@@ -502,26 +617,41 @@ function showHelp() {
  * Save current configuration as a profile
  */
 function saveProfile(name: string) {
-  const config = readEnvFile();
-  const profiles = loadProfiles();
-  
-  profiles[name] = {
+  const config = readQuartzConfig();
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  // Read existing data
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      data = {};
+    }
+  }
+
+  // Save profile
+  data[name] = {
     name,
     configs: Object.fromEntries(config),
   };
-  
-  fs.writeFileSync(getProfilesPath(), JSON.stringify(profiles, null, 2), 'utf-8');
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileSaved', { name }));
 }
 
 /**
- * Load profiles from file
+ * Load profiles from quartz.json
  */
 function loadProfiles(): Record<string, any> {
-  const profilesPath = getProfilesPath();
-  if (fs.existsSync(profilesPath)) {
+  const quartzPath = getQuartzPath();
+  if (fs.existsSync(quartzPath)) {
     try {
-      return JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
+      // Filter out 'default' profile from list
+      const { default: _, ...profiles } = data;
+      return profiles;
     } catch (error) {
       console.error('Failed to load profiles:', error);
       return {};
@@ -534,17 +664,32 @@ function loadProfiles(): Record<string, any> {
  * Load a configuration profile
  */
 function loadProfile(name: string) {
-  const profiles = loadProfiles();
-  
-  if (!profiles[name]) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load quartz.json:', error);
+      process.exit(1);
+    }
+  }
+
+  if (!data[name]) {
     console.error(t('config.profileNotFound', { name }));
     console.log('\n' + t('config.availableProfiles'));
     listProfiles();
     process.exit(1);
   }
-  
-  const config = new Map<string, string>(Object.entries(profiles[name].configs));
-  writeEnvFile(config);
+
+  // Update default profile with selected profile configs
+  data.default = {
+    configs: data[name].configs,
+  };
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileLoaded', { name }));
 }
 
@@ -554,17 +699,17 @@ function loadProfile(name: string) {
 function listProfiles() {
   const profiles = loadProfiles();
   const profileNames = Object.keys(profiles);
-  
+
   if (profileNames.length === 0) {
     console.log(t('config.noProfiles'));
     return;
   }
-  
+
   console.log('');
   console.log('\x1b[1m%s\x1b[0m', '📋 ' + t('config.savedProfiles'));
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   console.log('');
-  
+
   for (const name of profileNames) {
     const profile = profiles[name];
     console.log(`  📦 \x1b[36m${name}\x1b[0m`);
@@ -578,15 +723,26 @@ function listProfiles() {
  * Delete a configuration profile
  */
 function deleteProfile(name: string) {
-  const profiles = loadProfiles();
-  
-  if (!profiles[name]) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load quartz.json:', error);
+      process.exit(1);
+    }
+  }
+
+  if (!data[name]) {
     console.error(t('config.profileNotFound', { name }));
     process.exit(1);
   }
-  
-  delete profiles[name];
-  fs.writeFileSync(getProfilesPath(), JSON.stringify(profiles, null, 2), 'utf-8');
+
+  delete data[name];
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileDeleted', { name }));
 }
 
