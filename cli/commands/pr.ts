@@ -6,6 +6,63 @@ import { t } from '../i18n';
 import { getPRPrompt } from '../utils/prompt';
 
 /**
+ * Parse a single environment variable line
+ * @param line - Line from .env file
+ * @returns Parsed key-value pair or null
+ */
+function parseEnvLine(line: string): { key: string; value: string } | null {
+  const regex = /^([^=]+)=(.*)$/;
+  const match = regex.exec(line);
+  if (!match) return null;
+  
+  return {
+    key: match[1].trim(),
+    value: match[2].trim(),
+  };
+}
+
+/**
+ * Update config with environment variable if not already set
+ * @param config - Configuration object
+ * @param key - Environment variable key
+ * @param value - Environment variable value
+ */
+function updateConfigFromEnv(
+  config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string; githubToken: string },
+  key: string,
+  value: string
+): void {
+  if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
+    config.openaiApiKey = value;
+  } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
+    config.openaiBaseUrl = value;
+  } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
+    config.openaiModel = value;
+  } else if (key === 'GITHUB_TOKEN' && !config.githubToken) {
+    config.githubToken = value;
+  }
+}
+
+/**
+ * Load environment variables from .env file
+ * @param config - Configuration object to update
+ */
+function loadEnvFile(config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string; githubToken: string }): void {
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  const lines = envContent.split('\n');
+  
+  for (const line of lines) {
+    const parsed = parseEnvLine(line);
+    if (parsed) {
+      updateConfigFromEnv(config, parsed.key, parsed.value);
+    }
+  }
+}
+
+/**
  * Load configuration from environment variables and .env file
  * @returns Configuration object
  */
@@ -17,29 +74,7 @@ function loadConfig() {
     githubToken: process.env.GITHUB_TOKEN || '',
   };
 
-  // Try to load from .env file
-  const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    const lines = envContent.split('\n');
-    for (const line of lines) {
-      const regex = /^([^=]+)=(.*)$/;
-      const match = regex.exec(line);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-          config.openaiApiKey = value;
-        } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-          config.openaiBaseUrl = value;
-        } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-          config.openaiModel = value;
-        } else if (key === 'GITHUB_TOKEN' && !config.githubToken) {
-          config.githubToken = value;
-        }
-      }
-    }
-  }
+  loadEnvFile(config);
 
   if (!config.openaiApiKey) {
     console.error(t('errors.noApiKey'));
@@ -173,8 +208,8 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string } | null> {
 
     // Parse GitHub URL
     // Support formats: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-    const sshRegex = /git@github\.com:(.+?)\/(.+?)(\.git)?$/;
-    const httpsRegex = /https:\/\/github\.com\/(.+?)\/(.+?)(\.git)?$/;
+    const sshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const httpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
     const sshMatch = sshRegex.exec(remoteUrl);
     const httpsMatch = httpsRegex.exec(remoteUrl);
 
@@ -361,7 +396,8 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
     const tempFile = path.join(process.cwd(), '.ai-pr-body.md');
     fs.writeFileSync(tempFile, body);
 
-    await $`gh pr create --title "${title.replaceAll('"', String.raw`\"`)}" --body-file "${tempFile}" --base ${baseBranch}"`;
+    const escapedTitle = title.replaceAll('"', String.raw`\"`);
+    await $`gh pr create --title "${escapedTitle}" --body-file "${tempFile}" --base ${baseBranch}"`;
 
     // Delete temporary file
     fs.unlinkSync(tempFile);
