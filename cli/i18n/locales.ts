@@ -355,7 +355,7 @@ export const zhCN: Translations = {
 
   errors: {
     noApiKey: '❌ 错误: 未设置 OPENAI_API_KEY',
-    setApiKey: '   请设置环境变量或在项目根目录创建 .env 文件',
+    setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.json 文件',
     apiFailed: '❌ API 调用失败',
     fileNotFound: '❌ 文件不存在',
     gitError: '❌ Git 操作失败',
@@ -532,7 +532,7 @@ export const zhTW: Translations = {
 
   errors: {
     noApiKey: '❌ 錯誤: 未設定 OPENAI_API_KEY',
-    setApiKey: '   請設定環境變數或在專案根目錄建立 .env 檔案',
+    setApiKey: '   請執行 quartz config init 或在專案根目錄建立 quartz.json 檔案',
     apiFailed: '❌ API 呼叫失敗',
     fileNotFound: '❌ 檔案不存在',
     gitError: '❌ Git 操作失敗',
@@ -709,7 +709,7 @@ export const ja: Translations = {
 
   errors: {
     noApiKey: '❌ エラー: OPENAI_API_KEY が設定されていません',
-    setApiKey: '   環境変数を設定するか、プロジェクトルートに .env ファイルを作成してください',
+    setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.json ファイルを作成してください',
     apiFailed: '❌ API 呼び出し失敗',
     fileNotFound: '❌ ファイルが見つかりません',
     gitError: '❌ Git 操作失敗',
@@ -886,7 +886,7 @@ export const ko: Translations = {
 
   errors: {
     noApiKey: '❌ 오류: OPENAI_API_KEY가 설정되지 않았습니다',
-    setApiKey: '   환경 변수를 설정하거나 프로젝트 루트에 .env 파일을 생성하세요',
+    setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.json 파일을 생성하세요',
     apiFailed: '❌ API 호출 실패',
     fileNotFound: '❌ 파일을 찾을 수 없습니다',
     gitError: '❌ Git 작업 실패',
@@ -1063,7 +1063,7 @@ export const en: Translations = {
 
   errors: {
     noApiKey: '❌ Error: OPENAI_API_KEY is not set',
-    setApiKey: '   Please set environment variable or create .env file',
+    setApiKey: '   Please run quartz config init or create quartz.json file',
     apiFailed: '❌ API call failed',
     fileNotFound: '❌ File not found',
     gitError: '❌ Git operation failed',
