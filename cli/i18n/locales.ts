@@ -57,7 +57,6 @@ export interface Translations {
     generating: string;
     generated: string;
     tips: string;
-    autoTip: string;
     editTip: string;
     manualTip: string;
     saved: string;
@@ -220,9 +219,8 @@ export const zhCN: Translations = {
     generating: '🤖 正在生成 commit message...\n',
     generated: '📝 生成的 Commit Message:',
     tips: '💡 提示:',
-    autoTip: '   - 使用 --auto 或 -a 自动提交',
     editTip: '   - 使用 --edit 或 -e 在编辑器中修改后提交',
-    manualTip: '   - 手动复制上述消息进行提交\n',
+    manualTip: '   - 使用 ↑↓ 键选择提交消息, Enter 确认\n',
     saved: '💾 Commit message 已保存到: {path}\n',
     noStaged: '❌ 没有已暂存的变更',
     useGitAdd: '   请先使用 git add 暂存要提交的文件',
@@ -379,9 +377,8 @@ export const zhTW: Translations = {
     generating: '🤖 AI 正在生成 commit message...\n',
     generated: '📝 生成的 Commit Message:',
     tips: '💡 提示:',
-    autoTip: '   - 使用 --auto 或 -a 自動提交',
     editTip: '   - 使用 --edit 或 -e 在編輯器中修改後提交',
-    manualTip: '   - 手動複製上述訊息進行提交\n',
+    manualTip: '   - 使用 ↑↓ 鍵選擇提交訊息, Enter 確認\n',
     saved: '💾 Commit message 已儲存到: {path}\n',
     noStaged: '❌ 沒有已暫存的變更',
     useGitAdd: '   請先使用 git add 暫存要提交的檔案',
@@ -538,9 +535,8 @@ export const ja: Translations = {
     generating: '💎 Quartz が commit message を生成中...\n',
     generated: '📝 生成された Commit Message:',
     tips: '💡 ヒント:',
-    autoTip: '   - --auto または -a で自動コミット',
     editTip: '   - --edit または -e でエディタで編集してコミット',
-    manualTip: '   - 上記のメッセージを手動でコピーしてコミット\n',
+    manualTip: '   - ↑↓ キーでメッセージを選択, Enter で確認\n',
     saved: '💾 Commit message を保存しました: {path}\n',
     noStaged: '❌ ステージされた変更がありません',
     useGitAdd: '   まず git add でファイルをステージしてください',
@@ -697,9 +693,8 @@ export const ko: Translations = {
     generating: '💎 Quartz가 commit message 생성 중...\n',
     generated: '📝 생성된 Commit Message:',
     tips: '💡 힌트:',
-    autoTip: '   - --auto 또는 -a로 자동 커밋',
     editTip: '   - --edit 또는 -e로 에디터에서 수정 후 커밋',
-    manualTip: '   - 위 메시지를 수동으로 복사하여 커밋\n',
+    manualTip: '   - ↑↓ 키로 메시지 선택, Enter로 확인\n',
     saved: '💾 Commit message 저장됨: {path}\n',
     noStaged: '❌ 스테이징된 변경사항이 없습니다',
     useGitAdd: '   먼저 git add로 파일을 스테이징하세요',
@@ -856,9 +851,8 @@ export const en: Translations = {
     generating: '💎 Quartz is generating commit message...\n',
     generated: '📝 Generated Commit Message:',
     tips: '💡 Tips:',
-    autoTip: '   - Use --auto or -a to commit automatically',
     editTip: '   - Use --edit or -e to edit before committing',
-    manualTip: '   - Manually copy the message above\n',
+    manualTip: '   - Use ↑↓ keys to select message, Enter to confirm\n',
     saved: '💾 Commit message saved to: {path}\n',
     noStaged: '❌ No staged changes',
     useGitAdd: '   Please use git add to stage files first',
