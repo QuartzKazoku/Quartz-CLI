@@ -32,12 +32,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/creedchung/quartz.git"
+    "url": "git+https://github.com/QuartzKazoku/Quartz-CLI.git"
   },
   "bugs": {
-    "url": "https://github.com/creedchung/quartz/issues"
+    "url": "https://github.com/QuartzKazoku/Quartz-CLI/issues"
   },
-  "homepage": "https://github.com/creedchung/quartz#readme",
+  "homepage": "https://github.com/QuartzKazoku/Quartz-CLI#readme",
   "keywords": [
     "github-action",
     "code-review",
