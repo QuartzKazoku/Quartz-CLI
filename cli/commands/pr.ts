@@ -4,51 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '../i18n';
 import { getPRPrompt } from '../utils/prompt';
-
-/**
- * Load configuration from environment variables and .env file
- * @returns Configuration object
- */
-function loadConfig() {
-  const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
-    githubToken: process.env.GITHUB_TOKEN || '',
-  };
-
-  // Try to load from .env file
-  const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    const lines = envContent.split('\n');
-    for (const line of lines) {
-      const regex = /^([^=]+)=(.*)$/;
-      const match = regex.exec(line);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-          config.openaiApiKey = value;
-        } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-          config.openaiBaseUrl = value;
-        } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-          config.openaiModel = value;
-        } else if (key === 'GITHUB_TOKEN' && !config.githubToken) {
-          config.githubToken = value;
-        }
-      }
-    }
-  }
-
-  if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
-    process.exit(1);
-  }
-
-  return config;
-}
+import { loadConfig } from '../utils/config';
 
 /**
  * Get current branch name
@@ -173,8 +129,8 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string } | null> {
 
     // Parse GitHub URL
     // Support formats: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-    const sshRegex = /git@github\.com:(.+?)\/(.+?)(\.git)?$/;
-    const httpsRegex = /https:\/\/github\.com\/(.+?)\/(.+?)(\.git)?$/;
+    const sshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const httpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
     const sshMatch = sshRegex.exec(remoteUrl);
     const httpsMatch = httpsRegex.exec(remoteUrl);
 
@@ -301,6 +257,32 @@ async function generatePRDescription(
 }
 
 /**
+ * Check if branch exists on remote
+ * @param branch - Branch name
+ * @returns True if branch exists on remote
+ */
+async function isBranchOnRemote(branch: string): Promise<boolean> {
+  try {
+    await $`git ls-remote --heads origin ${branch}`.text();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Push current branch to remote
+ * @param branch - Branch name
+ */
+async function pushBranchToRemote(branch: string): Promise<void> {
+  try {
+    await $`git push -u origin ${branch}`.quiet();
+  } catch (error) {
+    throw new Error(`Failed to push branch: ${error}`);
+  }
+}
+
+/**
  * Create GitHub PR using API
  * @param token - GitHub token
  * @param owner - Repository owner
@@ -321,6 +303,14 @@ async function createGitHubPR(
   base: string
 ) {
   try {
+    // Check if head branch exists on remote
+    const isHeadOnRemote = await isBranchOnRemote(head);
+    if (!isHeadOnRemote) {
+      console.log(t('pr.pushingBranch', { branch: head }));
+      await pushBranchToRemote(head);
+      console.log(t('pr.branchPushed'));
+    }
+
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
       method: 'POST',
       headers: {
@@ -338,7 +328,12 @@ async function createGitHubPR(
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(`GitHub API error: ${error.message || response.statusText}`);
+      // Display more detailed error information
+      let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
+      if (error.errors) {
+        errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
+      }
+      throw new Error(errorMessage);
     }
 
     const pr = await response.json();
@@ -361,7 +356,8 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
     const tempFile = path.join(process.cwd(), '.ai-pr-body.md');
     fs.writeFileSync(tempFile, body);
 
-    await $`gh pr create --title "${title.replaceAll('"', String.raw`\"`)}" --body-file "${tempFile}" --base ${baseBranch}"`;
+    const escapedTitle = title.replaceAll('"', String.raw`\"`);
+    await $`gh pr create --title "${escapedTitle}" --body-file "${tempFile}" --base ${baseBranch}"`;
 
     // Delete temporary file
     fs.unlinkSync(tempFile);
@@ -378,9 +374,8 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
  * @param args - Command line arguments array
  * @returns Parsed arguments object
  */
-function parseArgs(args: string[]): { auto: boolean; base: string | null; useGH: boolean; interactive: boolean } {
+function parseArgs(args: string[]): { base: string | null; useGH: boolean; interactive: boolean } {
   const result = {
-    auto: args.includes('--auto') || args.includes('-a'),
     base: null as string | null,
     useGH: args.includes('--gh'),
     interactive: args.includes('--select') || args.includes('-s'),
@@ -402,7 +397,14 @@ export async function generatePR(args: string[]) {
   console.log(t('pr.starting'));
 
   const config = loadConfig();
-  const { auto, base: specifiedBase, useGH, interactive } = parseArgs(args);
+  
+  if (!config.openaiApiKey) {
+    console.error(t('errors.noApiKey'));
+    console.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
+  const { base: specifiedBase, useGH, interactive } = parseArgs(args);
 
   // Get current branch
   const currentBranch = await getCurrentBranch();
@@ -469,41 +471,28 @@ export async function generatePR(args: string[]) {
   console.log('━'.repeat(60));
   console.log('');
 
-  if (auto) {
-    // Auto create PR
-    console.log(t('pr.creating'));
+  // Auto create PR (default behavior)
+  console.log(t('pr.creating'));
 
-    if (useGH) {
-      // Use GitHub CLI
-      await createPRWithGH(title, body, baseBranch);
-    } else if (config.githubToken && repoInfo) {
-      // Use GitHub API
-      const pr = await createGitHubPR(
-        config.githubToken,
-        repoInfo.owner,
-        repoInfo.repo,
-        title,
-        body,
-        currentBranch,
-        baseBranch
-      );
-      console.log(t('pr.success'));
-      console.log(`🔗 ${pr.html_url}`);
-    } else {
-      console.error(t('pr.failed'));
-      process.exit(1);
-    }
+  if (useGH) {
+    // Use GitHub CLI
+    await createPRWithGH(title, body, baseBranch);
+  } else if (config.githubToken && repoInfo) {
+    // Use GitHub API
+    const pr = await createGitHubPR(
+      config.githubToken,
+      repoInfo.owner,
+      repoInfo.repo,
+      title,
+      body,
+      currentBranch,
+      baseBranch
+    );
+    console.log(t('pr.success'));
+    console.log(`🔗 ${pr.html_url}`);
   } else {
-    // Save to file
-    const prFile = path.join(process.cwd(), '.ai-pr-description.md');
-    fs.writeFileSync(prFile, `# ${title}\n\n${body}`);
-    console.log(t('pr.saved', { path: prFile }));
-
-    console.log(t('pr.tips'));
-    console.log(t('pr.autoTip'));
-    console.log(t('pr.ghTip'));
-    console.log(t('pr.selectTip'));
-    console.log(t('pr.baseTip'));
-    console.log(t('pr.manualTip'));
+    console.error(t('pr.noToken'));
+    console.error(t('pr.useGHTip'));
+    process.exit(1);
   }
 }

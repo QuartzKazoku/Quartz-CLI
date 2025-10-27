@@ -1,49 +1,10 @@
 import OpenAI from 'openai';
 import { $ } from 'bun';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { t } from '../i18n';
 import { getCommitPrompt } from '../utils/prompt';
-
-/**
- * Load configuration from environment variables and .env file
- * @returns Configuration object
- */
-function loadConfig() {
-  const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
-  };
-
-  // Try to load from .env file
-  const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    envContent.split('\n').forEach(line => {
-      const match = line.match(/^([^=]+)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-          config.openaiApiKey = value;
-        } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-          config.openaiBaseUrl = value;
-        } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-          config.openaiModel = value;
-        }
-      }
-    });
-  }
-
-  if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
-    process.exit(1);
-  }
-
-  return config;
-}
+import { loadConfig } from '../utils/config';
 
 /**
  * Stage all changes using git add .
@@ -51,9 +12,9 @@ function loadConfig() {
 async function stageAllChanges(): Promise<void> {
   try {
     await $`git add .`;
-    console.log('📦 已自动暂存所有更改 (git add .)\n');
+    console.log(t('commit.autoStaged'));
   } catch (error) {
-    console.error('❌ 暂存文件失败:', error);
+    console.error(t('commit.stageFailed'), error);
     process.exit(1);
   }
 }
@@ -88,10 +49,11 @@ async function getChangedFiles(): Promise<string[]> {
     const files = (await $`git diff --cached --name-only`.text())
       .trim()
       .split('\n')
-      .filter((f: string) => f);
+      .filter(Boolean);
 
     return files;
   } catch (error) {
+    console.error('Failed to get changed files:', error);
     return [];
   }
 }
@@ -115,7 +77,7 @@ async function generateCommitMessages(
   const prompt = getCommitPrompt(diff, files);
   const messages: string[] = [];
 
-  console.log(`🤖 正在生成 ${count} 个提交消息选项...\n`);
+  console.log(t('commit.generatingOptions', { count }));
 
   try {
     // Generate multiple messages in parallel
@@ -167,10 +129,11 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
   const displayMenu = () => {
     // Clear screen
     console.clear();
-    console.log('📝 请选择一个提交消息 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n');
+    console.log(t('commit.selectPrompt'));
     console.log('━'.repeat(80));
 
-    messages.forEach((msg, index) => {
+    for (let index = 0; index < messages.length; index++) {
+      const msg = messages[index];
       const isSelected = index === selectedIndex;
       const prefix = isSelected ? '→ ' : '  ';
       const color = isSelected ? '\x1b[36m' : '\x1b[37m'; // Cyan for selected, white for others
@@ -179,11 +142,11 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
       console.log(`${color}${prefix}[${index + 1}]${resetColor}`);
       // Split message into lines for better display
       const lines = msg.split('\n');
-      lines.forEach(line => {
+      for (const line of lines) {
         console.log(`${color}  ${line}${resetColor}`);
-      });
+      }
       console.log('');
-    });
+    }
 
     console.log('━'.repeat(80));
   };
@@ -207,7 +170,7 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
       } else if (key === '\u0003') {
         // Ctrl+C
         cleanup();
-        console.log('\n⚠️  取消提交');
+        console.log(t('commit.cancelled'));
         process.exit(0);
       } else {
         return; // Ignore other keys
@@ -234,7 +197,7 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
 async function executeCommit(message: string) {
   try {
     await $`git commit -m ${message}`;
-    console.log('\n✅ 提交成功!\n');
+    console.log(t('commit.success'));
   } catch (error) {
     console.error(t('commit.failed'), error);
     process.exit(1);
@@ -260,6 +223,13 @@ export async function generateCommit(args: string[]) {
   console.log(t('commit.starting'));
 
   const config = loadConfig();
+  
+  if (!config.openaiApiKey) {
+    console.error(t('errors.noApiKey'));
+    console.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
   const { edit } = parseArgs(args);
 
   // Stage all changes first
@@ -270,7 +240,9 @@ export async function generateCommit(args: string[]) {
   const files = await getChangedFiles();
 
   console.log(t('commit.foundStaged', { count: files.length }));
-  files.forEach(f => console.log(`   - ${f}`));
+  for (const f of files) {
+    console.log(`   - ${f}`);
+  }
   console.log('');
 
   // Initialize OpenAI client
@@ -284,7 +256,7 @@ export async function generateCommit(args: string[]) {
 
   if (edit) {
     // Edit mode - show first message in editor
-    console.log('✏️  编辑模式: 请在编辑器中修改 commit message');
+    console.log(t('commit.editMode'));
     const tempFile = path.join(process.cwd(), '.git', 'COMMIT_EDITMSG');
     fs.writeFileSync(tempFile, messages[0]);
     
@@ -292,6 +264,7 @@ export async function generateCommit(args: string[]) {
       await $`git commit -e -F ${tempFile}`;
       console.log(t('commit.success'));
     } catch (error) {
+      console.error('Commit cancelled or failed:', error);
       console.log(t('commit.cancelled'));
     }
   } else {
@@ -299,7 +272,7 @@ export async function generateCommit(args: string[]) {
     const selectedIndex = await selectCommitMessage(messages);
     const selectedMessage = messages[selectedIndex];
 
-    console.log(`\n✨ 已选择提交消息 [${selectedIndex + 1}]:\n`);
+    console.log(t('commit.selectedMessage', { index: selectedIndex + 1 }));
     console.log('━'.repeat(80));
     console.log(selectedMessage);
     console.log('━'.repeat(80));
