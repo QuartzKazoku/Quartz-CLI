@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { $ } from 'bun';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { t } from '../i18n';
 import { getReviewPrompt, getSummaryPrompt } from '../utils/prompt';
 
@@ -20,6 +20,79 @@ interface ReviewResult {
 }
 
 /**
+ * Parse environment variable line from .env file
+ * @param line - Line from .env file
+ * @returns Object with key and value, or null if invalid
+ */
+function parseEnvLine(line: string): { key: string; value: string } | null {
+  const envRegex = /^([^=]+)=(.*)$/;
+  const match = envRegex.exec(line);
+  
+  if (!match) {
+    return null;
+  }
+  
+  return {
+    key: match[1].trim(),
+    value: match[2].trim(),
+  };
+}
+
+/**
+ * Update config from parsed environment variable
+ * @param config - Configuration object to update
+ * @param key - Environment variable key
+ * @param value - Environment variable value
+ */
+function updateConfigFromEnv(
+  config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string },
+  key: string,
+  value: string
+): void {
+  if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
+    config.openaiApiKey = value;
+  } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
+    config.openaiBaseUrl = value;
+  } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
+    config.openaiModel = value;
+  }
+}
+
+/**
+ * Load environment variables from .env file
+ * @param config - Configuration object to update
+ */
+function loadEnvFile(config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string }): void {
+  const envPath = path.join(process.cwd(), '.env');
+  
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+  
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  const lines = envContent.split('\n');
+  
+  for (const line of lines) {
+    const parsed = parseEnvLine(line);
+    if (parsed) {
+      updateConfigFromEnv(config, parsed.key, parsed.value);
+    }
+  }
+}
+
+/**
+ * Validate configuration and exit if invalid
+ * @param config - Configuration object to validate
+ */
+function validateConfig(config: { openaiApiKey: string }): void {
+  if (!config.openaiApiKey) {
+    console.error(t('errors.noApiKey'));
+    console.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+}
+
+/**
  * Load configuration from environment variables and .env file
  * @returns Configuration object
  */
@@ -30,31 +103,8 @@ function loadConfig() {
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
   };
 
-  // Try to load from .env file
-  const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    envContent.split('\n').forEach(line => {
-      const match = line.match(/^([^=]+)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-          config.openaiApiKey = value;
-        } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-          config.openaiBaseUrl = value;
-        } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-          config.openaiModel = value;
-        }
-      }
-    });
-  }
-
-  if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
-    process.exit(1);
-  }
+  loadEnvFile(config);
+  validateConfig(config);
 
   return config;
 }
@@ -74,13 +124,13 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
     const staged = (await $`git diff --cached --name-only`.text())
       .trim()
       .split('\n')
-      .filter((f: string) => f);
+      .filter(Boolean);
 
     // Get unstaged files
     const unstaged = (await $`git diff --name-only`.text())
       .trim()
       .split('\n')
-      .filter((f: string) => f);
+      .filter(Boolean);
 
     // Merge and deduplicate
     const allFiles = [...new Set([...staged, ...unstaged])];
@@ -119,6 +169,7 @@ async function getFileDiff(file: string): Promise<string> {
 
     return diff;
   } catch (error) {
+    console.error(t('errors.gitError'), error);
     return '';
   }
 }
@@ -132,7 +183,7 @@ function readFileContent(file: string): string {
   try {
     return fs.readFileSync(file, 'utf-8');
   } catch (error) {
-    console.warn(t('errors.fileNotFound'));
+    console.warn(t('errors.fileNotFound'), error);
     return '';
   }
 }
@@ -238,8 +289,22 @@ function printResult(result: ReviewResult) {
   const { score, summary, comments } = result;
 
   // Score and level
-  const scoreEmoji = score >= 90 ? '🌟' : score >= 75 ? '✅' : score >= 60 ? '⚠️' : '❌';
-  const scoreDesc = score >= 90 ? t('scoreLevel.excellent') : score >= 75 ? t('scoreLevel.good') : score >= 60 ? t('scoreLevel.pass') : t('scoreLevel.needImprovement');
+  let scoreEmoji: string;
+  let scoreDesc: string;
+  
+  if (score >= 90) {
+    scoreEmoji = '🌟';
+    scoreDesc = t('scoreLevel.excellent');
+  } else if (score >= 75) {
+    scoreEmoji = '✅';
+    scoreDesc = t('scoreLevel.good');
+  } else if (score >= 60) {
+    scoreEmoji = '⚠️';
+    scoreDesc = t('scoreLevel.pass');
+  } else {
+    scoreEmoji = '❌';
+    scoreDesc = t('scoreLevel.needImprovement');
+  }
 
   console.log('\n' + '='.repeat(60));
   console.log(`${scoreEmoji} ${t('review.result')}`);
@@ -261,15 +326,23 @@ function printResult(result: ReviewResult) {
   // Detailed issues
   if (comments.length > 0) {
     console.log(t('review.details'));
-    comments.forEach((comment, index) => {
-      const emoji = comment.severity === 'error' ? '❌' : comment.severity === 'warning' ? '⚠️' : 'ℹ️';
+    for (let index = 0; index < comments.length; index++) {
+      const comment = comments[index];
+      let emoji: string;
+      if (comment.severity === 'error') {
+        emoji = '❌';
+      } else if (comment.severity === 'warning') {
+        emoji = '⚠️';
+      } else {
+        emoji = 'ℹ️';
+      }
       console.log(`${index + 1}. ${emoji} ${comment.file}:${comment.line}`);
       console.log(`   ${comment.message}`);
       if (comment.suggestion) {
         console.log(`   💡 ${comment.suggestion.split('\n')[0]}...`);
       }
       console.log('');
-    });
+    }
   }
 
   console.log('='.repeat(60) + '\n');
@@ -283,7 +356,8 @@ function printResult(result: ReviewResult) {
 function parseArgs(args: string[]): { files?: string[]; output?: string } {
   const result: { files?: string[]; output?: string } = {};
   
-  for (let i = 0; i < args.length; i++) {
+  let i = 0;
+  while (i < args.length) {
     if (args[i] === '--files' || args[i] === '-f') {
       result.files = [];
       i++;
@@ -291,9 +365,14 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
         result.files.push(args[i]);
         i++;
       }
-      i--;
     } else if (args[i] === '--output' || args[i] === '-o') {
-      result.output = args[++i];
+      i++;
+      if (i < args.length) {
+        result.output = args[i];
+        i++;
+      }
+    } else {
+      i++;
     }
   }
   
@@ -326,7 +405,9 @@ export async function reviewCode(args: string[]) {
   }
 
   console.log(t('review.foundFiles', { count: files.length }));
-  files.forEach(f => console.log(`   - ${f}`));
+  for (const f of files) {
+    console.log(`   - ${f}`);
+  }
   console.log('');
 
   // Review each file
