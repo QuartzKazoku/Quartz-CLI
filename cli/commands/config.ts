@@ -28,40 +28,32 @@ interface ConfigProfile {
 }
 
 /**
- * Get .env file path
+ * Get quartz.json file path
  */
-function getEnvPath(): string {
-  return path.join(process.cwd(), '.env');
-}
-
-/**
- * Get config profiles file path
- */
-function getProfilesPath(): string {
+function getQuartzPath(): string {
   return path.join(process.cwd(), 'quartz.json');
 }
 
 /**
- * Read existing .env file
+ * Read existing quartz.json file
  */
-function readEnvFile(): Map<string, string> {
-  const envPath = getEnvPath();
+function readQuartzConfig(): Map<string, string> {
+  const quartzPath = getQuartzPath();
   const config = new Map<string, string>();
 
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, 'utf-8');
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine && !trimmedLine.startsWith('#')) {
-        const regex = /^([^=]+)=(.*)$/;
-        const match = regex.exec(trimmedLine);
-        if (match) {
-          const key = match[1].trim();
-          const value = match[2].trim();
-          config.set(key, value);
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      const data = JSON.parse(content);
+      
+      // Read from default profile
+      if (data.default && data.default.configs) {
+        for (const [key, value] of Object.entries(data.default.configs)) {
+          config.set(key, value as string);
         }
       }
+    } catch (error) {
+      console.error('Failed to parse quartz.json:', error);
     }
   }
 
@@ -69,59 +61,46 @@ function readEnvFile(): Map<string, string> {
 }
 
 /**
- * Write config to .env file
+ * Write config to quartz.json file
  */
-function writeEnvFile(config: Map<string, string>) {
-  const envPath = getEnvPath();
-  const lines: string[] = ['# Quartz Configuration - OpenAI API'];
+function writeQuartzConfig(config: Map<string, string>) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
 
-  // OpenAI configs
-  if (config.has('OPENAI_API_KEY')) {
-    lines.push(`OPENAI_API_KEY=${config.get('OPENAI_API_KEY')}`);
-  }
-  if (config.has('OPENAI_BASE_URL')) {
-    lines.push(`OPENAI_BASE_URL=${config.get('OPENAI_BASE_URL')}`);
-  }
-  if (config.has('OPENAI_MODEL')) {
-    lines.push(`OPENAI_MODEL=${config.get('OPENAI_MODEL')}`);
-  }
-
-  lines.push('', '# Git Platform Configuration');
-
-  // Git platform configs
-  if (config.has('GIT_PLATFORM')) {
-    lines.push(`GIT_PLATFORM=${config.get('GIT_PLATFORM')}`);
-  }
-  if (config.has('GITHUB_TOKEN')) {
-    lines.push(`GITHUB_TOKEN=${config.get('GITHUB_TOKEN')}`);
-  }
-  if (config.has('GITLAB_TOKEN')) {
-    lines.push(`GITLAB_TOKEN=${config.get('GITLAB_TOKEN')}`);
-  }
-  if (config.has('GITLAB_URL')) {
-    lines.push(`GITLAB_URL=${config.get('GITLAB_URL')}`);
+  // Read existing data if file exists
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      // If parse fails, start with empty object
+      data = {};
+    }
   }
 
-  lines.push('', '# Quartz UI Configuration');
-
-  // Quartz configs
-  if (config.has('QUARTZ_LANG')) {
-    lines.push(`QUARTZ_LANG=${config.get('QUARTZ_LANG')}`);
+  // Ensure default profile exists
+  if (!data.default) {
+    data.default = { configs: {} };
   }
-  if (config.has('PROMPT_LANG')) {
-    lines.push(`PROMPT_LANG=${config.get('PROMPT_LANG')}`);
+  if (!data.default.configs) {
+    data.default.configs = {};
   }
 
-  fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf-8');
+  // Update configs
+  for (const [key, value] of config.entries()) {
+    data.default.configs[key] = value;
+  }
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 /**
  * Set a configuration value
  */
 function setConfig(key: string, value: string) {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   config.set(key, value);
-  writeEnvFile(config);
+  writeQuartzConfig(config);
   console.log(t('config.set', { key, value: key.includes('KEY') || key.includes('TOKEN') ? '***' : value }));
 }
 
@@ -129,12 +108,12 @@ function setConfig(key: string, value: string) {
  * Get a configuration value
  */
 function getConfig(key: string) {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   const value = config.get(key);
   
   if (value) {
-    const displayValue = key.includes('KEY') || key.includes('TOKEN') 
-      ? value.substring(0, 8) + '***' 
+    const displayValue = key.includes('KEY') || key.includes('TOKEN')
+      ? value.substring(0, 8) + '***'
       : value;
     console.log(`${key}=${displayValue}`);
   } else {
@@ -164,7 +143,7 @@ function getConfigIcon(key: string): string {
  * List all configurations
  */
 function listConfig() {
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   
   console.log('');
   printLogo();
@@ -207,7 +186,7 @@ function listConfig() {
   }
   
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
-  console.log('\x1b[2m%s\x1b[0m', `💾 ${getEnvPath()}`); // Show .env file path
+  console.log('\x1b[2m%s\x1b[0m', `💾 ${getQuartzPath()}`); // Show quartz.json file path
   console.log('');
 }
 
@@ -421,7 +400,7 @@ async function setupWizard() {
   console.log('');
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
   
-  const config = readEnvFile();
+  const config = readQuartzConfig();
   const readline = require('node:readline').createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -533,12 +512,12 @@ async function setupWizard() {
     readline2.close();
 
     // Save configuration
-    writeEnvFile(config);
+    writeQuartzConfig(config);
     console.log('');
     console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
     console.log('');
     console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success')); // Green success message
-    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getEnvPath() })); // Dim path
+    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() })); // Dim path
     console.log('');
 
   } catch (error) {
@@ -638,26 +617,41 @@ function showHelp() {
  * Save current configuration as a profile
  */
 function saveProfile(name: string) {
-  const config = readEnvFile();
-  const profiles = loadProfiles();
-  
-  profiles[name] = {
+  const config = readQuartzConfig();
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  // Read existing data
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      data = {};
+    }
+  }
+
+  // Save profile
+  data[name] = {
     name,
     configs: Object.fromEntries(config),
   };
-  
-  fs.writeFileSync(getProfilesPath(), JSON.stringify(profiles, null, 2), 'utf-8');
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileSaved', { name }));
 }
 
 /**
- * Load profiles from file
+ * Load profiles from quartz.json
  */
 function loadProfiles(): Record<string, any> {
-  const profilesPath = getProfilesPath();
-  if (fs.existsSync(profilesPath)) {
+  const quartzPath = getQuartzPath();
+  if (fs.existsSync(quartzPath)) {
     try {
-      return JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
+      // Filter out 'default' profile from list
+      const { default: _, ...profiles } = data;
+      return profiles;
     } catch (error) {
       console.error('Failed to load profiles:', error);
       return {};
@@ -670,17 +664,32 @@ function loadProfiles(): Record<string, any> {
  * Load a configuration profile
  */
 function loadProfile(name: string) {
-  const profiles = loadProfiles();
-  
-  if (!profiles[name]) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load quartz.json:', error);
+      process.exit(1);
+    }
+  }
+
+  if (!data[name]) {
     console.error(t('config.profileNotFound', { name }));
     console.log('\n' + t('config.availableProfiles'));
     listProfiles();
     process.exit(1);
   }
-  
-  const config = new Map<string, string>(Object.entries(profiles[name].configs));
-  writeEnvFile(config);
+
+  // Update default profile with selected profile configs
+  data.default = {
+    configs: data[name].configs,
+  };
+
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileLoaded', { name }));
 }
 
@@ -690,17 +699,17 @@ function loadProfile(name: string) {
 function listProfiles() {
   const profiles = loadProfiles();
   const profileNames = Object.keys(profiles);
-  
+
   if (profileNames.length === 0) {
     console.log(t('config.noProfiles'));
     return;
   }
-  
+
   console.log('');
   console.log('\x1b[1m%s\x1b[0m', '📋 ' + t('config.savedProfiles'));
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   console.log('');
-  
+
   for (const name of profileNames) {
     const profile = profiles[name];
     console.log(`  📦 \x1b[36m${name}\x1b[0m`);
@@ -714,15 +723,26 @@ function listProfiles() {
  * Delete a configuration profile
  */
 function deleteProfile(name: string) {
-  const profiles = loadProfiles();
-  
-  if (!profiles[name]) {
+  const quartzPath = getQuartzPath();
+  let data: any = {};
+
+  if (fs.existsSync(quartzPath)) {
+    try {
+      const content = fs.readFileSync(quartzPath, 'utf-8');
+      data = JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load quartz.json:', error);
+      process.exit(1);
+    }
+  }
+
+  if (!data[name]) {
     console.error(t('config.profileNotFound', { name }));
     process.exit(1);
   }
-  
-  delete profiles[name];
-  fs.writeFileSync(getProfilesPath(), JSON.stringify(profiles, null, 2), 'utf-8');
+
+  delete data[name];
+  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileDeleted', { name }));
 }
 
