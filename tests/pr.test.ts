@@ -1,12 +1,44 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { generatePR } from '../cli/commands/pr';
 
 // Mock console methods
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
+
+// Helper function to create OpenAI mock with successful response
+const createSuccessfulOpenAIMock = () => {
+  const mockResponse = {
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          title: 'Add new feature',
+          body: 'This PR adds a new feature to improve functionality'
+        })
+      }
+    }]
+  };
+  
+  return {
+    chat: {
+      completions: {
+        create: mock(() => Promise.resolve(mockResponse))
+      }
+    }
+  };
+};
+
+// Helper function to create OpenAI mock with error
+const createErrorOpenAIMock = () => {
+  const mockError = new Error('API Error');
+  
+  return {
+    chat: {
+      completions: {
+        create: mock(() => Promise.reject(mockError))
+      }
+    }
+  };
+};
 
 describe('PR Command', () => {
   beforeEach(() => {
@@ -43,26 +75,11 @@ describe('PR Command', () => {
     
     // Mock OpenAI
     mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.resolve({
-              choices: [{
-                message: {
-                  content: JSON.stringify({
-                    title: 'Add new feature',
-                    body: 'This PR adds a new feature to improve functionality'
-                  })
-                }
-              }]
-            }))
-          }
-        }
-      }))
+      default: mock(() => createSuccessfulOpenAIMock())
     }));
     
-    // Mock global fetch for GitHub API
-    global.fetch = mock(() => Promise.resolve({
+    // Mock globalThis fetch for GitHub API
+    globalThis.fetch = mock(() => Promise.resolve({
       ok: true,
       json: () => Promise.resolve({
         html_url: 'https://github.com/test/repo/pull/1'
@@ -82,14 +99,8 @@ describe('PR Command', () => {
     delete process.env.GITHUB_TOKEN;
   });
 
-  it('should generate PR description', async () => {
-    await generatePR([]);
-    
-    expect(console.log).toHaveBeenCalled();
-  });
-
-  it('should handle auto PR creation', async () => {
-    await generatePR(['--auto']);
+  it('should generate and create PR automatically', async () => {
+    await generatePR(['--base', 'main']);
     
     expect(console.log).toHaveBeenCalled();
   });
@@ -107,7 +118,7 @@ describe('PR Command', () => {
   });
 
   it('should handle short flags', async () => {
-    await generatePR(['-a', '-b', 'develop']);
+    await generatePR(['-b', 'develop']);
     
     expect(console.log).toHaveBeenCalled();
   });
@@ -115,21 +126,23 @@ describe('PR Command', () => {
   it('should show error when no API key is provided', async () => {
     delete process.env.OPENAI_API_KEY;
     
-    await generatePR([]);
+    await generatePR(['--base', 'main']);
     
     expect(console.error).toHaveBeenCalled();
   });
 
   it('should handle same branch error', async () => {
     // Mock git branch to return main
+    const mockTextFn = (cmd: string) => {
+      if (cmd.includes('branch --show-current')) {
+        return Promise.resolve('main');
+      }
+      return Promise.resolve('test-diff-content');
+    };
+    
     mock.module('bun', () => ({
       $: {
-        text: mock((cmd: string) => {
-          if (cmd.includes('branch --show-current')) {
-            return Promise.resolve('main');
-          }
-          return Promise.resolve('test-diff-content');
-        }),
+        text: mock(mockTextFn),
       },
     }));
     
@@ -140,21 +153,23 @@ describe('PR Command', () => {
 
   it('should handle no diff error', async () => {
     // Mock git diff to return empty
+    const mockTextFn = (cmd: string) => {
+      if (cmd.includes('branch --show-current')) {
+        return Promise.resolve('feature-branch');
+      }
+      if (cmd.includes('diff')) {
+        return Promise.resolve('');
+      }
+      return Promise.resolve('test-content');
+    };
+    
     mock.module('bun', () => ({
       $: {
-        text: mock((cmd: string) => {
-          if (cmd.includes('branch --show-current')) {
-            return Promise.resolve('feature-branch');
-          }
-          if (cmd.includes('diff')) {
-            return Promise.resolve('');
-          }
-          return Promise.resolve('test-content');
-        }),
+        text: mock(mockTextFn),
       },
     }));
     
-    await generatePR([]);
+    await generatePR(['--base', 'main']);
     
     expect(console.error).toHaveBeenCalled();
   });
@@ -162,30 +177,24 @@ describe('PR Command', () => {
   it('should handle API errors', async () => {
     // Mock OpenAI to throw an error
     mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.reject(new Error('API Error')))
-          }
-        }
-      }))
+      default: mock(() => createErrorOpenAIMock())
     }));
     
-    await generatePR([]);
+    await generatePR(['--base', 'main']);
     
     expect(console.error).toHaveBeenCalled();
   });
 
   it('should handle GitHub API errors', async () => {
     // Mock fetch to return an error
-    global.fetch = mock(() => Promise.resolve({
+    globalThis.fetch = mock(() => Promise.resolve({
       ok: false,
       json: () => Promise.resolve({
         message: 'API Error'
       })
     })) as any;
     
-    await generatePR(['--auto']);
+    await generatePR(['--base', 'main']);
     
     expect(console.error).toHaveBeenCalled();
   });

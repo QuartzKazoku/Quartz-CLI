@@ -66,6 +66,11 @@ export interface Translations {
     failed: string;
     cancelled: string;
     editMode: string;
+    autoStaged: string;
+    stageFailed: string;
+    selectPrompt: string;
+    generatingOptions: string;
+    selectedMessage: string;
   };
 
   // PR command
@@ -96,6 +101,10 @@ export interface Translations {
     ensureBranch: string;
     selectBranch: string;
     noBranches: string;
+    noToken: string;
+    useGHTip: string;
+    pushingBranch: string;
+    branchPushed: string;
   };
 
   // Score levels
@@ -231,6 +240,11 @@ export const zhCN: Translations = {
     failed: '❌ 提交失败',
     cancelled: '\n⚠️  取消提交',
     editMode: '✏️  编辑模式: 请在编辑器中修改 commit message',
+    autoStaged: '📦 已自动暂存所有更改 (git add .)\n',
+    stageFailed: '❌ 暂存文件失败',
+    selectPrompt: '📝 请选择一个提交消息 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n',
+    generatingOptions: '🤖 正在生成 {count} 个提交消息选项...\n',
+    selectedMessage: '\n✨ 已选择提交消息 [{index}]:\n',
   },
 
   pr: {
@@ -260,6 +274,10 @@ export const zhCN: Translations = {
     ensureBranch: '   请确保 {base} 分支存在',
     selectBranch: '请选择目标分支',
     noBranches: '❌ 没有可用的分支',
+    noToken: '❌ 错误: 未设置 GITHUB_TOKEN',
+    useGHTip: '   请使用 --gh 选项通过 GitHub CLI 创建 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到远程仓库...',
+    branchPushed: '✅ 分支已推送到远程仓库',
   },
 
   scoreLevel: {
@@ -392,6 +410,11 @@ export const zhTW: Translations = {
     failed: '❌ 提交失敗',
     cancelled: '\n⚠️  取消提交',
     editMode: '✏️  編輯模式: 請在編輯器中修改 commit message',
+    autoStaged: '📦 已自動暫存所有更改 (git add .)\n',
+    stageFailed: '❌ 暫存檔案失敗',
+    selectPrompt: '📝 請選擇一個提交訊息 (使用 ↑↓ 鍵選擇, Enter 確認, Ctrl+C 取消):\n',
+    generatingOptions: '🤖 正在生成 {count} 個提交訊息選項...\n',
+    selectedMessage: '\n✨ 已選擇提交訊息 [{index}]:\n',
   },
 
   pr: {
@@ -421,6 +444,10 @@ export const zhTW: Translations = {
     ensureBranch: '   請確保 {base} 分支存在',
     selectBranch: '請選擇目標分支',
     noBranches: '❌ 沒有可用的分支',
+    noToken: '❌ 錯誤: 未設定 GITHUB_TOKEN',
+    useGHTip: '   請使用 --gh 選項透過 GitHub CLI 建立 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到遠端倉庫...',
+    branchPushed: '✅ 分支已推送到遠端倉庫',
   },
 
   scoreLevel: {
@@ -553,6 +580,11 @@ export const ja: Translations = {
     failed: '❌ コミット失敗',
     cancelled: '\n⚠️  コミットをキャンセルしました',
     editMode: '✏️  編集モード: エディタで commit message を編集してください',
+    autoStaged: '📦 すべての変更を自動ステージしました (git add .)\n',
+    stageFailed: '❌ ファイルのステージに失敗しました',
+    selectPrompt: '📝 コミットメッセージを選択してください (↑↓ キーで選択, Enter で確認, Ctrl+C でキャンセル):\n',
+    generatingOptions: '🤖 {count} 個のコミットメッセージオプションを生成中...\n',
+    selectedMessage: '\n✨ コミットメッセージ [{index}] を選択しました:\n',
   },
 
   pr: {
@@ -582,6 +614,10 @@ export const ja: Translations = {
     ensureBranch: '   {base} ブランチが存在することを確認してください',
     selectBranch: 'ターゲットブランチを選択してください',
     noBranches: '❌ 利用可能なブランチがありません',
+    noToken: '❌ エラー: GITHUB_TOKEN が設定されていません',
+    useGHTip: '   --gh オプションで GitHub CLI を使用してください',
+    pushingBranch: '📤 ブランチ {branch} をリモートリポジトリにプッシュ中...',
+    branchPushed: '✅ ブランチをリモートリポジトリにプッシュしました',
   },
 
   config: {
@@ -714,6 +750,11 @@ export const ko: Translations = {
     failed: '❌ 커밋 실패',
     cancelled: '\n⚠️  커밋 취소됨',
     editMode: '✏️  편집 모드: 에디터에서 commit message를 수정하세요',
+    autoStaged: '📦 모든 변경사항을 자동으로 스테이징했습니다 (git add .)\n',
+    stageFailed: '❌ 파일 스테이징 실패',
+    selectPrompt: '📝 커밋 메시지를 선택하세요 (↑↓ 키로 선택, Enter로 확인, Ctrl+C로 취소):\n',
+    generatingOptions: '🤖 {count}개의 커밋 메시지 옵션 생성 중...\n',
+    selectedMessage: '\n✨ 커밋 메시지 [{index}]를 선택했습니다:\n',
   },
 
   pr: {
@@ -743,6 +784,10 @@ export const ko: Translations = {
     ensureBranch: '   {base} 브랜치가 존재하는지 확인하세요',
     selectBranch: '대상 브랜치를 선택하세요',
     noBranches: '❌ 사용 가능한 브랜치가 없습니다',
+    pushingBranch: '📤 브랜치 {branch}를 원격 저장소에 푸시 중...',
+    branchPushed: '✅ 브랜치를 원격 저장소에 푸시했습니다',
+    noToken: '❌ 오류: GITHUB_TOKEN이 설정되지 않았습니다',
+    useGHTip: '   --gh 옵션으로 GitHub CLI를 사용하세요',
   },
 
   config: {
@@ -875,6 +920,11 @@ export const en: Translations = {
     failed: '❌ Commit failed',
     cancelled: '\n⚠️  Commit cancelled',
     editMode: '✏️  Edit mode: Modify commit message in editor',
+    autoStaged: '📦 Automatically staged all changes (git add .)\n',
+    stageFailed: '❌ Failed to stage files',
+    selectPrompt: '📝 Select a commit message (use ↑↓ keys, Enter to confirm, Ctrl+C to cancel):\n',
+    generatingOptions: '🤖 Generating {count} commit message options...\n',
+    selectedMessage: '\n✨ Selected commit message [{index}]:\n',
   },
 
   pr: {
@@ -902,8 +952,12 @@ export const en: Translations = {
     switchBranch: '   Please switch to a feature branch first',
     noDiff: '❌ No difference between current and {base} branch',
     ensureBranch: '   Please ensure {base} branch exists',
+    pushingBranch: '📤 Pushing branch {branch} to remote repository...',
+    branchPushed: '✅ Branch pushed to remote repository',
     selectBranch: 'Select target branch',
     noBranches: '❌ No available branches',
+    noToken: '❌ Error: GITHUB_TOKEN is not set',
+    useGHTip: '   Please use --gh option to create PR via GitHub CLI',
   },
 
   scoreLevel: {

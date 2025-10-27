@@ -45,7 +45,7 @@ Thumbs.db
 .ai-review-result.json
 
 # Quartz Configuration Profiles
-.quartz-profiles.json
+quartz.json
 
 # Temporary files
 *.tmp
