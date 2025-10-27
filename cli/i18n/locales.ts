@@ -103,6 +103,8 @@ export interface Translations {
     noBranches: string;
     noToken: string;
     useGHTip: string;
+    pushingBranch: string;
+    branchPushed: string;
   };
 
   // Score levels
@@ -274,6 +276,8 @@ export const zhCN: Translations = {
     noBranches: '❌ 没有可用的分支',
     noToken: '❌ 错误: 未设置 GITHUB_TOKEN',
     useGHTip: '   请使用 --gh 选项通过 GitHub CLI 创建 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到远程仓库...',
+    branchPushed: '✅ 分支已推送到远程仓库',
   },
 
   scoreLevel: {
@@ -442,6 +446,8 @@ export const zhTW: Translations = {
     noBranches: '❌ 沒有可用的分支',
     noToken: '❌ 錯誤: 未設定 GITHUB_TOKEN',
     useGHTip: '   請使用 --gh 選項透過 GitHub CLI 建立 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到遠端倉庫...',
+    branchPushed: '✅ 分支已推送到遠端倉庫',
   },
 
   scoreLevel: {
@@ -610,6 +616,8 @@ export const ja: Translations = {
     noBranches: '❌ 利用可能なブランチがありません',
     noToken: '❌ エラー: GITHUB_TOKEN が設定されていません',
     useGHTip: '   --gh オプションで GitHub CLI を使用してください',
+    pushingBranch: '📤 ブランチ {branch} をリモートリポジトリにプッシュ中...',
+    branchPushed: '✅ ブランチをリモートリポジトリにプッシュしました',
   },
 
   config: {
@@ -776,6 +784,8 @@ export const ko: Translations = {
     ensureBranch: '   {base} 브랜치가 존재하는지 확인하세요',
     selectBranch: '대상 브랜치를 선택하세요',
     noBranches: '❌ 사용 가능한 브랜치가 없습니다',
+    pushingBranch: '📤 브랜치 {branch}를 원격 저장소에 푸시 중...',
+    branchPushed: '✅ 브랜치를 원격 저장소에 푸시했습니다',
     noToken: '❌ 오류: GITHUB_TOKEN이 설정되지 않았습니다',
     useGHTip: '   --gh 옵션으로 GitHub CLI를 사용하세요',
   },
@@ -942,6 +952,8 @@ export const en: Translations = {
     switchBranch: '   Please switch to a feature branch first',
     noDiff: '❌ No difference between current and {base} branch',
     ensureBranch: '   Please ensure {base} branch exists',
+    pushingBranch: '📤 Pushing branch {branch} to remote repository...',
+    branchPushed: '✅ Branch pushed to remote repository',
     selectBranch: 'Select target branch',
     noBranches: '❌ No available branches',
     noToken: '❌ Error: GITHUB_TOKEN is not set',

@@ -4,59 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '../i18n';
 import { getCommitPrompt } from '../utils/prompt';
-
-/**
- * Parse environment variables from .env file content
- * @param envContent - Content of .env file
- * @param config - Config object to update
- */
-function parseEnvFile(envContent: string, config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string }) {
-  const lines = envContent.split('\n');
-  const regex = /^([^=]+)=(.*)$/;
-  
-  for (const line of lines) {
-    const match = regex.exec(line);
-    if (match) {
-      const key = match[1].trim();
-      const value = match[2].trim();
-      
-      if (key === 'OPENAI_API_KEY' && !config.openaiApiKey) {
-        config.openaiApiKey = value;
-      } else if (key === 'OPENAI_BASE_URL' && process.env.OPENAI_BASE_URL === undefined) {
-        config.openaiBaseUrl = value;
-      } else if (key === 'OPENAI_MODEL' && process.env.OPENAI_MODEL === undefined) {
-        config.openaiModel = value;
-      }
-    }
-  }
-}
-
-/**
- * Load configuration from environment variables and .env file
- * @returns Configuration object
- */
-function loadConfig() {
-  const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
-  };
-
-  // Try to load from .env file
-  const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    parseEnvFile(envContent, config);
-  }
-
-  if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
-    process.exit(1);
-  }
-
-  return config;
-}
+import { loadConfig } from '../utils/config';
 
 /**
  * Stage all changes using git add .
@@ -275,6 +223,13 @@ export async function generateCommit(args: string[]) {
   console.log(t('commit.starting'));
 
   const config = loadConfig();
+  
+  if (!config.openaiApiKey) {
+    console.error(t('errors.noApiKey'));
+    console.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
   const { edit } = parseArgs(args);
 
   // Stage all changes first
