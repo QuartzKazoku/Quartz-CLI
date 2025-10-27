@@ -74,7 +74,7 @@ function getUsageText(): string {
   console.log('');
   console.log('  \x1b[2m# ' + t('commit.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
   console.log('  \x1b[32m$\x1b[0m quartz commit');
-  console.log('  \x1b[32m$\x1b[0m quartz commit --auto');
+  console.log('  \x1b[32m$\x1b[0m quartz commit --edit');
   console.log('');
   console.log('  \x1b[2m# ' + t('pr.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
   console.log('  \x1b[32m$\x1b[0m quartz pr --auto --base main');

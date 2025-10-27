@@ -57,7 +57,6 @@ export interface Translations {
     generating: string;
     generated: string;
     tips: string;
-    autoTip: string;
     editTip: string;
     manualTip: string;
     saved: string;
@@ -67,6 +66,11 @@ export interface Translations {
     failed: string;
     cancelled: string;
     editMode: string;
+    autoStaged: string;
+    stageFailed: string;
+    selectPrompt: string;
+    generatingOptions: string;
+    selectedMessage: string;
   };
 
   // PR command
@@ -84,6 +88,7 @@ export interface Translations {
     tips: string;
     autoTip: string;
     ghTip: string;
+    selectTip: string;
     baseTip: string;
     manualTip: string;
     saved: string;
@@ -94,6 +99,12 @@ export interface Translations {
     switchBranch: string;
     noDiff: string;
     ensureBranch: string;
+    selectBranch: string;
+    noBranches: string;
+    noToken: string;
+    useGHTip: string;
+    pushingBranch: string;
+    branchPushed: string;
   };
 
   // Score levels
@@ -220,9 +231,8 @@ export const zhCN: Translations = {
     generating: '🤖 正在生成 commit message...\n',
     generated: '📝 生成的 Commit Message:',
     tips: '💡 提示:',
-    autoTip: '   - 使用 --auto 或 -a 自动提交',
     editTip: '   - 使用 --edit 或 -e 在编辑器中修改后提交',
-    manualTip: '   - 手动复制上述消息进行提交\n',
+    manualTip: '   - 使用 ↑↓ 键选择提交消息, Enter 确认\n',
     saved: '💾 Commit message 已保存到: {path}\n',
     noStaged: '❌ 没有已暂存的变更',
     useGitAdd: '   请先使用 git add 暂存要提交的文件',
@@ -230,6 +240,11 @@ export const zhCN: Translations = {
     failed: '❌ 提交失败',
     cancelled: '\n⚠️  取消提交',
     editMode: '✏️  编辑模式: 请在编辑器中修改 commit message',
+    autoStaged: '📦 已自动暂存所有更改 (git add .)\n',
+    stageFailed: '❌ 暂存文件失败',
+    selectPrompt: '📝 请选择一个提交消息 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n',
+    generatingOptions: '🤖 正在生成 {count} 个提交消息选项...\n',
+    selectedMessage: '\n✨ 已选择提交消息 [{index}]:\n',
   },
 
   pr: {
@@ -246,7 +261,8 @@ export const zhCN: Translations = {
     tips: '💡 提示:',
     autoTip: '   - 使用 --auto 或 -a 自动创建 PR',
     ghTip: '   - 使用 --gh 选项通过 GitHub CLI 创建',
-    baseTip: '   - 使用 --base <branch> 指定目标分支 (默认: main)',
+    selectTip: '   - 使用 --select 或 -s 交互式选择目标分支',
+    baseTip: '   - 使用 --base <branch> 指定目标分支',
     manualTip: '   - 或手动复制上述描述到 GitHub 创建 PR\n',
     saved: '💾 PR 描述已保存到: {path}\n',
     creating: '⚡ 自动创建 PR...\n',
@@ -256,6 +272,12 @@ export const zhCN: Translations = {
     switchBranch: '   请切换到功能分支后再创建 PR',
     noDiff: '❌ 当前分支与 {base} 分支没有差异',
     ensureBranch: '   请确保 {base} 分支存在',
+    selectBranch: '请选择目标分支',
+    noBranches: '❌ 没有可用的分支',
+    noToken: '❌ 错误: 未设置 GITHUB_TOKEN',
+    useGHTip: '   请使用 --gh 选项通过 GitHub CLI 创建 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到远程仓库...',
+    branchPushed: '✅ 分支已推送到远程仓库',
   },
 
   scoreLevel: {
@@ -379,9 +401,8 @@ export const zhTW: Translations = {
     generating: '🤖 AI 正在生成 commit message...\n',
     generated: '📝 生成的 Commit Message:',
     tips: '💡 提示:',
-    autoTip: '   - 使用 --auto 或 -a 自動提交',
     editTip: '   - 使用 --edit 或 -e 在編輯器中修改後提交',
-    manualTip: '   - 手動複製上述訊息進行提交\n',
+    manualTip: '   - 使用 ↑↓ 鍵選擇提交訊息, Enter 確認\n',
     saved: '💾 Commit message 已儲存到: {path}\n',
     noStaged: '❌ 沒有已暫存的變更',
     useGitAdd: '   請先使用 git add 暫存要提交的檔案',
@@ -389,6 +410,11 @@ export const zhTW: Translations = {
     failed: '❌ 提交失敗',
     cancelled: '\n⚠️  取消提交',
     editMode: '✏️  編輯模式: 請在編輯器中修改 commit message',
+    autoStaged: '📦 已自動暫存所有更改 (git add .)\n',
+    stageFailed: '❌ 暫存檔案失敗',
+    selectPrompt: '📝 請選擇一個提交訊息 (使用 ↑↓ 鍵選擇, Enter 確認, Ctrl+C 取消):\n',
+    generatingOptions: '🤖 正在生成 {count} 個提交訊息選項...\n',
+    selectedMessage: '\n✨ 已選擇提交訊息 [{index}]:\n',
   },
 
   pr: {
@@ -405,7 +431,8 @@ export const zhTW: Translations = {
     tips: '💡 提示:',
     autoTip: '   - 使用 --auto 或 -a 自動建立 PR',
     ghTip: '   - 使用 --gh 選項透過 GitHub CLI 建立',
-    baseTip: '   - 使用 --base <branch> 指定目標分支 (預設: main)',
+    selectTip: '   - 使用 --select 或 -s 交互式選擇目標分支',
+    baseTip: '   - 使用 --base <branch> 指定目標分支',
     manualTip: '   - 或手動複製上述描述到 GitHub 建立 PR\n',
     saved: '💾 PR 描述已儲存到: {path}\n',
     creating: '⚡ 自動建立 PR...\n',
@@ -415,6 +442,12 @@ export const zhTW: Translations = {
     switchBranch: '   請切換到功能分支後再建立 PR',
     noDiff: '❌ 當前分支與 {base} 分支沒有差異',
     ensureBranch: '   請確保 {base} 分支存在',
+    selectBranch: '請選擇目標分支',
+    noBranches: '❌ 沒有可用的分支',
+    noToken: '❌ 錯誤: 未設定 GITHUB_TOKEN',
+    useGHTip: '   請使用 --gh 選項透過 GitHub CLI 建立 PR',
+    pushingBranch: '📤 正在推送分支 {branch} 到遠端倉庫...',
+    branchPushed: '✅ 分支已推送到遠端倉庫',
   },
 
   scoreLevel: {
@@ -538,9 +571,8 @@ export const ja: Translations = {
     generating: '💎 Quartz が commit message を生成中...\n',
     generated: '📝 生成された Commit Message:',
     tips: '💡 ヒント:',
-    autoTip: '   - --auto または -a で自動コミット',
     editTip: '   - --edit または -e でエディタで編集してコミット',
-    manualTip: '   - 上記のメッセージを手動でコピーしてコミット\n',
+    manualTip: '   - ↑↓ キーでメッセージを選択, Enter で確認\n',
     saved: '💾 Commit message を保存しました: {path}\n',
     noStaged: '❌ ステージされた変更がありません',
     useGitAdd: '   まず git add でファイルをステージしてください',
@@ -548,6 +580,11 @@ export const ja: Translations = {
     failed: '❌ コミット失敗',
     cancelled: '\n⚠️  コミットをキャンセルしました',
     editMode: '✏️  編集モード: エディタで commit message を編集してください',
+    autoStaged: '📦 すべての変更を自動ステージしました (git add .)\n',
+    stageFailed: '❌ ファイルのステージに失敗しました',
+    selectPrompt: '📝 コミットメッセージを選択してください (↑↓ キーで選択, Enter で確認, Ctrl+C でキャンセル):\n',
+    generatingOptions: '🤖 {count} 個のコミットメッセージオプションを生成中...\n',
+    selectedMessage: '\n✨ コミットメッセージ [{index}] を選択しました:\n',
   },
 
   pr: {
@@ -564,7 +601,8 @@ export const ja: Translations = {
     tips: '💡 ヒント:',
     autoTip: '   - --auto または -a で PR を自動作成',
     ghTip: '   - --gh オプションで GitHub CLI を使用',
-    baseTip: '   - --base <branch> でターゲットブランチを指定 (デフォルト: main)',
+    selectTip: '   - --select または -s で対話的にターゲットブランチを選択',
+    baseTip: '   - --base <branch> でターゲットブランチを指定',
     manualTip: '   - または上記の説明を GitHub に手動でコピー\n',
     saved: '💾 PR 説明を保存しました: {path}\n',
     creating: '⚡ PR を自動作成中...\n',
@@ -574,6 +612,12 @@ export const ja: Translations = {
     switchBranch: '   機能ブランチに切り替えてから PR を作成してください',
     noDiff: '❌ 現在のブランチと {base} ブランチに差分がありません',
     ensureBranch: '   {base} ブランチが存在することを確認してください',
+    selectBranch: 'ターゲットブランチを選択してください',
+    noBranches: '❌ 利用可能なブランチがありません',
+    noToken: '❌ エラー: GITHUB_TOKEN が設定されていません',
+    useGHTip: '   --gh オプションで GitHub CLI を使用してください',
+    pushingBranch: '📤 ブランチ {branch} をリモートリポジトリにプッシュ中...',
+    branchPushed: '✅ ブランチをリモートリポジトリにプッシュしました',
   },
 
   config: {
@@ -697,9 +741,8 @@ export const ko: Translations = {
     generating: '💎 Quartz가 commit message 생성 중...\n',
     generated: '📝 생성된 Commit Message:',
     tips: '💡 힌트:',
-    autoTip: '   - --auto 또는 -a로 자동 커밋',
     editTip: '   - --edit 또는 -e로 에디터에서 수정 후 커밋',
-    manualTip: '   - 위 메시지를 수동으로 복사하여 커밋\n',
+    manualTip: '   - ↑↓ 키로 메시지 선택, Enter로 확인\n',
     saved: '💾 Commit message 저장됨: {path}\n',
     noStaged: '❌ 스테이징된 변경사항이 없습니다',
     useGitAdd: '   먼저 git add로 파일을 스테이징하세요',
@@ -707,6 +750,11 @@ export const ko: Translations = {
     failed: '❌ 커밋 실패',
     cancelled: '\n⚠️  커밋 취소됨',
     editMode: '✏️  편집 모드: 에디터에서 commit message를 수정하세요',
+    autoStaged: '📦 모든 변경사항을 자동으로 스테이징했습니다 (git add .)\n',
+    stageFailed: '❌ 파일 스테이징 실패',
+    selectPrompt: '📝 커밋 메시지를 선택하세요 (↑↓ 키로 선택, Enter로 확인, Ctrl+C로 취소):\n',
+    generatingOptions: '🤖 {count}개의 커밋 메시지 옵션 생성 중...\n',
+    selectedMessage: '\n✨ 커밋 메시지 [{index}]를 선택했습니다:\n',
   },
 
   pr: {
@@ -723,7 +771,8 @@ export const ko: Translations = {
     tips: '💡 힌트:',
     autoTip: '   - --auto 또는 -a로 PR 자동 생성',
     ghTip: '   - --gh 옵션으로 GitHub CLI 사용',
-    baseTip: '   - --base <branch>로 대상 브랜치 지정 (기본값: main)',
+    selectTip: '   - --select 또는 -s로 대화형으로 대상 브랜치 선택',
+    baseTip: '   - --base <branch>로 대상 브랜치 지정',
     manualTip: '   - 또는 위 설명을 GitHub에 수동으로 복사\n',
     saved: '💾 PR 설명 저장됨: {path}\n',
     creating: '⚡ PR 자동 생성 중...\n',
@@ -733,6 +782,12 @@ export const ko: Translations = {
     switchBranch: '   기능 브랜치로 전환한 후 PR을 생성하세요',
     noDiff: '❌ 현재 브랜치와 {base} 브랜치 간 차이가 없습니다',
     ensureBranch: '   {base} 브랜치가 존재하는지 확인하세요',
+    selectBranch: '대상 브랜치를 선택하세요',
+    noBranches: '❌ 사용 가능한 브랜치가 없습니다',
+    pushingBranch: '📤 브랜치 {branch}를 원격 저장소에 푸시 중...',
+    branchPushed: '✅ 브랜치를 원격 저장소에 푸시했습니다',
+    noToken: '❌ 오류: GITHUB_TOKEN이 설정되지 않았습니다',
+    useGHTip: '   --gh 옵션으로 GitHub CLI를 사용하세요',
   },
 
   config: {
@@ -856,9 +911,8 @@ export const en: Translations = {
     generating: '💎 Quartz is generating commit message...\n',
     generated: '📝 Generated Commit Message:',
     tips: '💡 Tips:',
-    autoTip: '   - Use --auto or -a to commit automatically',
     editTip: '   - Use --edit or -e to edit before committing',
-    manualTip: '   - Manually copy the message above\n',
+    manualTip: '   - Use ↑↓ keys to select message, Enter to confirm\n',
     saved: '💾 Commit message saved to: {path}\n',
     noStaged: '❌ No staged changes',
     useGitAdd: '   Please use git add to stage files first',
@@ -866,6 +920,11 @@ export const en: Translations = {
     failed: '❌ Commit failed',
     cancelled: '\n⚠️  Commit cancelled',
     editMode: '✏️  Edit mode: Modify commit message in editor',
+    autoStaged: '📦 Automatically staged all changes (git add .)\n',
+    stageFailed: '❌ Failed to stage files',
+    selectPrompt: '📝 Select a commit message (use ↑↓ keys, Enter to confirm, Ctrl+C to cancel):\n',
+    generatingOptions: '🤖 Generating {count} commit message options...\n',
+    selectedMessage: '\n✨ Selected commit message [{index}]:\n',
   },
 
   pr: {
@@ -882,7 +941,8 @@ export const en: Translations = {
     tips: '💡 Tips:',
     autoTip: '   - Use --auto or -a to create PR automatically',
     ghTip: '   - Use --gh option to create via GitHub CLI',
-    baseTip: '   - Use --base <branch> to specify target (default: main)',
+    selectTip: '   - Use --select or -s to interactively select target branch',
+    baseTip: '   - Use --base <branch> to specify target branch',
     manualTip: '   - Or manually copy the description to GitHub\n',
     saved: '💾 PR description saved to: {path}\n',
     creating: '⚡ Creating PR automatically...\n',
@@ -892,6 +952,12 @@ export const en: Translations = {
     switchBranch: '   Please switch to a feature branch first',
     noDiff: '❌ No difference between current and {base} branch',
     ensureBranch: '   Please ensure {base} branch exists',
+    pushingBranch: '📤 Pushing branch {branch} to remote repository...',
+    branchPushed: '✅ Branch pushed to remote repository',
+    selectBranch: 'Select target branch',
+    noBranches: '❌ No available branches',
+    noToken: '❌ Error: GITHUB_TOKEN is not set',
+    useGHTip: '   Please use --gh option to create PR via GitHub CLI',
   },
 
   scoreLevel: {
