@@ -1,7 +1,6 @@
 //tests/config-wizard.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import { readQuartzConfig, writeQuartzConfig, upsertPlatformConfig } from '@/utils/config';
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
@@ -28,24 +27,15 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 describe('Config Wizard - API Key Persistence', () => {
-  const testConfigPath = path.join(process.cwd(), 'test-quartz.jsonc');
-  
   beforeEach(() => {
-    // Clean up any existing test config
-    if (fs.existsSync(testConfigPath)) {
-      fs.unlinkSync(testConfigPath);
-    }
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    // Clean up test config
-    if (fs.existsSync(testConfigPath)) {
-      fs.unlinkSync(testConfigPath);
-    }
+    vi.clearAllMocks();
   });
 
   it('should preserve apiKey when updating platform tokens', () => {
-    const { readQuartzConfig, writeQuartzConfig, upsertPlatformConfig } = require('@/utils/config');
     
     // Initial config with apiKey
     const initialConfig = {
@@ -81,7 +71,6 @@ describe('Config Wizard - API Key Persistence', () => {
   });
 
   it('should preserve all openai config when updating platforms', () => {
-    const { readQuartzConfig, writeQuartzConfig, upsertPlatformConfig } = require('@/utils/config');
     
     // Initial config with complete openai settings
     const initialConfig = {

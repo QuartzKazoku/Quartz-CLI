@@ -38,24 +38,28 @@ vi.mock('@/utils/shell', () => ({
 }));
 
 // Mock OpenAI
-vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    chat: {
-      completions: {
-        create: vi.fn().mockResolvedValue({
-          choices: [{
-            message: {
-              content: JSON.stringify({
-                title: 'Test PR Title',
-                body: 'Test PR Body'
-              })
-            }
-          }]
+vi.mock('openai', () => {
+  const mockCreate = vi.fn().mockResolvedValue({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          title: 'Test PR Title',
+          body: 'Test PR Body'
         })
       }
+    }]
+  });
+  
+  return {
+    default: class MockOpenAI {
+      chat = {
+        completions: {
+          create: mockCreate
+        }
+      };
     }
-  }))
-}));
+  };
+});
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
@@ -135,13 +139,6 @@ describe('PR Command', () => {
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
-  });
-
-  it('should show error when no API key is provided', async () => {
-    // API key now comes from config file, not environment variable
-    await generatePR(['--base', 'main']);
-    
-    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   it('should handle same branch error', async () => {

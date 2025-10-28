@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Ensure quartz.jsonc exists for tests (use example if not present)
+if [ ! -f "quartz.jsonc" ] && [ -f "quartz.example.jsonc" ]; then
+  echo "⚙️  Creating quartz.jsonc from example..."
+  cp quartz.example.jsonc quartz.jsonc
+fi
+
+# Run biome check and fix
+echo "🔍 Running Biome check..."
+npm run check:fix
+
+# Run add-path-comments script
+echo "📝 Adding path comments..."
+npm run add-path-comments
+
+# Add modified files to staging
+git add -u
