@@ -160,12 +160,12 @@ function getConfigIcon(key: string): string {
 function listConfig() {
     const config = readConfig();
 
-    logger.log('');
+    logger.line();
     printLogo();
-    logger.log('');
-    logger.log('\x1b[1m%s\x1b[0m', t('config.current'));
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-    logger.log('');
+    logger.line();
+    console.log(logger.text.bold(t('config.current')));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
 
     // Configuration items list
     const configItems = [
@@ -186,32 +186,32 @@ function listConfig() {
         if (value) {
             const displayValue = isSensitiveKey(item.key) ? formatSensitiveValue(value) : value;
 
-            logger.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  \x1b[1m${item.label}\x1b[0m`);
-            logger.log(`${' '.repeat(INDENT.LEVEL_3)}\x1b[36m${displayValue}\x1b[0m`);
+            console.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  ${logger.text.bold(item.label)}`);
+            console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.primary(displayValue)}`);
         } else {
-            logger.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  \x1b[1m${item.label}\x1b[0m`);
-            logger.log(`${' '.repeat(INDENT.LEVEL_3)}\x1b[2m\x1b[31m${t('config.notConfigured')}\x1b[0m`);
+            console.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  ${logger.text.bold(item.label)}`);
+            console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(logger.text.error(t('config.notConfigured')))}`);
         }
-        logger.log('');
+        logger.line();
     }
 
     // Display configured platform information
     if (config.platforms.length > 0) {
-        logger.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.configuredPlatforms'));
-        logger.log('');
+        console.log(logger.text.bold('🔧 ' + t('config.configuredPlatforms')));
+        logger.line();
         for (const platform of config.platforms) {
-            logger.log(`${' '.repeat(INDENT.LEVEL_1)}✓ \x1b[36m${platform.type.toUpperCase()}\x1b[0m`);
+            console.log(`${' '.repeat(INDENT.LEVEL_1)}✓ ${logger.text.primary(platform.type.toUpperCase())}`);
             if (platform.url) {
-                logger.log(`${' '.repeat(INDENT.LEVEL_2)}URL: ${platform.url}`);
+                console.log(`${' '.repeat(INDENT.LEVEL_2)}URL: ${platform.url}`);
             }
-            logger.log(`${' '.repeat(INDENT.LEVEL_2)}Token: ${formatSensitiveValue(platform.token)}`);
-            logger.log('');
+            console.log(`${' '.repeat(INDENT.LEVEL_2)}Token: ${formatSensitiveValue(platform.token)}`);
+            logger.line();
         }
     }
 
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-    logger.log('\x1b[2m%s\x1b[0m', `💾 ${getQuartzPath()}`);
-    logger.log('');
+    logger.separator(SEPARATOR_LENGTH);
+    console.log(logger.text.dim(`💾 ${getQuartzPath()}`));
+    logger.line();
 }
 
 /**
@@ -226,7 +226,7 @@ function printLogo() {
   ╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ███████╗
    ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
   `;
-    logger.log('\x1b[36m%s\x1b[0m', logo);
+    logger.gradient(logo);
 }
 
 /**
@@ -305,10 +305,10 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
 async function setupWizard() {
     console.clear();
     printLogo();
-    logger.log('');
+    logger.line();
     logger.log(t('config.wizard.welcome'));
-    logger.log('');
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
+    logger.line();
+    logger.separator(SEPARATOR_LENGTH);
 
     const config = readConfig();
 
@@ -406,8 +406,8 @@ async function setupWizard() {
 
         // Save configuration
         writeConfig(config);
-        logger.log('');
-        logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
+        logger.line();
+        logger.separator(SEPARATOR_LENGTH);
         await message(
             t('config.wizard.success'),
             t('config.wizard.saved', { path: getQuartzPath() }),
@@ -424,80 +424,62 @@ async function setupWizard() {
  * Show usage help
  */
 function showHelp() {
-    logger.log('');
+    logger.line();
     printLogo();
-    logger.log('');
+    logger.line();
 
-    logger.log('\x1b[1m%s\x1b[0m', '📖 ' + t('config.usage'));
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-    logger.log('');
+    console.log(logger.text.bold('📖 ' + t('config.usage')));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
 
-    logger.log('\x1b[1m%s\x1b[0m', '⚡ ' + t('config.commands'));
-    logger.log('');
-    logger.log('  \x1b[36mquartz config list\x1b[0m');
-    logger.log('  \x1b[2m' + t('config.listDesc') + '\x1b[0m');
-    logger.log('');
-    logger.log('  \x1b[36mquartz config set\x1b[0m \x1b[33m<key>\x1b[0m \x1b[33m<value>\x1b[0m');
-    logger.log('  \x1b[2m' + t('config.setDesc') + '\x1b[0m');
-    logger.log('');
-    logger.log('  \x1b[36mquartz config get\x1b[0m \x1b[33m<key>\x1b[0m');
-    logger.log('  \x1b[2m' + t('config.getDesc') + '\x1b[0m');
-    logger.log('');
-    logger.log('  \x1b[36mquartz config init\x1b[0m');
-    logger.log('  \x1b[2m' + t('config.initDesc') + '\x1b[0m');
-    logger.log('');
+    console.log(logger.text.bold('⚡ ' + t('config.commands')));
+    logger.line();
+    logger.command('quartz config list', logger.text.dim(t('config.listDesc')));
+    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
+    logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
+    logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
 
-    logger.log('\x1b[1m%s\x1b[0m', '🔑 ' + t('config.availableKeys'));
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_API_KEY) + '  \x1b[33m' + CONFIG_KEYS.OPENAI_API_KEY + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.apiKey') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_BASE_URL) + '  \x1b[33m' + CONFIG_KEYS.OPENAI_BASE_URL + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.baseUrl') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_MODEL) + '  \x1b[33m' + CONFIG_KEYS.OPENAI_MODEL + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.model') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.GITHUB_TOKEN) + '  \x1b[33m' + CONFIG_KEYS.GITHUB_TOKEN + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.githubToken') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_TOKEN) + '  \x1b[33m' + CONFIG_KEYS.GITLAB_TOKEN + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.gitlabToken') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_URL) + '  \x1b[33m' + CONFIG_KEYS.GITLAB_URL + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.gitlabUrl') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.QUARTZ_LANG) + '  \x1b[33m' + CONFIG_KEYS.QUARTZ_LANG + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.language') + '\x1b[0m');
-    logger.log('');
-    logger.log('  ' + getConfigIcon(CONFIG_KEYS.PROMPT_LANG) + '  \x1b[33m' + CONFIG_KEYS.PROMPT_LANG + '\x1b[0m');
-    logger.log('     \x1b[2m' + t('config.keys.promptLanguage') + '\x1b[0m');
-    logger.log('');
+    console.log(logger.text.bold('🔑 ' + t('config.availableKeys')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_API_KEY) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_API_KEY));
+    console.log('     ' + logger.text.dim(t('config.keys.apiKey')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_BASE_URL) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_BASE_URL));
+    console.log('     ' + logger.text.dim(t('config.keys.baseUrl')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_MODEL) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_MODEL));
+    console.log('     ' + logger.text.dim(t('config.keys.model')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITHUB_TOKEN) + '  ' + logger.text.warning(CONFIG_KEYS.GITHUB_TOKEN));
+    console.log('     ' + logger.text.dim(t('config.keys.githubToken')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_TOKEN) + '  ' + logger.text.warning(CONFIG_KEYS.GITLAB_TOKEN));
+    console.log('     ' + logger.text.dim(t('config.keys.gitlabToken')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_URL) + '  ' + logger.text.warning(CONFIG_KEYS.GITLAB_URL));
+    console.log('     ' + logger.text.dim(t('config.keys.gitlabUrl')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.QUARTZ_LANG) + '  ' + logger.text.warning(CONFIG_KEYS.QUARTZ_LANG));
+    console.log('     ' + logger.text.dim(t('config.keys.language')));
+    logger.line();
+    console.log('  ' + getConfigIcon(CONFIG_KEYS.PROMPT_LANG) + '  ' + logger.text.warning(CONFIG_KEYS.PROMPT_LANG));
+    console.log('     ' + logger.text.dim(t('config.keys.promptLanguage')));
+    logger.line();
 
-    logger.log('\x1b[1m%s\x1b[0m', '💡 ' + t('config.examples'));
-    logger.log('');
-    logger.log('  \x1b[2m# ' + t('config.initDesc') + '\x1b[0m');
-    logger.log('  \x1b[32m$\x1b[0m quartz config init');
-    logger.log('');
-    logger.log('  \x1b[2m# ' + t('config.setDesc') + '\x1b[0m');
-    logger.log('  \x1b[32m$\x1b[0m quartz config set ' + CONFIG_KEYS.OPENAI_API_KEY + ' sk-your-key');
-    logger.log('  \x1b[32m$\x1b[0m quartz config set ' + CONFIG_KEYS.OPENAI_MODEL + ' ' + DEFAULT_VALUES.OPENAI_MODEL);
-    logger.log('  \x1b[32m$\x1b[0m quartz config set ' + CONFIG_KEYS.QUARTZ_LANG + ' zh-CN');
-    logger.log('  \x1b[32m$\x1b[0m quartz config set ' + CONFIG_KEYS.PROMPT_LANG + ' en');
-    logger.log('');
-    logger.log('  \x1b[2m# ' + t('config.profilesDesc') + '\x1b[0m');
-    logger.log('  \x1b[32m$\x1b[0m quartz config save-profile my-profile');
-    logger.log('  \x1b[32m$\x1b[0m quartz config load-profile my-profile');
-    logger.log('  \x1b[32m$\x1b[0m quartz config list-profiles');
-    logger.log('');
-    logger.log('  \x1b[2m# ' + t('config.getDesc') + '\x1b[0m');
-    logger.log('  \x1b[32m$\x1b[0m quartz config get ' + CONFIG_KEYS.OPENAI_API_KEY);
-    logger.log('');
-    logger.log('  \x1b[2m# ' + t('config.listDesc') + '\x1b[0m');
-    logger.log('  \x1b[32m$\x1b[0m quartz config list');
-    logger.log('');
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-    logger.log('');
+    console.log(logger.text.bold('💡 ' + t('config.examples')));
+    logger.line();
+    logger.example(t('config.initDesc'), 'quartz config init');
+    logger.example(t('config.setDesc'), `quartz config set ${CONFIG_KEYS.OPENAI_API_KEY} sk-your-key`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.OPENAI_MODEL} ${DEFAULT_VALUES.OPENAI_MODEL}`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.QUARTZ_LANG} zh-CN`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.PROMPT_LANG} en`);
+    logger.example(t('config.profilesDesc'), 'quartz config save-profile my-profile');
+    logger.example('', 'quartz config load-profile my-profile');
+    logger.example('', 'quartz config list-profiles');
+    logger.example(t('config.getDesc'), `quartz config get ${CONFIG_KEYS.OPENAI_API_KEY}`);
+    logger.example(t('config.listDesc'), 'quartz config list');
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
 }
 
 /**
@@ -570,19 +552,19 @@ function listProfiles() {
         return;
     }
 
-    logger.log('');
-    logger.log('\x1b[1m%s\x1b[0m', '📋 ' + t('config.savedProfiles'));
-    logger.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-    logger.log('');
+    logger.line();
+    console.log(logger.text.bold('📋 ' + t('config.savedProfiles')));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
 
     for (const name of profileNames) {
         const profile = profiles[name];
-        logger.log(`${' '.repeat(INDENT.LEVEL_1)}📦 \x1b[36m${name}\x1b[0m`);
+        console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)}`);
         if (profile.config) {
             const platformCount = profile.config.platforms?.length || 0;
-            logger.log(`${' '.repeat(INDENT.LEVEL_3)}\x1b[2m${t('config.platformCount', { count: platformCount })}\x1b[0m`);
+            console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
         }
-        logger.log('');
+        logger.line();
     }
 }
 

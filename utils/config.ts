@@ -1,11 +1,12 @@
 //cli/utils/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
+import { parse as parseJsonc } from 'jsonc-parser';
 import { PlatformConfig, QuartzConfig } from '@/types/config';
 import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
 
 /**
- * 获取 quartz.json 文件路径
+ * Get quartz.jsonc file path
  */
 function getQuartzPath(): string {
     return path.join(process.cwd(), CONFIG_FILE.NAME);
@@ -37,7 +38,7 @@ export function readQuartzConfig(): QuartzConfig {
 
     try {
         const content = fs.readFileSync(quartzPath, 'utf-8');
-        const data = JSON.parse(content);
+        const data = parseJsonc(content);
 
         if (data[CONFIG_FILE.DEFAULT_PROFILE]?.config) {
             return data[CONFIG_FILE.DEFAULT_PROFILE].config;
@@ -45,7 +46,7 @@ export function readQuartzConfig(): QuartzConfig {
 
         return defaultConfig;
     } catch (error) {
-        // console.error('Failed to parse quartz.json:', error);
+        // console.error('Failed to parse quartz.jsonc:', error);
         return defaultConfig;
     }
 }
@@ -57,11 +58,11 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
     const quartzPath = getQuartzPath();
     let data: any = {};
 
-    // 读取现有数据
+    // Read existing data
     if (fs.existsSync(quartzPath)) {
         try {
             const content = fs.readFileSync(quartzPath, 'utf-8');
-            data = JSON.parse(content);
+            data = parseJsonc(content);
         } catch (error) {
             // console.warn('Failed to read existing config, creating new one:', error);
             data = {};
