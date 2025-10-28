@@ -1,6 +1,8 @@
-import { Language, Translations, locales, defaultLanguage } from './locales';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+//cli/i18n/index.ts
+import type { Language, Translations } from './locales';
+import { locales, defaultLanguage } from './locales';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 // Current language
 let currentLanguage: Language = defaultLanguage;
@@ -46,7 +48,7 @@ function loadLanguageFromConfig(): Language | null {
       }
     }
   } catch (error) {
-    // Ignore errors
+      console.warn('Failed to load or parse .ai-config.json:', error);
   }
   
   return null;
@@ -96,9 +98,9 @@ export function t(key: string, params?: Record<string, string | number>): string
   
   // Replace parameters
   if (params) {
-    Object.entries(params).forEach(([key, val]) => {
-      result = result.replace(`{${key}}`, String(val));
-    });
+    for (const [key1, val] of Object.entries(params)) {
+      result = result.replace(`{${key1}}`, String(val));
+    }
   }
   
   return result;

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+// cli/index.ts
 import { reviewCode } from './commands/review';
 import { generateCommit } from './commands/commit';
 import { generatePR } from './commands/pr';
@@ -87,63 +87,55 @@ function getUsageText(): string {
   return '';
 }
 
-/**
- * Main CLI entry point
- */
-async function main() {
-  // Initialize language
-  i18n.init();
-  const t = i18n.t;
+// 初始化语言
+i18n.init();
+const t = i18n.t;
 
-  // Get command line arguments
-  const args = process.argv.slice(2);
+// 获取命令行参数
+const args = process.argv.slice(2);
 
-  // Handle help flag
-  if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
-    getUsageText();
-    process.exit(0);
-  }
-
-  // Handle version flag
-  if (args.includes('-v') || args.includes('--version')) {
-    const pkg = await import('../package.json');
-    console.log(`${pkg.version}`);
-    process.exit(0);
-  }
-
-  // Get command
-  const command = args[0];
-
-  // Execute command
-  try {
-    switch (command) {
-      // Config management
-      case 'config':
-        await configCommand(args.slice(1));
-        break;
-      // Review code
-      case 'review':
-        await reviewCode(args.slice(1));
-        break;
-      // Generate commit message
-      case 'commit':
-        await generateCommit(args.slice(1));
-        break;
-      // Generate PR description
-      case 'pr':
-        await generatePR(args.slice(1));
-        break;
-      // Handle unknown command
-      default:
-        console.error(`\n\x1b[31m${t('common.error')}\x1b[0m Unknown command: \x1b[33m${command}\x1b[0m\n`);
-        getUsageText();
-        process.exit(1);
-    }
-    // Handle errors
-  } catch (error) {
-    console.error(`${t('common.error')} Execution failed:`, error);
-    process.exit(1);
-  }
+// 处理帮助标志
+if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
+  getUsageText();
+  process.exit(0);
 }
 
-main();
+// 处理版本标志
+if (args.includes('-v') || args.includes('--version')) {
+  const pkg = await import('../package.json');
+  console.log(`${pkg.version}`);
+  process.exit(0);
+}
+
+// 获取命令
+const command = args[0];
+
+// 执行命令
+try {
+  switch (command) {
+    // Config management
+    case 'config':
+      await configCommand(args.slice(1));
+      break;
+    // Review code
+    case 'review':
+      await reviewCode(args.slice(1));
+      break;
+    // Generate commit message
+    case 'commit':
+      await generateCommit(args.slice(1));
+      break;
+    // Generate PR description
+    case 'pr':
+      await generatePR(args.slice(1));
+      break;
+    // Handle unknown command
+    default:
+      console.error(`\n\x1b[31m${t('common.error')}\x1b[0m Unknown command: \x1b[33m${command}\x1b[0m\n`);
+      getUsageText();
+      process.exit(1);
+  }
+} catch (error) {
+  console.error(`${t('common.error')} Execution failed:`, error);
+  process.exit(1);
+}
