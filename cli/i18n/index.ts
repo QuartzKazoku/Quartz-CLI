@@ -1,3 +1,4 @@
+//cli/i18n/index.ts
 import { Language, Translations, locales, defaultLanguage } from './locales';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';

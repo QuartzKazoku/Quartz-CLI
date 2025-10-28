@@ -1,3 +1,4 @@
+//cli/commands/commit.ts
 import OpenAI from 'openai';
 import {$} from 'bun';
 import fs from 'node:fs';

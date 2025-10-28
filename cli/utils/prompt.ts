@@ -1,3 +1,4 @@
+//cli/utils/prompt.ts
 import { getLanguage } from '../i18n';
 
 // Get prompt language from environment or fallback to UI language

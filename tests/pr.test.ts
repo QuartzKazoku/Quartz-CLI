@@ -1,3 +1,4 @@
+//tests/pr.test.ts
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { generatePR } from '../cli/commands/pr';
 

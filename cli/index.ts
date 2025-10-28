@@ -1,3 +1,4 @@
+//cli/index.ts
 #!/usr/bin/env bun
 import { reviewCode } from './commands/review';
 import { generateCommit } from './commands/commit';

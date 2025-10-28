@@ -1,3 +1,4 @@
+//tests/i18n.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { mock } from 'bun:test';
 import { initLanguage, setLanguage, getLanguage, t } from '../cli/i18n';

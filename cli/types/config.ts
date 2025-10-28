@@ -1,3 +1,4 @@
+//cli/types/config.ts
 /**
  * 平台配置接口
  */
