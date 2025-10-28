@@ -1,10 +1,12 @@
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import {$} from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '../i18n';
-import { getPRPrompt } from '../utils/prompt';
-import { loadConfig } from '../utils/config';
+import {t} from '../i18n';
+import {getPRPrompt} from '../utils/prompt';
+import {getPlatformConfigs, loadConfig} from '../utils/config';
+import {PlatformStrategy} from '../strategies/platform';
+import {PlatformStrategyFactory} from "../strategies/factory.ts";
 
 /**
  * Get current branch name
@@ -25,11 +27,10 @@ async function getCurrentBranch(): Promise<string> {
  */
 async function getAllBranches(): Promise<string[]> {
   try {
-    const branches = (await $`git branch --format='%(refname:short)'`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-    return branches;
+      return (await $`git branch --format='%(refname:short)'`.text())
+        .trim()
+        .split('\n')
+        .filter(Boolean);
   } catch (error) {
     console.error(t('errors.gitError'), error);
     process.exit(1);
@@ -147,9 +148,9 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
     const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
     const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
 
-    if (gitlabSshMatch && gitlabSshMatch[1].includes('gitlab')) {
+    if (gitlabSshMatch?.[1]?.includes('gitlab')) {
       return { owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab' };
-    } else if (gitlabHttpsMatch && gitlabHttpsMatch[1].includes('gitlab')) {
+    } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
       return { owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab' };
     }
 
@@ -188,12 +189,10 @@ async function getDiffWithBase(baseBranch: string): Promise<string> {
  */
 async function getCommitHistory(baseBranch: string): Promise<string[]> {
   try {
-    const commits = (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-
-    return commits;
+      return (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
+        .trim()
+        .split('\n')
+        .filter(Boolean);
   } catch {
     return [];
   }
@@ -206,12 +205,10 @@ async function getCommitHistory(baseBranch: string): Promise<string[]> {
  */
 async function getChangedFiles(baseBranch: string): Promise<string[]> {
   try {
-    const files = (await $`git diff ${baseBranch}...HEAD --name-only`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-
-    return files;
+      return (await $`git diff ${baseBranch}...HEAD --name-only`.text())
+        .trim()
+        .split('\n')
+        .filter(Boolean);
   } catch {
     return [];
   }
@@ -296,18 +293,17 @@ async function pushBranchToRemote(branch: string): Promise<void> {
 }
 
 /**
- * Create GitHub PR using API
- * @param token - GitHub token
- * @param owner - Repository owner
- * @param repo - Repository name
- * @param title - PR title
- * @param body - PR body
- * @param head - Head branch
- * @param base - Base branch
- * @returns Created PR object
+ * 使用策略模式创建PR/MR
+ * @param strategy - 平台策略实例
+ * @param owner - 仓库所有者
+ * @param repo - 仓库名称
+ * @param title - PR标题
+ * @param body - PR正文
+ * @param head - 源分支
+ * @param base - 目标分支
  */
-async function createGitHubPR(
-  token: string,
+async function createPullRequestWithStrategy(
+  strategy: PlatformStrategy,
   owner: string,
   repo: string,
   title: string,
@@ -316,107 +312,16 @@ async function createGitHubPR(
   base: string
 ) {
   try {
-    // Check if head branch exists on remote
-    const isHeadOnRemote = await isBranchOnRemote(head);
+    // 检查分支是否在远程存在
+    const isHeadOnRemote = await strategy.isBranchOnRemote(head);
     if (!isHeadOnRemote) {
       console.log(t('pr.pushingBranch', { branch: head }));
-      await pushBranchToRemote(head);
+      await strategy.pushBranchToRemote(head);
       console.log(t('pr.branchPushed'));
     }
 
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title,
-        body,
-        head,
-        base,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      // Display more detailed error information
-      let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
-      if (error.errors) {
-        errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
-      }
-      throw new Error(errorMessage);
-    }
-
-    const pr = await response.json();
-    return pr;
-  } catch (error) {
-    console.error(t('pr.failed'), error);
-    process.exit(1);
-  }
-}
-
-/**
- * Create GitLab MR using API
- * @param token - GitLab token
- * @param gitlabUrl - GitLab server URL
- * @param owner - Project namespace
- * @param repo - Project name
- * @param title - MR title
- * @param body - MR description
- * @param head - Source branch
- * @param base - Target branch
- * @returns Created MR object
- */
-async function createGitLabMR(
-  token: string,
-  gitlabUrl: string,
-  owner: string,
-  repo: string,
-  title: string,
-  body: string,
-  head: string,
-  base: string
-) {
-  try {
-    // Check if head branch exists on remote
-    const isHeadOnRemote = await isBranchOnRemote(head);
-    if (!isHeadOnRemote) {
-      console.log(t('pr.pushingBranch', { branch: head }));
-      await pushBranchToRemote(head);
-      console.log(t('pr.branchPushed'));
-    }
-
-    // Encode project path for GitLab API
-    const projectPath = encodeURIComponent(`${owner}/${repo}`);
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/merge_requests`;
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'PRIVATE-TOKEN': token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_branch: head,
-        target_branch: base,
-        title,
-        description: body,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      let errorMessage = `GitLab API error: ${error.message || response.statusText}`;
-      if (error.error) {
-        errorMessage += '\nDetails: ' + error.error;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const mr = await response.json();
-    return mr;
+    // 创建PR/MR
+      return await strategy.createPullRequest(owner, repo, title, body, head, base);
   } catch (error) {
     console.error(t('pr.failed'), error);
     process.exit(1);
@@ -476,8 +381,8 @@ export async function generatePR(args: string[]) {
   console.log(t('pr.starting'));
 
   const config = loadConfig();
-  
-  if (!config.openaiApiKey) {
+  let openAIConfig = config.openai;
+  if (!openAIConfig.apiKey) {
     console.error(t('errors.noApiKey'));
     console.error(t('errors.setApiKey'));
     process.exit(1);
@@ -524,15 +429,15 @@ export async function generatePR(args: string[]) {
 
   // Initialize OpenAI client
   const openai = new OpenAI({
-    apiKey: config.openaiApiKey,
-    baseURL: config.openaiBaseUrl,
+    apiKey: openAIConfig.apiKey,
+    baseURL: openAIConfig.baseUrl,
   });
 
   // Generate PR description
   console.log(t('pr.generating'));
   const { title, body } = await generatePRDescription(
     openai,
-    config.openaiModel,
+    openAIConfig.model,
     diff,
     commits,
     files,
@@ -550,55 +455,40 @@ export async function generatePR(args: string[]) {
   console.log('━'.repeat(60));
   console.log('');
 
-  // Auto create PR/MR (default behavior)
+  // 自动创建 PR/MR（默认行为）
   console.log(t('pr.creating'));
 
   if (useGH) {
-    // Use GitHub CLI
+    // 使用 GitHub CLI
     await createPRWithGH(title, body, baseBranch);
   } else if (repoInfo) {
-    const platform = config.gitPlatform || repoInfo.platform;
+    // 获取所有平台配置
+    const platformConfigs = getPlatformConfigs();
     
-    if (platform === 'github') {
-      if (config.githubToken) {
-        // Use GitHub API
-        const pr = await createGitHubPR(
-          config.githubToken,
-          repoInfo.owner,
-          repoInfo.repo,
-          title,
-          body,
-          currentBranch,
-          baseBranch
-        );
-        console.log(t('pr.success'));
-        console.log(`🔗 ${pr.html_url}`);
-      } else {
-        console.error(t('pr.noToken'));
-        console.error(t('pr.useGHTip'));
-        process.exit(1);
-      }
-    } else if (platform === 'gitlab') {
-      if (config.gitlabToken) {
-        // Use GitLab API
-        const mr = await createGitLabMR(
-          config.gitlabToken,
-          config.gitlabUrl,
-          repoInfo.owner,
-          repoInfo.repo,
-          title,
-          body,
-          currentBranch,
-          baseBranch
-        );
-        console.log(t('pr.success'));
-        console.log(`🔗 ${mr.web_url}`);
-      } else {
-        console.error(t('pr.noToken'));
-        console.error('   Please set GITLAB_TOKEN in configuration');
-        process.exit(1);
-      }
+    // 查找匹配当前仓库平台的配置
+    const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
+    
+    if (!matchingConfig) {
+      console.error(t('pr.noToken'));
+      console.error(`   请为 ${repoInfo.platform} 配置 token`);
+      console.error(t('pr.useGHTip'));
+      process.exit(1);
     }
+
+    // 使用策略模式创建PR/MR
+    const strategy = PlatformStrategyFactory.create(matchingConfig);
+    const result = await createPullRequestWithStrategy(
+      strategy,
+      repoInfo.owner,
+      repoInfo.repo,
+      title,
+      body,
+      currentBranch,
+      baseBranch
+    );
+    
+    console.log(t('pr.success'));
+    console.log(`🔗 ${result.url}`);
   } else {
     console.error(t('pr.noToken'));
     console.error(t('pr.useGHTip'));
