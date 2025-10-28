@@ -1,31 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { t, setLanguage } from '../i18n';
-
-/**
- * Configuration keys
- */
-const CONFIG_KEYS = {
-  OPENAI_API_KEY: 'OPENAI_API_KEY',
-  OPENAI_BASE_URL: 'OPENAI_BASE_URL',
-  OPENAI_MODEL: 'OPENAI_MODEL',
-  GIT_PLATFORM: 'GIT_PLATFORM',
-  GITHUB_TOKEN: 'GITHUB_TOKEN',
-  GITLAB_TOKEN: 'GITLAB_TOKEN',
-  GITLAB_URL: 'GITLAB_URL',
-  QUARTZ_LANG: 'QUARTZ_LANG',
-  PROMPT_LANG: 'PROMPT_LANG',
-} as const;
-
-type ConfigKey = keyof typeof CONFIG_KEYS;
-
-/**
- * Configuration profile structure
- */
-interface ConfigProfile {
-  name: string;
-  configs: Map<string, string>;
-}
+import {setLanguage, t} from '../i18n';
+import {readQuartzConfig as readConfig, upsertPlatformConfig, writeQuartzConfig as writeConfig} from '../utils/config';
+import {QuartzConfig} from '../types/config';
 
 /**
  * Get quartz.json file path
@@ -35,81 +12,99 @@ function getQuartzPath(): string {
 }
 
 /**
- * Read existing quartz.json file
+ * 从新配置结构中获取显示值的辅助函数
  */
-function readQuartzConfig(): Map<string, string> {
-  const quartzPath = getQuartzPath();
-  const config = new Map<string, string>();
-
-  if (fs.existsSync(quartzPath)) {
-    try {
-      const content = fs.readFileSync(quartzPath, 'utf-8');
-      const data = JSON.parse(content);
-      
-      // Read from default profile
-      if (data.default && data.default.configs) {
-        for (const [key, value] of Object.entries(data.default.configs)) {
-          config.set(key, value as string);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to parse quartz.json:', error);
-    }
+function getConfigDisplayValue(config: QuartzConfig, key: string): string | undefined {
+  switch (key) {
+    case 'OPENAI_API_KEY':
+      return config.openai.apiKey;
+    case 'OPENAI_BASE_URL':
+      return config.openai.baseUrl;
+    case 'OPENAI_MODEL':
+      return config.openai.model;
+    case 'QUARTZ_LANG':
+      return config.language.ui;
+    case 'PROMPT_LANG':
+      return config.language.prompt;
+    case 'GITHUB_TOKEN':
+      return config.platforms.find(p => p.type === 'github')?.token;
+    case 'GITLAB_TOKEN':
+      return config.platforms.find(p => p.type === 'gitlab')?.token;
+    case 'GITLAB_URL':
+      return config.platforms.find(p => p.type === 'gitlab')?.url;
+    case 'GIT_PLATFORM':
+      return config.platforms.length > 0 ? config.platforms[0].type : undefined;
+    default:
+      return undefined;
   }
-
-  return config;
 }
 
 /**
- * Write config to quartz.json file
- */
-function writeQuartzConfig(config: Map<string, string>) {
-  const quartzPath = getQuartzPath();
-  let data: any = {};
-
-  // Read existing data if file exists
-  if (fs.existsSync(quartzPath)) {
-    try {
-      const content = fs.readFileSync(quartzPath, 'utf-8');
-      data = JSON.parse(content);
-    } catch (error) {
-      // If parse fails, start with empty object
-      data = {};
-    }
-  }
-
-  // Ensure default profile exists
-  if (!data.default) {
-    data.default = { configs: {} };
-  }
-  if (!data.default.configs) {
-    data.default.configs = {};
-  }
-
-  // Update configs
-  for (const [key, value] of config.entries()) {
-    data.default.configs[key] = value;
-  }
-
-  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-/**
- * Set a configuration value
+ * 设置配置值（支持新结构）
  */
 function setConfig(key: string, value: string) {
-  const config = readQuartzConfig();
-  config.set(key, value);
-  writeQuartzConfig(config);
+  const config = readConfig();
+  
+  switch (key) {
+    case 'OPENAI_API_KEY':
+      config.openai.apiKey = value;
+      break;
+    case 'OPENAI_BASE_URL':
+      config.openai.baseUrl = value;
+      break;
+    case 'OPENAI_MODEL':
+      config.openai.model = value;
+      break;
+    case 'QUARTZ_LANG':
+      config.language.ui = value;
+      break;
+    case 'PROMPT_LANG':
+      config.language.prompt = value;
+      break;
+    case 'GITHUB_TOKEN':
+      upsertPlatformConfig({ type: 'github', token: value });
+      console.log(t('config.set', { key, value: '***' }));
+      return;
+    case 'GITLAB_TOKEN': {
+      const existingGitlab = config.platforms.find(p => p.type === 'gitlab');
+      upsertPlatformConfig({ 
+        type: 'gitlab',
+        token: value,
+        url: existingGitlab?.url || 'https://gitlab.com'
+      });
+      console.log(t('config.set', { key, value: '***' }));
+      return;
+    }
+    case 'GITLAB_URL': {
+      const existingGitlab = config.platforms.find(p => p.type === 'gitlab');
+      if (existingGitlab) {
+        upsertPlatformConfig({ ...existingGitlab, url: value });
+      } else {
+        console.error('请先设置 GITLAB_TOKEN');
+        return;
+      }
+      console.log(t('config.set', { key, value }));
+      return;
+    }
+    case 'GIT_PLATFORM':
+      // GIT_PLATFORM 已废弃，现在支持多平台
+      console.warn('警告: GIT_PLATFORM 配置已废弃，请直接配置对应平台的 TOKEN');
+      return;
+    default:
+      console.error(`未知的配置键: ${key}`);
+      return;
+  }
+  
+  writeConfig(config);
   console.log(t('config.set', { key, value: key.includes('KEY') || key.includes('TOKEN') ? '***' : value }));
 }
 
 /**
- * Get a configuration value
+ * 获取配置值
  */
 function getConfig(key: string) {
-  const config = readQuartzConfig();
-  const value = config.get(key);
+  const config = readConfig();
+  const value = getConfigDisplayValue(config, key);
   
   if (value) {
     const displayValue = key.includes('KEY') || key.includes('TOKEN')
@@ -140,16 +135,16 @@ function getConfigIcon(key: string): string {
 }
 
 /**
- * List all configurations
+ * 列出所有配置
  */
 function listConfig() {
-  const config = readQuartzConfig();
+  const config = readConfig();
   
   console.log('');
   printLogo();
   console.log('');
-  console.log('\x1b[1m%s\x1b[0m', t('config.current')); // Bold title
-  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
+  console.log('\x1b[1m%s\x1b[0m', t('config.current'));
+  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   console.log('');
   
   // Configuration items with icons and colors
@@ -157,7 +152,6 @@ function listConfig() {
     { key: 'OPENAI_API_KEY', label: t('config.keys.apiKey') },
     { key: 'OPENAI_BASE_URL', label: t('config.keys.baseUrl') },
     { key: 'OPENAI_MODEL', label: t('config.keys.model') },
-    { key: 'GIT_PLATFORM', label: t('config.keys.gitPlatform') },
     { key: 'GITHUB_TOKEN', label: t('config.keys.githubToken') },
     { key: 'GITLAB_TOKEN', label: t('config.keys.gitlabToken') },
     { key: 'GITLAB_URL', label: t('config.keys.gitlabUrl') },
@@ -166,7 +160,7 @@ function listConfig() {
   ];
 
   for (const item of configItems) {
-    const value = config.get(item.key);
+    const value = getConfigDisplayValue(config, item.key);
     const icon = getConfigIcon(item.key);
     
     if (value) {
@@ -174,19 +168,31 @@ function listConfig() {
         ? value.substring(0, 8) + '***'
         : value;
       
-      // Icon + Label (bold) + Value (cyan)
       console.log(`  ${icon}  \x1b[1m${item.label}\x1b[0m`);
       console.log(`     \x1b[36m${displayValue}\x1b[0m`);
     } else {
-      // Icon + Label (bold) + Not configured (dim red)
       console.log(`  ${icon}  \x1b[1m${item.label}\x1b[0m`);
       console.log(`     \x1b[2m\x1b[31m${t('config.notConfigured')}\x1b[0m`);
     }
-    console.log(''); // Empty line between items
+    console.log('');
   }
   
-  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
-  console.log('\x1b[2m%s\x1b[0m', `💾 ${getQuartzPath()}`); // Show quartz.json file path
+  // 显示配置的平台信息
+  if (config.platforms.length > 0) {
+    console.log('\x1b[1m%s\x1b[0m', '🔧 配置的代码托管平台:');
+    console.log('');
+    for (const platform of config.platforms) {
+      console.log(`  ✓ \x1b[36m${platform.type.toUpperCase()}\x1b[0m`);
+      if (platform.url) {
+        console.log(`    URL: ${platform.url}`);
+      }
+      console.log(`    Token: ${platform.token.substring(0, 8)}***`);
+      console.log('');
+    }
+  }
+  
+  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
+  console.log('\x1b[2m%s\x1b[0m', `💾 ${getQuartzPath()}`);
   console.log('');
 }
 
@@ -202,7 +208,7 @@ function printLogo() {
   ╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ███████╗
    ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
   `;
-  console.log('\x1b[36m%s\x1b[0m', logo); // Cyan color
+  console.log('\x1b[36m%s\x1b[0m', logo);
 }
 
 /**
@@ -211,17 +217,16 @@ function printLogo() {
 async function askQuestion(
   readline: any,
   label: string,
-  description?: string,
-  defaultValue?: string
+  description?: string
 ): Promise<string> {
   return new Promise(resolve => {
-    console.log(''); // Empty line before question
-    console.log('\x1b[1m%s\x1b[0m', label); // Bold label
+    console.log('');
+    console.log('\x1b[1m%s\x1b[0m', label);
     if (description) {
-      console.log('\x1b[2m%s\x1b[0m', description); // Dim description
+      console.log('\x1b[2m%s\x1b[0m', description);
     }
     
-    const prompt = `\x1b[32m❯\x1b[0m `; // Green arrow
+    const prompt = `\x1b[32m❯\x1b[0m `;
     
     readline.question(prompt, (answer: string) => {
       resolve(answer);
@@ -245,7 +250,6 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
     const stdin = process.stdin;
     const stdout = process.stdout;
 
-    // Enable raw mode to capture key presses
     if (stdin.isTTY) {
       stdin.setRawMode(true);
     }
@@ -253,22 +257,18 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
     stdin.setEncoding('utf8');
 
     const render = () => {
-      // Clear previous output
-      stdout.write('\x1B[2J\x1B[0f'); // Clear screen and move cursor to top
+      stdout.write('\x1B[2J\x1B[0f');
       
-      console.log(''); // Empty line
-      console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform')); // Bold label
-      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || 'github' })); // Description
+      console.log('');
+      console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform'));
+      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || 'github' }));
       console.log('');
 
-      // Render options
       for (let index = 0; index < platforms.length; index++) {
         const platform = platforms[index];
         if (index === selectedIndex) {
-          // Highlighted option
           stdout.write(`  \x1b[32m❯ ${platform.label}\x1b[0m\n`);
         } else {
-          // Normal option
           stdout.write(`    ${platform.label}\n`);
         }
       }
@@ -278,19 +278,18 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
     };
 
     const onData = (key: string) => {
-      // Handle key presses
-      if (key === '\u001B[A') { // Up arrow
+      if (key === '\u001B[A') {
         selectedIndex = (selectedIndex - 1 + platforms.length) % platforms.length;
         render();
-      } else if (key === '\u001B[B') { // Down arrow
+      } else if (key === '\u001B[B') {
         selectedIndex = (selectedIndex + 1) % platforms.length;
         render();
-      } else if (key === '\r' || key === '\n') { // Enter
+      } else if (key === '\r' || key === '\n') {
         cleanup();
         resolve(platforms[selectedIndex].value);
-      } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
+      } else if (key === '\u001B' || key === '\u0003') {
         cleanup();
-        resolve(currentPlatform || 'github'); // Return current/default platform
+        resolve(currentPlatform || 'github');
       }
     };
 
@@ -326,7 +325,6 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
     const stdin = process.stdin;
     const stdout = process.stdout;
 
-    // Enable raw mode to capture key presses
     if (stdin.isTTY) {
       stdin.setRawMode(true);
     }
@@ -334,22 +332,18 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
     stdin.setEncoding('utf8');
 
     const render = () => {
-      // Clear previous output
-      stdout.write('\x1B[2J\x1B[0f'); // Clear screen and move cursor to top
+      stdout.write('\x1B[2J\x1B[0f');
       
-      console.log(''); // Empty line
-      console.log('\x1b[1m%s\x1b[0m', '🌍 ' + (title || t('config.keys.language'))); // Bold label
-      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.language', { default: currentLang || 'en' })); // Description
+      console.log('');
+      console.log('\x1b[1m%s\x1b[0m', '🌍 ' + (title || t('config.keys.language')));
+      console.log('\x1b[2m%s\x1b[0m', t('config.wizard.language', { default: currentLang || 'en' }));
       console.log('');
 
-      // Render options
       for (let index = 0; index < languages.length; index++) {
         const lang = languages[index];
         if (index === selectedIndex) {
-          // Highlighted option
           stdout.write(`  \x1b[32m❯ ${lang.label}\x1b[0m\n`);
         } else {
-          // Normal option
           stdout.write(`    ${lang.label}\n`);
         }
       }
@@ -359,19 +353,18 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
     };
 
     const onData = (key: string) => {
-      // Handle key presses
-      if (key === '\u001B[A') { // Up arrow
+      if (key === '\u001B[A') {
         selectedIndex = (selectedIndex - 1 + languages.length) % languages.length;
         render();
-      } else if (key === '\u001B[B') { // Down arrow
+      } else if (key === '\u001B[B') {
         selectedIndex = (selectedIndex + 1) % languages.length;
         render();
-      } else if (key === '\r' || key === '\n') { // Enter
+      } else if (key === '\r' || key === '\n') {
         cleanup();
         resolve(languages[selectedIndex].value);
-      } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
+      } else if (key === '\u001B' || key === '\u0003') {
         cleanup();
-        resolve(currentLang || 'en'); // Return current/default language
+        resolve(currentLang || 'en');
       }
     };
 
@@ -392,88 +385,84 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
  * Interactive setup wizard
  */
 async function setupWizard() {
-  // Clear console and print logo
   console.clear();
   printLogo();
   console.log('');
   console.log(t('config.wizard.welcome'));
   console.log('');
-  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
+  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   
-  const config = readQuartzConfig();
+  const config = readConfig();
   const readline = require('node:readline').createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
   try {
-    // UI Language - Set first so subsequent prompts can use correct language
-    readline.close(); // Close readline before entering raw mode
-    const currentLang = config.get('QUARTZ_LANG');
+    // UI Language
+    readline.close();
+    const currentLang = config.language.ui;
     const lang = await selectLanguage(currentLang, t('config.keys.language'));
-    config.set('QUARTZ_LANG', lang);
+    config.language.ui = lang;
     
-    // Update environment variable and i18n system immediately
     process.env.QUARTZ_LANG = lang;
     setLanguage(lang as any);
 
-    // Prompt Language - Use interactive selector
-    const currentPromptLang = config.get('PROMPT_LANG') || lang;
-    const promptLang = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
-    config.set('PROMPT_LANG', promptLang);
+    // Prompt Language
+    const currentPromptLang = config.language.prompt || lang;
+      config.language.prompt = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
 
-    // Git Platform - Use interactive selector
-    const currentPlatform = config.get('GIT_PLATFORM') || 'github';
+    // Git Platform
+    const currentPlatform = config.platforms.length > 0 ? config.platforms[0].type : 'github';
     const platform = await selectPlatform(currentPlatform);
-    config.set('GIT_PLATFORM', platform);
 
-    // Reopen readline for text input questions
     const readline2 = require('node:readline').createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
     // OpenAI API Key
-    const currentApiKey = config.get('OPENAI_API_KEY');
+    const currentApiKey = config.openai.apiKey;
     const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
     const apiKeyDesc = currentApiKey
       ? t('config.wizard.apiKeyWithCurrent', { current: currentApiKey.substring(0, 8) + '***' })
       : t('config.wizard.apiKey');
     
-    const apiKey = await askQuestion(readline2, apiKeyLabel, apiKeyDesc, currentApiKey);
+    const apiKey = await askQuestion(readline2, apiKeyLabel, apiKeyDesc);
     if (apiKey.trim()) {
-      config.set('OPENAI_API_KEY', apiKey.trim());
+      config.openai.apiKey = apiKey.trim();
     }
 
     // OpenAI Base URL
-    const currentBaseUrl = config.get('OPENAI_BASE_URL');
+    const currentBaseUrl = config.openai.baseUrl;
     const defaultBaseUrl = currentBaseUrl || 'https://api.openai.com/v1';
     const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
     const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
     
-    const baseUrl = await askQuestion(readline2, baseUrlLabel, baseUrlDesc, defaultBaseUrl);
+    const baseUrl = await askQuestion(readline2, baseUrlLabel, baseUrlDesc);
     if (baseUrl.trim()) {
-      config.set('OPENAI_BASE_URL', baseUrl.trim());
+      config.openai.baseUrl = baseUrl.trim();
     } else if (!currentBaseUrl) {
-      config.set('OPENAI_BASE_URL', defaultBaseUrl);
+      config.openai.baseUrl = defaultBaseUrl;
     }
 
     // OpenAI Model
-    const currentModel = config.get('OPENAI_MODEL');
+    const currentModel = config.openai.model;
     const defaultModel = currentModel || 'gpt-4-turbo-preview';
     const modelLabel = '🤖 ' + t('config.keys.model');
     const modelDesc = t('config.wizard.model', { default: defaultModel });
     
-    const model = await askQuestion(readline2, modelLabel, modelDesc, defaultModel);
+    const model = await askQuestion(readline2, modelLabel, modelDesc);
     if (model.trim()) {
-      config.set('OPENAI_MODEL', model.trim());
+      config.openai.model = model.trim();
     } else if (!currentModel) {
-      config.set('OPENAI_MODEL', defaultModel);
+      config.openai.model = defaultModel;
     }
 
     // Git Token (based on selected platform)
     if (platform === 'github') {
-      const currentGithubToken = config.get('GITHUB_TOKEN');
+      const existingGithub = config.platforms.find(p => p.type === 'github');
+      const currentGithubToken = existingGithub?.token;
       const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
       const githubTokenDesc = currentGithubToken
         ? t('config.wizard.githubTokenWithCurrent', { current: currentGithubToken.substring(0, 8) + '***' })
@@ -481,10 +470,11 @@ async function setupWizard() {
       
       const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
       if (githubToken.trim()) {
-        config.set('GITHUB_TOKEN', githubToken.trim());
+        upsertPlatformConfig({ type: 'github', token: githubToken.trim() });
       }
     } else if (platform === 'gitlab') {
-      const currentGitlabToken = config.get('GITLAB_TOKEN');
+      const existingGitlab = config.platforms.find(p => p.type === 'gitlab');
+      const currentGitlabToken = existingGitlab?.token;
       const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
       const gitlabTokenDesc = currentGitlabToken
         ? t('config.wizard.gitlabTokenWithCurrent', { current: currentGitlabToken.substring(0, 8) + '***' })
@@ -492,32 +482,29 @@ async function setupWizard() {
       
       const gitlabToken = await askQuestion(readline2, gitlabTokenLabel, gitlabTokenDesc);
       if (gitlabToken.trim()) {
-        config.set('GITLAB_TOKEN', gitlabToken.trim());
-      }
-
-      // GitLab URL
-      const currentGitlabUrl = config.get('GITLAB_URL');
-      const defaultGitlabUrl = currentGitlabUrl || 'https://gitlab.com';
-      const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
-      const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
-      
-      const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
-      if (gitlabUrl.trim()) {
-        config.set('GITLAB_URL', gitlabUrl.trim());
-      } else if (!currentGitlabUrl) {
-        config.set('GITLAB_URL', defaultGitlabUrl);
+        const currentGitlabUrl = existingGitlab?.url;
+        const defaultGitlabUrl = currentGitlabUrl || 'https://gitlab.com';
+        const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
+        const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
+        
+        const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc);
+        upsertPlatformConfig({
+          type: 'gitlab',
+          token: gitlabToken.trim(),
+          url: gitlabUrl.trim() || defaultGitlabUrl
+        });
       }
     }
 
     readline2.close();
 
     // Save configuration
-    writeQuartzConfig(config);
+    writeConfig(config);
     console.log('');
-    console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70)); // Dim separator
+    console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
     console.log('');
-    console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success')); // Green success message
-    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() })); // Dim path
+    console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success'));
+    console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() }));
     console.log('');
 
   } catch (error) {
@@ -534,12 +521,10 @@ function showHelp() {
   printLogo();
   console.log('');
   
-  // Usage section
   console.log('\x1b[1m%s\x1b[0m', '📖 ' + t('config.usage'));
   console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
   console.log('');
   
-  // Commands section
   console.log('\x1b[1m%s\x1b[0m', '⚡ ' + t('config.commands'));
   console.log('');
   console.log('  \x1b[36mquartz config list\x1b[0m');
@@ -555,7 +540,6 @@ function showHelp() {
   console.log('  \x1b[2m' + t('config.initDesc') + '\x1b[0m');
   console.log('');
   
-  // Available keys section
   console.log('\x1b[1m%s\x1b[0m', '🔑 ' + t('config.availableKeys'));
   console.log('');
   console.log('  ' + getConfigIcon('OPENAI_API_KEY') + '  \x1b[33mOPENAI_API_KEY\x1b[0m');
@@ -566,9 +550,6 @@ function showHelp() {
   console.log('');
   console.log('  ' + getConfigIcon('OPENAI_MODEL') + '  \x1b[33mOPENAI_MODEL\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.model') + '\x1b[0m');
-  console.log('');
-  console.log('  ' + getConfigIcon('GIT_PLATFORM') + '  \x1b[33mGIT_PLATFORM\x1b[0m');
-  console.log('     \x1b[2m' + t('config.keys.gitPlatform') + '\x1b[0m');
   console.log('');
   console.log('  ' + getConfigIcon('GITHUB_TOKEN') + '  \x1b[33mGITHUB_TOKEN\x1b[0m');
   console.log('     \x1b[2m' + t('config.keys.githubToken') + '\x1b[0m');
@@ -586,7 +567,6 @@ function showHelp() {
   console.log('     \x1b[2m' + t('config.keys.promptLanguage') + '\x1b[0m');
   console.log('');
   
-  // Examples section
   console.log('\x1b[1m%s\x1b[0m', '💡 ' + t('config.examples'));
   console.log('');
   console.log('  \x1b[2m# ' + t('config.initDesc') + '\x1b[0m');
@@ -617,27 +597,8 @@ function showHelp() {
  * Save current configuration as a profile
  */
 function saveProfile(name: string) {
-  const config = readQuartzConfig();
-  const quartzPath = getQuartzPath();
-  let data: any = {};
-
-  // Read existing data
-  if (fs.existsSync(quartzPath)) {
-    try {
-      const content = fs.readFileSync(quartzPath, 'utf-8');
-      data = JSON.parse(content);
-    } catch (error) {
-      data = {};
-    }
-  }
-
-  // Save profile
-  data[name] = {
-    name,
-    configs: Object.fromEntries(config),
-  };
-
-  fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+  const config = readConfig();
+  writeConfig(config, name);
   console.log(t('config.profileSaved', { name }));
 }
 
@@ -649,7 +610,6 @@ function loadProfiles(): Record<string, any> {
   if (fs.existsSync(quartzPath)) {
     try {
       const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
-      // Filter out 'default' profile from list
       const { default: _, ...profiles } = data;
       return profiles;
     } catch (error) {
@@ -684,10 +644,8 @@ function loadProfile(name: string) {
     process.exit(1);
   }
 
-  // Update default profile with selected profile configs
-  data.default = {
-    configs: data[name].configs,
-  };
+  // Update default profile with selected profile config
+  data.default = data[name];
 
   fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
   console.log(t('config.profileLoaded', { name }));
@@ -713,8 +671,10 @@ function listProfiles() {
   for (const name of profileNames) {
     const profile = profiles[name];
     console.log(`  📦 \x1b[36m${name}\x1b[0m`);
-    const configCount = Object.keys(profile.configs).length;
-    console.log(`     \x1b[2m${configCount} ${t('config.configItems')}\x1b[0m`);
+    if (profile.config) {
+      const platformCount = profile.config.platforms?.length || 0;
+      console.log(`     \x1b[2m${platformCount} 个平台配置\x1b[0m`);
+    }
     console.log('');
   }
 }

@@ -1,9 +1,9 @@
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import {$} from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '../i18n';
-import { getReviewPrompt, getSummaryPrompt } from '../utils/prompt';
+import {t} from '../i18n';
+import {getReviewPrompt, getSummaryPrompt} from '../utils/prompt';
 
 interface ReviewComment {
   file: string;
@@ -35,7 +35,7 @@ function loadQuartzConfig(config: { openaiApiKey: string; openaiBaseUrl: string;
     const data = JSON.parse(content);
     
     // Read from default profile
-    if (data.default && data.default.configs) {
+    if (data.default?.configs) {
       const configs = data.default.configs;
       
       if (configs.OPENAI_API_KEY && !config.openaiApiKey) {
@@ -198,15 +198,13 @@ async function reviewCodeWithAI(
     }
 
     const parsed = JSON.parse(result);
-    const comments: ReviewComment[] = (parsed.comments || []).map((c: any) => ({
-      file,
-      line: typeof c.line === 'number' ? c.line : 1,
-      severity: c.severity || 'info',
-      message: c.message || 'Unknown issue',
-      suggestion: c.suggestion,
+      return (parsed.comments || []).map((c: any) => ({
+        file,
+        line: typeof c.line === 'number' ? c.line : 1,
+        severity: c.severity || 'info',
+        message: c.message || 'Unknown issue',
+        suggestion: c.suggestion,
     }));
-
-    return comments;
   } catch (error) {
     console.error(t('review.error'), error);
     return [];

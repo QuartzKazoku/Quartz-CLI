@@ -1,73 +1,127 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {PlatformConfig, QuartzConfig} from '../types/config';
 
 /**
- * Configuration structure
+ * 获取 quartz.json 文件路径
  */
-export interface QuartzConfig {
-  openaiApiKey: string;
-  openaiBaseUrl: string;
-  openaiModel: string;
-  gitPlatform: 'github' | 'gitlab';
-  githubToken: string;
-  gitlabToken: string;
-  gitlabUrl: string;
+function getQuartzPath(): string {
+    return path.join(process.cwd(), 'quartz.json');
 }
 
 /**
- * Load configuration from quartz.json
- * @returns Configuration object from default profile or null
+ * 读取配置文件
  */
-function loadQuartzJson(): Record<string, string> | null {
-  const quartzPath = path.join(process.cwd(), 'quartz.json');
-  if (!fs.existsSync(quartzPath)) {
-    return null;
-  }
+export function readQuartzConfig(): QuartzConfig {
+    const quartzPath = getQuartzPath();
 
-  try {
-    const content = fs.readFileSync(quartzPath, 'utf-8');
-    const data = JSON.parse(content);
-    
-    // Get default profile
-    if (data.default && data.default.configs) {
-      return data.default.configs;
+    // 默认配置
+    const defaultConfig: QuartzConfig = {
+        openai: {
+            apiKey: '',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4-turbo-preview',
+        },
+        platforms: [],
+        language: {
+            ui: 'en',
+            prompt: 'en',
+        },
+    };
+
+    if (!fs.existsSync(quartzPath)) {
+        return defaultConfig;
     }
-    
-    return null;
-  } catch (error) {
-    console.error('Failed to parse quartz.json:', error);
-    return null;
-  }
+
+    try {
+        const content = fs.readFileSync(quartzPath, 'utf-8');
+        const data = JSON.parse(content);
+
+        if (data.default?.config) {
+            return data.default.config;
+        }
+
+        return defaultConfig;
+    } catch (error) {
+        console.error('Failed to parse quartz.json:', error);
+        return defaultConfig;
+    }
 }
 
+/**
+ * 写入配置文件（新版格式）
+ */
+export function writeQuartzConfig(config: QuartzConfig, profileName: string = 'default'): void {
+    const quartzPath = getQuartzPath();
+    let data: any = {};
+
+    // 读取现有数据
+    if (fs.existsSync(quartzPath)) {
+        try {
+            const content = fs.readFileSync(quartzPath, 'utf-8');
+            data = JSON.parse(content);
+        } catch (error) {
+            console.warn('Failed to read existing config, creating new one:', error);
+            data = {};
+        }
+    }
+
+    // 更新指定profile
+    data[profileName] = {
+        name: profileName,
+        config,
+    };
+
+    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+}
 
 /**
- * Load configuration from quartz.json only
- *
- * @returns Configuration object
+ * 加载配置（对外接口，保持兼容性）
  */
 export function loadConfig(): QuartzConfig {
-  const config: QuartzConfig = {
-    openaiApiKey: '',
-    openaiBaseUrl: 'https://api.openai.com/v1',
-    openaiModel: 'gpt-4-turbo-preview',
-    gitPlatform: 'github',
-    githubToken: '',
-    gitlabToken: '',
-    gitlabUrl: 'https://gitlab.com',
-  };
+    return readQuartzConfig();
+}
 
-  // Load from quartz.json only
-  const quartzConfig = loadQuartzJson();
-  if (quartzConfig) {
-    if (quartzConfig.OPENAI_API_KEY) config.openaiApiKey = quartzConfig.OPENAI_API_KEY;
-    if (quartzConfig.OPENAI_BASE_URL) config.openaiBaseUrl = quartzConfig.OPENAI_BASE_URL;
-    if (quartzConfig.OPENAI_MODEL) config.openaiModel = quartzConfig.OPENAI_MODEL;
-    if (quartzConfig.GIT_PLATFORM) config.gitPlatform = quartzConfig.GIT_PLATFORM as 'github' | 'gitlab';
-    if (quartzConfig.GITHUB_TOKEN) config.githubToken = quartzConfig.GITHUB_TOKEN;
-    if (quartzConfig.GITLAB_TOKEN) config.gitlabToken = quartzConfig.GITLAB_TOKEN;
-    if (quartzConfig.GITLAB_URL) config.gitlabUrl = quartzConfig.GITLAB_URL;
-  }
+/**
+ * 获取平台配置列表
+ */
+export function getPlatformConfigs(): PlatformConfig[] {
+    const config = readQuartzConfig();
+    return config.platforms;
+}
 
-  return config;
+/**
+ * 根据平台类型获取配置
+ */
+export function getPlatformConfig(type: 'github' | 'gitlab'): PlatformConfig | undefined {
+    const config = readQuartzConfig();
+    return config.platforms.find(p => p.type === type);
+}
+
+/**
+ * 添加或更新平台配置
+ */
+export function upsertPlatformConfig(platformConfig: PlatformConfig): void {
+    const config = readQuartzConfig();
+    const existingIndex = config.platforms.findIndex(p => p.type === platformConfig.type && p.url === platformConfig.url);
+
+    if (existingIndex >= 0) {
+        config.platforms[existingIndex] = platformConfig;
+    } else {
+        config.platforms.push(platformConfig);
+    }
+
+    writeQuartzConfig(config);
+}
+
+/**
+ * 删除平台配置
+ */
+export function removePlatformConfig(type: 'github' | 'gitlab', url?: string): void {
+    const config = readQuartzConfig();
+    config.platforms = config.platforms.filter(p => {
+        if (p.type !== type) return true;
+        return !!(url && p.url !== url);
+    });
+    writeQuartzConfig(config);
 }
