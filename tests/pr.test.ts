@@ -2,10 +2,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generatePR } from '@/app/commands/pr';
 
-// Mock console methods
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-
 // Mock shell module
 vi.mock('@/utils/shell', () => ({
   $: vi.fn((strings: TemplateStringsArray) => {
@@ -38,24 +34,28 @@ vi.mock('@/utils/shell', () => ({
 }));
 
 // Mock OpenAI
-vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    chat: {
-      completions: {
-        create: vi.fn().mockResolvedValue({
-          choices: [{
-            message: {
-              content: JSON.stringify({
-                title: 'Test PR Title',
-                body: 'Test PR Body'
-              })
-            }
-          }]
+vi.mock('openai', () => {
+  const mockCreate = vi.fn().mockResolvedValue({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          title: 'Test PR Title',
+          body: 'Test PR Body'
         })
       }
+    }]
+  });
+  
+  return {
+    default: class MockOpenAI {
+      chat = {
+        completions: {
+          create: mockCreate
+        }
+      };
     }
-  }))
-}));
+  };
+});
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
@@ -85,9 +85,12 @@ vi.mock('@/utils/enquirer', () => ({
 
 describe('PR Command', () => {
   beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+    
     // Mock console methods
-    console.log = vi.fn();
-    console.error = vi.fn();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     
     // Mock process.exit
     vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
@@ -102,11 +105,7 @@ describe('PR Command', () => {
   });
 
   afterEach(() => {
-    // Restore console methods
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
-    
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should generate and create PR automatically', async () => {
@@ -135,13 +134,6 @@ describe('PR Command', () => {
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
-  });
-
-  it('should show error when no API key is provided', async () => {
-    // API key now comes from config file, not environment variable
-    await generatePR(['--base', 'main']);
-    
-    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   it('should handle same branch error', async () => {

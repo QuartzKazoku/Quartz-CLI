@@ -1,3 +1,4 @@
+//app/commands/pr.ts
 //cli/commands/pr.ts
 import OpenAI from 'openai';
 import { $ } from '@/utils/shell';
