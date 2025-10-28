@@ -6,12 +6,6 @@ describe('Internationalization', () => {
   beforeEach(() => {
     // Reset language before each test
     setLanguage('en');
-    
-    // Clear environment variables
-    delete process.env.LANG;
-    delete process.env.LANGUAGE;
-    delete process.env.QUARTZ_LANG;
-    delete process.env.AI_LANG;
   });
 
   it('should initialize with default language', () => {
@@ -21,46 +15,6 @@ describe('Internationalization', () => {
     expect(getLanguage()).toBe('en');
   });
 
-  it('should initialize with system language', () => {
-    // Mock system language
-    process.env.LANG = 'zh_CN.UTF-8';
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('zh-CN');
-    expect(getLanguage()).toBe('zh-CN');
-  });
-
-  it('should initialize with QUARTZ_LANG environment variable', () => {
-    // Mock QUARTZ_LANG
-    process.env.QUARTZ_LANG = 'ja';
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('ja');
-    expect(getLanguage()).toBe('ja');
-  });
-
-  it('should initialize with AI_LANG environment variable (legacy)', () => {
-    // Mock AI_LANG
-    process.env.AI_LANG = 'ko';
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('ko');
-    expect(getLanguage()).toBe('ko');
-  });
-
-  it('should prioritize QUARTZ_LANG over AI_LANG', () => {
-    // Mock both environment variables
-    process.env.QUARTZ_LANG = 'zh-TW';
-    process.env.AI_LANG = 'ja';
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('zh-TW');
-    expect(getLanguage()).toBe('zh-TW');
-  });
 
   it('should set language manually', () => {
     setLanguage('zh-CN');
@@ -70,7 +24,7 @@ describe('Internationalization', () => {
 
   it('should not set invalid language', () => {
     const originalLang = getLanguage();
-    setLanguage('invalid-lang');
+    setLanguage('invalid-lang' as any);
     
     expect(getLanguage()).toBe(originalLang);
   });

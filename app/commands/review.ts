@@ -37,7 +37,7 @@ function validateConfig(config: { openaiApiKey: string }): void {
 }
 
 /**
- * Load configuration from environment variables and quartz.json
+ * Load configuration from quartz.json
  * @returns Configuration object
  */
 function loadConfig() {
@@ -45,9 +45,9 @@ function loadConfig() {
   const quartzConfig = readQuartzConfig();
 
   const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || quartzConfig.openai.apiKey || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
-    openaiModel: process.env.OPENAI_MODEL || quartzConfig.openai.model || DEFAULT_VALUES.OPENAI_MODEL,
+    openaiApiKey: quartzConfig.openai.apiKey || '',
+    openaiBaseUrl: quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
+    openaiModel: quartzConfig.openai.model || DEFAULT_VALUES.OPENAI_MODEL,
   };
 
   validateConfig(config);

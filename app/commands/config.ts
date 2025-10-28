@@ -335,7 +335,6 @@ async function configureLanguages(config: QuartzConfig) {
     const lang = await selectLanguage(currentLang, t('config.keys.language'));
     config.language.ui = lang;
 
-    process.env.QUARTZ_LANG = lang;
     setLanguage(lang as any);
 
     const currentPromptLang = config.language.prompt || lang;
@@ -397,6 +396,9 @@ async function configureOpenAI(config: QuartzConfig) {
  * Configure platform-specific tokens
  */
 async function configurePlatformTokens(config: QuartzConfig, platform: string) {
+    // Save current config before updating platform tokens
+    writeConfig(config);
+    
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
     } else if (platform === PLATFORM_TYPES.GITLAB) {
@@ -452,7 +454,17 @@ async function configureGitLabToken(config: QuartzConfig) {
  * Save wizard configuration and show success message
  */
 async function saveWizardConfig(config: QuartzConfig) {
-    writeConfig(config);
+    // Read the latest config to ensure we have all updates including platform tokens
+    const latestConfig = readConfig();
+    
+    // Merge the wizard config with latest config to preserve platform tokens
+    const finalConfig: QuartzConfig = {
+        openai: config.openai,
+        language: config.language,
+        platforms: latestConfig.platforms
+    };
+    
+    writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     await message(
