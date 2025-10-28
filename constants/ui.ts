@@ -2,7 +2,7 @@
 import {CONFIG_KEYS} from "./config.ts";
 
 /**
- * 支持的语言列表
+ * List of supported languages
  */
 export const SUPPORTED_LANGUAGES = [
     {value: 'zh-CN', label: '简体中文 (Simplified Chinese)'},
@@ -13,7 +13,7 @@ export const SUPPORTED_LANGUAGES = [
 ] as const;
 
 /**
- * 配置键图标映射
+ * Configuration key icon mapping
  */
 export const CONFIG_ICONS: Record<string, string> = {
     [CONFIG_KEYS.OPENAI_API_KEY]: '🔑',
@@ -28,7 +28,7 @@ export const CONFIG_ICONS: Record<string, string> = {
 } as const;
 
 /**
- * 终端控制字符
+ * Terminal control characters
  */
 export const TERMINAL = {
     CLEAR: '\x1B[2J\x1B[0f',
@@ -41,7 +41,7 @@ export const TERMINAL = {
 } as const;
 
 /**
- * 敏感配置键（需要隐藏显示）
+ * Sensitive configuration keys (need to hide display)
  */
 export const SENSITIVE_KEYS = [
     CONFIG_KEYS.OPENAI_API_KEY,
@@ -50,17 +50,17 @@ export const SENSITIVE_KEYS = [
 ] as const;
 
 /**
- * Token 显示长度（前N个字符）
+ * Token display length (first N characters)
  */
 export const TOKEN_DISPLAY_LENGTH = 8;
 
 /**
- * 分隔线长度
+ * Separator line length
  */
 export const SEPARATOR_LENGTH = 70;
 
 /**
- * 缩进空格数
+ * Indentation space count
  */
 export const INDENT = {
     LEVEL_1: 2,

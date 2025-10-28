@@ -1,6 +1,6 @@
 //cli/constants/config.ts
 /**
- * 配置文件相关常量
+ * Configuration file related constants
  */
 export const CONFIG_FILE = {
     NAME: 'quartz.json',
@@ -8,7 +8,7 @@ export const CONFIG_FILE = {
 } as const;
 
 /**
- * 配置键名常量
+ * Configuration key name constants
  */
 export const CONFIG_KEYS = {
     OPENAI_API_KEY: 'OPENAI_API_KEY',
@@ -23,11 +23,11 @@ export const CONFIG_KEYS = {
 } as const;
 
 /**
- * 默认配置值
+ * Default configuration values
  */
 export const DEFAULT_VALUES = {
     OPENAI_BASE_URL: 'https://api.openai.com/v1',
-    OPENAI_MODEL: 'gpt-4-turbo-preview',
+    OPENAI_MODEL: 'gpt-5',
     GITLAB_URL: 'https://gitlab.com',
     LANGUAGE_UI: 'en',
     LANGUAGE_PROMPT: 'en',

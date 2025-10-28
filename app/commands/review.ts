@@ -1,12 +1,12 @@
 //cli/commands/review.ts
 import OpenAI from 'openai';
-import {$} from 'bun';
+import { $ } from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import {t} from '../i18n';
-import {getReviewPrompt, getSummaryPrompt} from '../utils/prompt';
-import {readQuartzConfig} from '../utils/config';
-import {DEFAULT_VALUES} from '../constants';
+import { t } from '../../i18n';
+import { getReviewPrompt, getSummaryPrompt } from '../../utils/prompt';
+import { readQuartzConfig } from '../../utils/config';
+import { DEFAULT_VALUES } from '../../constants';
 
 interface ReviewComment {
   file: string;
@@ -40,9 +40,9 @@ function validateConfig(config: { openaiApiKey: string }): void {
  * @returns Configuration object
  */
 function loadConfig() {
-  // 使用新的配置读取方式
+  // Use new configuration reading method
   const quartzConfig = readQuartzConfig();
-  
+
   const config = {
     openaiApiKey: process.env.OPENAI_API_KEY || quartzConfig.openai.apiKey || '',
     openaiBaseUrl: process.env.OPENAI_BASE_URL || quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
@@ -79,7 +79,7 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
 
     // Merge and deduplicate
     const allFiles = [...new Set([...staged, ...unstaged])];
-    
+
     // Only return supported file types
     return allFiles.filter(f =>
       f && fs.existsSync(f) &&
@@ -170,12 +170,12 @@ async function reviewCodeWithAI(
     }
 
     const parsed = JSON.parse(result);
-      return (parsed.comments || []).map((c: any) => ({
-        file,
-        line: typeof c.line === 'number' ? c.line : 1,
-        severity: c.severity || 'info',
-        message: c.message || 'Unknown issue',
-        suggestion: c.suggestion,
+    return (parsed.comments || []).map((c: any) => ({
+      file,
+      line: typeof c.line === 'number' ? c.line : 1,
+      severity: c.severity || 'info',
+      message: c.message || 'Unknown issue',
+      suggestion: c.suggestion,
     }));
   } catch (error) {
     console.error(t('review.error'), error);
@@ -234,7 +234,7 @@ function printResult(result: ReviewResult) {
   // Score and level
   let scoreEmoji: string;
   let scoreDesc: string;
-  
+
   if (score >= 90) {
     scoreEmoji = '🌟';
     scoreDesc = t('scoreLevel.excellent');
@@ -298,7 +298,7 @@ function printResult(result: ReviewResult) {
  */
 function parseArgs(args: string[]): { files?: string[]; output?: string } {
   const result: { files?: string[]; output?: string } = {};
-  
+
   let i = 0;
   while (i < args.length) {
     if (args[i] === '--files' || args[i] === '-f') {
@@ -318,7 +318,7 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
       i++;
     }
   }
-  
+
   return result;
 }
 
@@ -357,7 +357,7 @@ export async function reviewCode(args: string[]) {
   const allComments: ReviewComment[] = [];
   for (const file of files) {
     console.log(t('review.reviewing', { file }));
-    
+
     const diff = await getFileDiff(file);
     if (!diff) {
       console.log(`   ⏭️  Skip\n`);
@@ -366,7 +366,7 @@ export async function reviewCode(args: string[]) {
 
     const content = readFileContent(file);
     const comments = await reviewCodeWithAI(openai, config.openaiModel, file, diff, content);
-    
+
     console.log(`   ✅ ${t('review.found')} ${comments.length} ${t('review.issues')}\n`);
     allComments.push(...comments);
   }

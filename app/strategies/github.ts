@@ -1,15 +1,15 @@
 //cli/strategies/github.ts
-import {BasePlatformStrategy, PullRequestResult} from "./platform.ts";
-import {PlatformConfig} from "../types/config.ts";
+import { BasePlatformStrategy, PullRequestResult } from "./platform.ts";
+import { PlatformConfig } from "../../types/config.ts";
 
 /**
- * GitHub平台策略实现类，用于与GitHub API交互以创建Pull Request、检查分支状态及推送分支。
+ * GitHub platform strategy implementation class for interacting with GitHub API to create Pull Requests, check branch status, and push branches.
  */
 export class GitHubStrategy extends BasePlatformStrategy {
     /**
-     * 构造函数初始化GitHub策略实例。
-     * @param config 平台配置对象，必须是类型为'github'的配置。
-     * @throws 当传入的配置类型不是'github'时抛出错误。
+     * Constructor initializes GitHub strategy instance.
+     * @param config Platform configuration object, must be of type 'github'.
+     * @throws Error when the passed configuration type is not 'github'.
      */
     constructor(private readonly config: PlatformConfig) {
         super();
@@ -19,15 +19,15 @@ export class GitHubStrategy extends BasePlatformStrategy {
     }
 
     /**
-     * 创建一个新的Pull Request。
-     * @param owner 仓库所有者的名称。
-     * @param repo 仓库名称。
-     * @param title Pull Request的标题。
-     * @param body Pull Request的内容描述。
-     * @param head 源分支（通常是特性分支）。
-     * @param base 目标分支（通常是主分支或开发分支）。
-     * @returns 返回一个Promise，解析为包含PR链接和编号的对象。
-     * @throws 当API请求失败时抛出详细错误信息。
+     * Create a new Pull Request.
+     * @param owner Name of the repository owner.
+     * @param repo Repository name.
+     * @param title Title of the Pull Request.
+     * @param body Content description of the Pull Request.
+     * @param head Source branch (usually feature branch).
+     * @param base Target branch (usually main or development branch).
+     * @returns Returns a Promise that resolves to an object containing PR link and number.
+     * @throws Throws detailed error information when API request fails.
      */
     async createPullRequest(
         owner: string,
@@ -37,7 +37,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
         head: string,
         base: string
     ): Promise<PullRequestResult> {
-        // 根据是否自定义URL决定使用GitHub公共API还是私有部署API地址
+        // Decide whether to use GitHub public API or private deployment API address based on whether URL is customized
         const apiUrl = this.config.url
             ? `${this.config.url}/api/v3/repos/${owner}/${repo}/pulls`
             : `https://api.github.com/repos/${owner}/${repo}/pulls`;
@@ -57,7 +57,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
             }),
         });
 
-        // 处理API响应异常情况并构造详细的错误消息
+        // Handle API response exception cases and construct detailed error messages
         if (!response.ok) {
             const error = await response.json();
             let errorMessage = `GitHub API error: ${error.message || response.statusText}`;

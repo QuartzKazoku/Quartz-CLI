@@ -1,6 +1,6 @@
 //cli/types/config.ts
 /**
- * 平台配置接口
+ * Platform configuration interface
  */
 export interface PlatformConfig {
   type: 'github' | 'gitlab';
@@ -9,15 +9,15 @@ export interface PlatformConfig {
 }
 
 /**
- * 语言配置接口
+ * Language configuration interface
  */
 export interface LanguageConfig {
-  ui: string;        // UI语言 (QUARTZ_LANG)
-  prompt: string;    // Prompt语言 (PROMPT_LANG)
+  ui: string;        // UI language (QUARTZ_LANG)
+  prompt: string;    // Prompt language (PROMPT_LANG)
 }
 
 /**
- * OpenAI配置接口
+ * OpenAI configuration interface
  */
 export interface OpenAIConfig {
   apiKey: string;
@@ -26,7 +26,7 @@ export interface OpenAIConfig {
 }
 
 /**
- * Quartz配置结构
+ * Quartz configuration structure
  */
 export interface QuartzConfig {
   openai: OpenAIConfig;
@@ -35,7 +35,7 @@ export interface QuartzConfig {
 }
 
 /**
- * 配置文件结构
+ * Configuration file structure
  */
 export interface QuartzConfigFile {
   default: {

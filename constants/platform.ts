@@ -1,6 +1,6 @@
 //cli/constants/platform.ts
 /**
- * 平台类型常量
+ * Platform type constants
  */
 export const PLATFORM_TYPES = {
     GITHUB: 'github',
@@ -8,7 +8,7 @@ export const PLATFORM_TYPES = {
 } as const;
 
 /**
- * 支持的平台列表
+ * List of supported platforms
  */
 export const SUPPORTED_PLATFORMS = [
     { value: 'github', label: 'GitHub' },

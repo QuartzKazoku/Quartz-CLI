@@ -1,15 +1,15 @@
 //cli/strategies/gitlab.ts
-import {BasePlatformStrategy, PullRequestResult} from "./platform.ts";
-import {PlatformConfig} from "../types/config.ts";
+import { BasePlatformStrategy, PullRequestResult } from "./platform.ts";
+import { PlatformConfig } from "../../types/config.ts";
 
 /**
- * GitLab平台策略实现类，用于与GitLab进行交互，包括创建合并请求、检查分支状态等操作。
+ * GitLab platform strategy implementation class for interacting with GitLab, including creating merge requests, checking branch status, and other operations.
  */
 export class GitLabStrategy extends BasePlatformStrategy {
     /**
-     * 构造函数初始化GitLab策略实例
-     * @param config 平台配置信息，必须是GitLab类型的配置
-     * @throws 当传入的平台类型不是'gitlab.ts'时抛出错误
+     * Constructor initializes GitLab strategy instance
+     * @param config Platform configuration information, must be GitLab type configuration
+     * @throws Error when the passed platform type is not 'gitlab'
      */
     constructor(private config: PlatformConfig) {
         super()
@@ -19,16 +19,16 @@ export class GitLabStrategy extends BasePlatformStrategy {
     }
 
     /**
-     * 创建一个合并请求（Merge Request）
+     * Create a merge request (Merge Request)
      *
-     * @param owner 项目所有者名称
-     * @param repo 仓库名称
-     * @param title 合并请求标题
-     * @param body 合并请求描述内容
-     * @param head 源分支名
-     * @param base 目标分支名
-     * @returns 返回包含合并请求URL和内部ID的结果对象
-     * @throws 当API调用失败或响应异常时抛出错误
+     * @param owner Project owner name
+     * @param repo Repository name
+     * @param title Merge request title
+     * @param body Merge request description content
+     * @param head Source branch name
+     * @param base Target branch name
+     * @returns Returns result object containing merge request URL and internal ID
+     * @throws Error when API call fails or response is abnormal
      */
     async createPullRequest(
         owner: string,
@@ -38,12 +38,12 @@ export class GitLabStrategy extends BasePlatformStrategy {
         head: string,
         base: string
     ): Promise<PullRequestResult> {
-        // 构建GitLab API地址
+        // Build GitLab API address
         const gitlabUrl = this.config.url || 'https://gitlab.com';
         const projectPath = encodeURIComponent(`${owner}/${repo}`);
         const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/merge_requests`;
 
-        // 发起创建合并请求的POST请求
+        // Send POST request to create merge request
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -58,7 +58,7 @@ export class GitLabStrategy extends BasePlatformStrategy {
             }),
         });
 
-        // 处理可能的API错误响应
+        // Handle possible API error responses
         if (!response.ok) {
             const error = await response.json();
             let errorMessage = `GitLab API error: ${error.message || response.statusText}`;
@@ -68,7 +68,7 @@ export class GitLabStrategy extends BasePlatformStrategy {
             throw new Error(errorMessage);
         }
 
-        // 解析成功响应数据并返回结果
+        // Parse successful response data and return result
         const mr = await response.json();
         return {
             url: mr.web_url,

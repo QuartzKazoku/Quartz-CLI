@@ -1,23 +1,23 @@
 //scripts/add-path-comments.ts
 /**
- * 自动为 TypeScript 文件添加路径注释
- * 用法: bun run scripts/add-path-comments.ts
+ * Automatically add path comments to TypeScript files
+ * Usage: bun run scripts/add-path-comments.ts
  */
 
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-// 项目根目录
+// Project root directory
 const ROOT_DIR = process.cwd();
 
-// 需要处理的目录
+// Directories to process
 const TARGET_DIRS = ['cli', 'tests', 'scripts'];
 
-// 需要排除的目录
+// Directories to exclude
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'docs']);
 
 /**
- * 递归获取所有 TypeScript 文件
+ * Recursively get all TypeScript files
  */
 function getAllTsFiles(dir: string, fileList: string[] = []): string[] {
   const files = readdirSync(dir);
@@ -27,7 +27,7 @@ function getAllTsFiles(dir: string, fileList: string[] = []): string[] {
     const stat = statSync(filePath);
 
     if (stat.isDirectory()) {
-      // 排除指定目录
+      // Exclude specified directories
       if (!EXCLUDE_DIRS.has(file)) {
         getAllTsFiles(filePath, fileList);
       }
@@ -40,32 +40,32 @@ function getAllTsFiles(dir: string, fileList: string[] = []): string[] {
 }
 
 /**
- * 检查文件是否已有路径注释
+ * Check if file already has path comment
  */
 function hasPathComment(content: string, relativePath: string): boolean {
   const lines = content.split('\n');
   if (lines.length === 0) return false;
 
   const firstLine = lines[0].trim();
-  // 检查第一行是否已经是路径注释
+  // Check if first line is already a path comment
   return firstLine.startsWith('//') && firstLine.includes(relativePath);
 }
 
 /**
- * 为文件添加路径注释
+ * Add path comment to file
  */
 function addPathComment(filePath: string): boolean {
   try {
     const content = readFileSync(filePath, 'utf-8');
     const relativePath = relative(ROOT_DIR, filePath).replaceAll('\\', '/');
 
-    // 如果已经有路径注释,跳过
+    // If already has path comment, skip
     if (hasPathComment(content, relativePath)) {
       console.log(`⏭️  跳过(已存在): ${relativePath}`);
       return false;
     }
 
-    // 在文件开头添加路径注释
+    // Add path comment at the beginning of the file
     const pathComment = `//${relativePath}\n`;
     const newContent = pathComment + content;
 
@@ -79,7 +79,7 @@ function addPathComment(filePath: string): boolean {
 }
 
 /**
- * 主函数
+ * Main function
  */
 function main() {
   console.log('🚀 开始为 TypeScript 文件添加路径注释...\n');
@@ -88,7 +88,7 @@ function main() {
   let addedFiles = 0;
   let skippedFiles = 0;
 
-  // 处理每个目标目录
+  // Process each target directory
   for (const targetDir of TARGET_DIRS) {
     const dirPath = join(ROOT_DIR, targetDir);
     
@@ -111,7 +111,7 @@ function main() {
     }
   }
 
-  // 输出统计信息
+  // Output statistics
   console.log('\n' + '='.repeat(50));
   console.log('📊 处理完成!');
   console.log(`   总文件数: ${totalFiles}`);
@@ -120,5 +120,5 @@ function main() {
   console.log('='.repeat(50));
 }
 
-// 运行脚本
+// Run script
 main();

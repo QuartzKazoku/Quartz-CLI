@@ -1,13 +1,13 @@
 //cli/commands/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import {setLanguage, t} from '../i18n';
+import { setLanguage, t } from '../../i18n';
 import {
     readQuartzConfig as readConfig,
     upsertPlatformConfig,
     writeQuartzConfig as writeConfig
-} from '../utils/config';
-import {QuartzConfig} from '../types/config';
+} from '../../utils/config';
+import { QuartzConfig } from '../../types/config';
 import {
     CONFIG_FILE,
     CONFIG_KEYS,
@@ -21,17 +21,17 @@ import {
     TOKEN_DISPLAY_LENGTH,
     SEPARATOR_LENGTH,
     INDENT,
-} from '../constants'
+} from '../../constants'
 
 /**
- * 获取 quartz.json 文件路径
+ * Get quartz.json file path
  */
 function getQuartzPath(): string {
     return path.join(process.cwd(), CONFIG_FILE.NAME);
 }
 
 /**
- * 从新配置结构中获取显示值的辅助函数
+ * Helper function to get display value from new configuration structure
  */
 function getConfigDisplayValue(config: QuartzConfig, key: string): string | undefined {
     switch (key) {
@@ -59,21 +59,21 @@ function getConfigDisplayValue(config: QuartzConfig, key: string): string | unde
 }
 
 /**
- * 检查配置键是否为敏感信息
+ * Check if configuration key is sensitive information
  */
 function isSensitiveKey(key: string): boolean {
     return SENSITIVE_KEYS.includes(key as any);
 }
 
 /**
- * 格式化敏感值的显示
+ * Format sensitive value display
  */
 function formatSensitiveValue(value: string): string {
     return value.substring(0, TOKEN_DISPLAY_LENGTH) + '***';
 }
 
 /**
- * 设置配置值
+ * Set configuration value
  */
 function setConfig(key: string, value: string) {
     const config = readConfig();
@@ -95,8 +95,8 @@ function setConfig(key: string, value: string) {
             config.language.prompt = value;
             break;
         case CONFIG_KEYS.GITHUB_TOKEN:
-            upsertPlatformConfig({type: PLATFORM_TYPES.GITHUB, token: value});
-            console.log(t('config.set', {key, value: '***'}));
+            upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
+            console.log(t('config.set', { key, value: '***' }));
             return;
         case CONFIG_KEYS.GITLAB_TOKEN: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
@@ -105,34 +105,34 @@ function setConfig(key: string, value: string) {
                 token: value,
                 url: existingGitlab?.url || DEFAULT_VALUES.GITLAB_URL
             });
-            console.log(t('config.set', {key, value: '***'}));
+            console.log(t('config.set', { key, value: '***' }));
             return;
         }
         case CONFIG_KEYS.GITLAB_URL: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             if (existingGitlab) {
-                upsertPlatformConfig({...existingGitlab, url: value});
+                upsertPlatformConfig({ ...existingGitlab, url: value });
             } else {
                 console.error(t('config.gitlabTokenSetFirst'));
                 return;
             }
-            console.log(t('config.set', {key, value}));
+            console.log(t('config.set', { key, value }));
             return;
         }
         case CONFIG_KEYS.GIT_PLATFORM:
             console.warn(t('config.gitPlatformDeprecated'));
             return;
         default:
-            console.error(t('config.unknownKey', {key}));
+            console.error(t('config.unknownKey', { key }));
             return;
     }
 
     writeConfig(config);
-    console.log(t('config.set', {key, value: isSensitiveKey(key) ? '***' : value}));
+    console.log(t('config.set', { key, value: isSensitiveKey(key) ? '***' : value }));
 }
 
 /**
- * 获取配置值
+ * Get configuration value
  */
 function getConfig(key: string) {
     const config = readConfig();
@@ -142,19 +142,19 @@ function getConfig(key: string) {
         const displayValue = isSensitiveKey(key) ? formatSensitiveValue(value) : value;
         console.log(`${key}=${displayValue}`);
     } else {
-        console.log(t('config.notSet', {key}));
+        console.log(t('config.notSet', { key }));
     }
 }
 
 /**
- * 获取配置键的图标
+ * Get icon for configuration key
  */
 function getConfigIcon(key: string): string {
     return CONFIG_ICONS[key] || '⚙️';
 }
 
 /**
- * 列出所有配置
+ * List all configurations
  */
 function listConfig() {
     const config = readConfig();
@@ -166,16 +166,16 @@ function listConfig() {
     console.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
     console.log('');
 
-    // 配置项列表
+    // Configuration items list
     const configItems = [
-        {key: CONFIG_KEYS.OPENAI_API_KEY, label: t('config.keys.apiKey')},
-        {key: CONFIG_KEYS.OPENAI_BASE_URL, label: t('config.keys.baseUrl')},
-        {key: CONFIG_KEYS.OPENAI_MODEL, label: t('config.keys.model')},
-        {key: CONFIG_KEYS.GITHUB_TOKEN, label: t('config.keys.githubToken')},
-        {key: CONFIG_KEYS.GITLAB_TOKEN, label: t('config.keys.gitlabToken')},
-        {key: CONFIG_KEYS.GITLAB_URL, label: t('config.keys.gitlabUrl')},
-        {key: CONFIG_KEYS.QUARTZ_LANG, label: t('config.keys.language')},
-        {key: CONFIG_KEYS.PROMPT_LANG, label: t('config.keys.promptLanguage')},
+        { key: CONFIG_KEYS.OPENAI_API_KEY, label: t('config.keys.apiKey') },
+        { key: CONFIG_KEYS.OPENAI_BASE_URL, label: t('config.keys.baseUrl') },
+        { key: CONFIG_KEYS.OPENAI_MODEL, label: t('config.keys.model') },
+        { key: CONFIG_KEYS.GITHUB_TOKEN, label: t('config.keys.githubToken') },
+        { key: CONFIG_KEYS.GITLAB_TOKEN, label: t('config.keys.gitlabToken') },
+        { key: CONFIG_KEYS.GITLAB_URL, label: t('config.keys.gitlabUrl') },
+        { key: CONFIG_KEYS.QUARTZ_LANG, label: t('config.keys.language') },
+        { key: CONFIG_KEYS.PROMPT_LANG, label: t('config.keys.promptLanguage') },
     ];
 
     for (const item of configItems) {
@@ -194,7 +194,7 @@ function listConfig() {
         console.log('');
     }
 
-    // 显示配置的平台信息
+    // Display configured platform information
     if (config.platforms.length > 0) {
         console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.configuredPlatforms'));
         console.log('');
@@ -214,7 +214,7 @@ function listConfig() {
 }
 
 /**
- * 打印 ASCII 艺术 Logo
+ * Print ASCII art Logo
  */
 function printLogo() {
     const logo = `
@@ -229,7 +229,7 @@ function printLogo() {
 }
 
 /**
- * 询问问题（改进的格式化）
+ * Ask question (improved formatting)
  */
 async function askQuestion(
     readline: any,
@@ -252,7 +252,7 @@ async function askQuestion(
 }
 
 /**
- * 交互式平台选择器（支持方向键）
+ * Interactive platform selector (supports arrow keys)
  */
 async function selectPlatform(currentPlatform?: string): Promise<string> {
     let selectedIndex = SUPPORTED_PLATFORMS.findIndex(p => p.value === currentPlatform);
@@ -273,7 +273,7 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
 
             console.log('');
             console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform'));
-            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', {default: currentPlatform || PLATFORM_TYPES.GITHUB}));
+            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || PLATFORM_TYPES.GITHUB }));
             console.log('');
 
             for (let index = 0; index < SUPPORTED_PLATFORMS.length; index++) {
@@ -319,7 +319,7 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
 }
 
 /**
- * 交互式语言选择器（支持方向键）
+ * Interactive language selector (supports arrow keys)
  */
 async function selectLanguage(currentLang?: string, title?: string): Promise<string> {
     let selectedIndex = SUPPORTED_LANGUAGES.findIndex(l => l.value === currentLang);
@@ -340,7 +340,7 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
 
             console.log('');
             console.log('\x1b[1m%s\x1b[0m', '🌍 ' + (title || t('config.keys.language')));
-            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.language', {default: currentLang || DEFAULT_VALUES.LANGUAGE_UI}));
+            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.language', { default: currentLang || DEFAULT_VALUES.LANGUAGE_UI }));
             console.log('');
 
             for (let index = 0; index < SUPPORTED_LANGUAGES.length; index++) {
@@ -386,7 +386,7 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
 }
 
 /**
- * 交互式设置向导
+ * Interactive setup wizard
  */
 async function setupWizard() {
     console.clear();
@@ -403,7 +403,7 @@ async function setupWizard() {
     });
 
     try {
-        // UI 语言
+        // UI language
         readline.close();
         const currentLang = config.language.ui;
         const lang = await selectLanguage(currentLang, t('config.keys.language'));
@@ -412,11 +412,11 @@ async function setupWizard() {
         process.env.QUARTZ_LANG = lang;
         setLanguage(lang as any);
 
-        // Prompt 语言
+        // Prompt language
         const currentPromptLang = config.language.prompt || lang;
         config.language.prompt = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
 
-        // Git 平台
+        // Git platform
         const currentPlatform = config.platforms.length > 0 ? config.platforms[0].type : PLATFORM_TYPES.GITHUB;
         const platform = await selectPlatform(currentPlatform);
 
@@ -429,7 +429,7 @@ async function setupWizard() {
         const currentApiKey = config.openai.apiKey;
         const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
         const apiKeyDesc = currentApiKey
-            ? t('config.wizard.apiKeyWithCurrent', {current: formatSensitiveValue(currentApiKey)})
+            ? t('config.wizard.apiKeyWithCurrent', { current: formatSensitiveValue(currentApiKey) })
             : t('config.wizard.apiKey');
 
         const apiKey = await askQuestion(readline2, apiKeyLabel, apiKeyDesc);
@@ -441,7 +441,7 @@ async function setupWizard() {
         const currentBaseUrl = config.openai.baseUrl;
         const defaultBaseUrl = currentBaseUrl || DEFAULT_VALUES.OPENAI_BASE_URL;
         const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
-        const baseUrlDesc = t('config.wizard.baseUrl', {default: defaultBaseUrl});
+        const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
 
         const baseUrl = await askQuestion(readline2, baseUrlLabel, baseUrlDesc);
         if (baseUrl.trim()) {
@@ -454,7 +454,7 @@ async function setupWizard() {
         const currentModel = config.openai.model;
         const defaultModel = currentModel || DEFAULT_VALUES.OPENAI_MODEL;
         const modelLabel = '🤖 ' + t('config.keys.model');
-        const modelDesc = t('config.wizard.model', {default: defaultModel});
+        const modelDesc = t('config.wizard.model', { default: defaultModel });
 
         const model = await askQuestion(readline2, modelLabel, modelDesc);
         if (model.trim()) {
@@ -463,25 +463,25 @@ async function setupWizard() {
             config.openai.model = defaultModel;
         }
 
-        // Git Token（基于选择的平台）
+        // Git Token (based on selected platform)
         if (platform === PLATFORM_TYPES.GITHUB) {
             const existingGithub = config.platforms.find(p => p.type === PLATFORM_TYPES.GITHUB);
             const currentGithubToken = existingGithub?.token;
             const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
             const githubTokenDesc = currentGithubToken
-                ? t('config.wizard.githubTokenWithCurrent', {current: formatSensitiveValue(currentGithubToken)})
+                ? t('config.wizard.githubTokenWithCurrent', { current: formatSensitiveValue(currentGithubToken) })
                 : t('config.wizard.githubToken');
 
             const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
             if (githubToken.trim()) {
-                upsertPlatformConfig({type: PLATFORM_TYPES.GITHUB, token: githubToken.trim()});
+                upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
             }
         } else if (platform === PLATFORM_TYPES.GITLAB) {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             const currentGitlabToken = existingGitlab?.token;
             const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
             const gitlabTokenDesc = currentGitlabToken
-                ? t('config.wizard.gitlabTokenWithCurrent', {current: formatSensitiveValue(currentGitlabToken)})
+                ? t('config.wizard.gitlabTokenWithCurrent', { current: formatSensitiveValue(currentGitlabToken) })
                 : t('config.wizard.gitlabToken');
 
             const gitlabToken = await askQuestion(readline2, gitlabTokenLabel, gitlabTokenDesc);
@@ -489,7 +489,7 @@ async function setupWizard() {
                 const currentGitlabUrl = existingGitlab?.url;
                 const defaultGitlabUrl = currentGitlabUrl || DEFAULT_VALUES.GITLAB_URL;
                 const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
-                const gitlabUrlDesc = t('config.wizard.gitlabUrl', {default: defaultGitlabUrl});
+                const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
 
                 const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc);
                 upsertPlatformConfig({
@@ -502,13 +502,13 @@ async function setupWizard() {
 
         readline2.close();
 
-        // 保存配置
+        // Save configuration
         writeConfig(config);
         console.log('');
         console.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
         console.log('');
         console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success'));
-        console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', {path: getQuartzPath()}));
+        console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() }));
         console.log('');
 
     } catch (error) {
@@ -518,7 +518,7 @@ async function setupWizard() {
 }
 
 /**
- * 显示使用帮助
+ * Show usage help
  */
 function showHelp() {
     console.log('');
@@ -598,23 +598,23 @@ function showHelp() {
 }
 
 /**
- * 将当前配置保存为 profile
+ * Save current configuration as profile
  */
 function saveProfile(name: string) {
     const config = readConfig();
     writeConfig(config, name);
-    console.log(t('config.profileSaved', {name}));
+    console.log(t('config.profileSaved', { name }));
 }
 
 /**
- * 从 quartz.json 加载 profiles
+ * Load profiles from quartz.json
  */
 function loadProfiles(): Record<string, any> {
     const quartzPath = getQuartzPath();
     if (fs.existsSync(quartzPath)) {
         try {
             const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
-            const {[CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles} = data;
+            const { [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = data;
             return profiles;
         } catch (error) {
             console.error('Failed to load profiles:', error);
@@ -625,7 +625,7 @@ function loadProfiles(): Record<string, any> {
 }
 
 /**
- * 加载配置 profile
+ * Load configuration profile
  */
 function loadProfile(name: string) {
     const quartzPath = getQuartzPath();
@@ -642,21 +642,21 @@ function loadProfile(name: string) {
     }
 
     if (!data[name]) {
-        console.error(t('config.profileNotFound', {name}));
+        console.error(t('config.profileNotFound', { name }));
         console.log('\n' + t('config.availableProfiles'));
         listProfiles();
         process.exit(1);
     }
 
-    // 使用选择的 profile 更新 default profile
+    // Update default profile with selected profile
     data[CONFIG_FILE.DEFAULT_PROFILE] = data[name];
 
     fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log(t('config.profileLoaded', {name}));
+    console.log(t('config.profileLoaded', { name }));
 }
 
 /**
- * 列出所有保存的 profiles
+ * List all saved profiles
  */
 function listProfiles() {
     const profiles = loadProfiles();
@@ -677,14 +677,14 @@ function listProfiles() {
         console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 \x1b[36m${name}\x1b[0m`);
         if (profile.config) {
             const platformCount = profile.config.platforms?.length || 0;
-            console.log(`${' '.repeat(INDENT.LEVEL_3)}\x1b[2m${t('config.platformCount', {count: platformCount})}\x1b[0m`);
+            console.log(`${' '.repeat(INDENT.LEVEL_3)}\x1b[2m${t('config.platformCount', { count: platformCount })}\x1b[0m`);
         }
         console.log('');
     }
 }
 
 /**
- * 删除配置 profile
+ * Delete configuration profile
  */
 function deleteProfile(name: string) {
     const quartzPath = getQuartzPath();
@@ -701,17 +701,17 @@ function deleteProfile(name: string) {
     }
 
     if (!data[name]) {
-        console.error(t('config.profileNotFound', {name}));
+        console.error(t('config.profileNotFound', { name }));
         process.exit(1);
     }
 
     delete data[name];
     fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log(t('config.profileDeleted', {name}));
+    console.log(t('config.profileDeleted', { name }));
 }
 
 /**
- * 主配置命令处理器
+ * Main configuration command handler
  */
 export async function configCommand(args: string[]) {
     const subCommand = args[0];
@@ -782,7 +782,7 @@ export async function configCommand(args: string[]) {
             break;
 
         default:
-            console.error(t('config.errors.unknownCommand', {command: subCommand}));
+            console.error(t('config.errors.unknownCommand', { command: subCommand }));
             showHelp();
             process.exit(1);
     }

@@ -1,11 +1,11 @@
 //cli/commands/commit.ts
 import OpenAI from 'openai';
-import {$} from 'bun';
+import { $ } from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import {t} from '../i18n';
-import {getCommitPrompt} from '../utils/prompt';
-import {loadConfig} from '../utils/config';
+import { t } from '../../i18n';
+import { getCommitPrompt } from '../../utils/prompt';
+import { loadConfig } from '../../utils/config';
 
 /**
  * Stage all changes using git add .
@@ -47,10 +47,10 @@ async function getGitDiff(): Promise<string> {
  */
 async function getChangedFiles(): Promise<string[]> {
   try {
-      return (await $`git diff --cached --name-only`.text())
-        .trim()
-        .split('\n')
-        .filter(Boolean);
+    return (await $`git diff --cached --name-only`.text())
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   } catch (error) {
     console.error('Failed to get changed files:', error);
     return [];
@@ -228,7 +228,7 @@ export async function generateCommit(args: string[]) {
     console.error(t('errors.setApiKey'));
     process.exit(1);
   }
-  
+
   const { edit } = parseArgs(args);
 
   // Stage all changes first
@@ -246,7 +246,7 @@ export async function generateCommit(args: string[]) {
 
   // Initialize OpenAI client
   const openai = new OpenAI({
-    apiKey:openAIConfig.apiKey,
+    apiKey: openAIConfig.apiKey,
     baseURL: openAIConfig.baseUrl,
   });
 
@@ -258,7 +258,7 @@ export async function generateCommit(args: string[]) {
     console.log(t('commit.editMode'));
     const tempFile = path.join(process.cwd(), '.git', 'COMMIT_EDITMSG');
     fs.writeFileSync(tempFile, messages[0]);
-    
+
     try {
       await $`git commit -e -F ${tempFile}`;
       console.log(t('commit.success'));

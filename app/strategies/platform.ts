@@ -1,6 +1,6 @@
 //cli/strategies/platform.ts
 /**
- * PR/MR创建结果接口
+ * PR/MR creation result interface
  */
 export interface PullRequestResult {
   url: string;
@@ -9,11 +9,11 @@ export interface PullRequestResult {
 }
 
 /**
- * 平台策略接口
+ * Platform strategy interface
  */
 export interface PlatformStrategy {
   /**
-   * 创建PR/MR
+   * Create PR/MR
    */
   createPullRequest(
     owner: string,
@@ -25,31 +25,31 @@ export interface PlatformStrategy {
   ): Promise<PullRequestResult>;
 
   /**
-   * 检查分支是否在远程存在
+   * Check if branch exists on remote
    */
   isBranchOnRemote(branch: string): Promise<boolean>;
 
   /**
-   * 推送分支到远程
+   * Push branch to remote
    */
   pushBranchToRemote(branch: string): Promise<void>;
 }
 
 /**
- * BasePlatformStrategy 类是一个抽象类，实现了 PlatformStrategy 接口的基础功能
- * 提供了与 Git 远程仓库交互的通用方法，以及需要子类实现的抽象方法
+ * BasePlatformStrategy class is an abstract class that implements the basic functionality of the PlatformStrategy interface
+ * Provides common methods for interacting with Git remote repositories, and abstract methods that need to be implemented by subclasses
  */
 export abstract class BasePlatformStrategy implements PlatformStrategy {
 
     /**
-     * 检查指定分支是否存在于远程仓库
-     * @param branch 要检查的分支名称
-     * @returns Promise<boolean> 如果分支存在于远程仓库则返回 true，否则返回 false
+     * Check if specified branch exists in remote repository
+     * @param branch Branch name to check
+     * @returns Promise<boolean> Returns true if branch exists in remote repository, otherwise returns false
      */
     async isBranchOnRemote(branch: string): Promise<boolean> {
         try {
             const { $ } = await import('bun');
-            // 执行 git ls-remote 命令检查远程分支是否存在
+            // Execute git ls-remote command to check if remote branch exists
             await $`git ls-remote --heads origin ${branch}`.text();
             return true;
         } catch {
@@ -58,15 +58,15 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
     }
 
     /**
-     * 将指定分支推送到远程仓库
-     * @param branch 要推送的分支名称
+     * Push specified branch to remote repository
+     * @param branch Branch name to push
      * @returns Promise<void>
-     * @throws Error 当推送失败时抛出错误
+     * @throws Error when push fails
      */
     async pushBranchToRemote(branch: string): Promise<void> {
         const { $ } = await import('bun');
         try {
-            // 执行 git push 命令将分支推送到远程仓库
+            // Execute git push command to push branch to remote repository
             await $`git push -u origin ${branch}`.quiet();
         } catch (error) {
             throw new Error(`Failed to push branch: ${error}`);
@@ -74,16 +74,16 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
     }
 
     /**
-     * 创建 Pull Request 的抽象方法，需要子类实现具体的平台相关逻辑
-     * @param owner 仓库所有者
-     * @param repo 仓库名称
-     * @param title Pull Request 标题
-     * @param body Pull Request 内容描述
-     * @param head 源分支名称
-     * @param base 目标分支名称
-     * @returns Promise<PullRequestResult> 创建的 Pull Request 结果
+     * Abstract method for creating Pull Request, needs subclasses to implement specific platform-related logic
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @param title Pull Request title
+     * @param body Pull Request content description
+     * @param head Source branch name
+     * @param base Target branch name
+     * @returns Promise<PullRequestResult> Created Pull Request result
      */
-    // 需要子类实现的抽象方法
+    // Abstract method that needs to be implemented by subclasses
     abstract createPullRequest(
         owner: string,
         repo: string,

@@ -1,13 +1,13 @@
 //cli/commands/pr.ts
 import OpenAI from 'openai';
-import {$} from 'bun';
+import { $ } from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import {t} from '../i18n';
-import {getPRPrompt} from '../utils/prompt';
-import {getPlatformConfigs, loadConfig} from '../utils/config';
-import {PlatformStrategy} from '../strategies/platform';
-import {PlatformStrategyFactory} from "../strategies/factory.ts";
+import { t } from '../../i18n/index.ts';
+import { getPRPrompt } from '../../utils/prompt.ts';
+import { getPlatformConfigs, loadConfig } from '../../utils/config.ts';
+import { PlatformStrategy } from '../strategies/platform.ts';
+import { PlatformStrategyFactory } from "../strategies/factory.ts";
 
 /**
  * Get current branch name
@@ -28,10 +28,10 @@ async function getCurrentBranch(): Promise<string> {
  */
 async function getAllBranches(): Promise<string[]> {
   try {
-      return (await $`git branch --format='%(refname:short)'`.text())
-        .trim()
-        .split('\n')
-        .filter(Boolean);
+    return (await $`git branch --format='%(refname:short)'`.text())
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   } catch (error) {
     console.error(t('errors.gitError'), error);
     process.exit(1);
@@ -46,7 +46,7 @@ async function getAllBranches(): Promise<string[]> {
 async function selectBranch(currentBranch: string): Promise<string> {
   const allBranches = await getAllBranches();
   const branches = allBranches.filter(b => b !== currentBranch);
-  
+
   if (branches.length === 0) {
     console.error(t('pr.noBranches'));
     process.exit(1);
@@ -190,10 +190,10 @@ async function getDiffWithBase(baseBranch: string): Promise<string> {
  */
 async function getCommitHistory(baseBranch: string): Promise<string[]> {
   try {
-      return (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
-        .trim()
-        .split('\n')
-        .filter(Boolean);
+    return (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   } catch {
     return [];
   }
@@ -206,10 +206,10 @@ async function getCommitHistory(baseBranch: string): Promise<string[]> {
  */
 async function getChangedFiles(baseBranch: string): Promise<string[]> {
   try {
-      return (await $`git diff ${baseBranch}...HEAD --name-only`.text())
-        .trim()
-        .split('\n')
-        .filter(Boolean);
+    return (await $`git diff ${baseBranch}...HEAD --name-only`.text())
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   } catch {
     return [];
   }
@@ -294,14 +294,14 @@ async function pushBranchToRemote(branch: string): Promise<void> {
 }
 
 /**
- * 使用策略模式创建PR/MR
- * @param strategy - 平台策略实例
- * @param owner - 仓库所有者
- * @param repo - 仓库名称
- * @param title - PR标题
- * @param body - PR正文
- * @param head - 源分支
- * @param base - 目标分支
+ * Create PR/MR using strategy pattern
+ * @param strategy - Platform strategy instance
+ * @param owner - Repository owner
+ * @param repo - Repository name
+ * @param title - PR title
+ * @param body - PR body
+ * @param head - Source branch
+ * @param base - Target branch
  */
 async function createPullRequestWithStrategy(
   strategy: PlatformStrategy,
@@ -313,7 +313,7 @@ async function createPullRequestWithStrategy(
   base: string
 ) {
   try {
-    // 检查分支是否在远程存在
+    // Check if branch exists on remote
     const isHeadOnRemote = await strategy.isBranchOnRemote(head);
     if (!isHeadOnRemote) {
       console.log(t('pr.pushingBranch', { branch: head }));
@@ -321,8 +321,8 @@ async function createPullRequestWithStrategy(
       console.log(t('pr.branchPushed'));
     }
 
-    // 创建PR/MR
-      return await strategy.createPullRequest(owner, repo, title, body, head, base);
+    // Create PR/MR
+    return await strategy.createPullRequest(owner, repo, title, body, head, base);
   } catch (error) {
     console.error(t('pr.failed'), error);
     process.exit(1);
@@ -346,7 +346,7 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
 
     // Delete temporary file
     fs.unlinkSync(tempFile);
-    
+
     console.log(t('pr.success'));
   } catch (error) {
     console.error(t('pr.failed'), error);
@@ -388,12 +388,12 @@ export async function generatePR(args: string[]) {
     console.error(t('errors.setApiKey'));
     process.exit(1);
   }
-  
+
   const { base: specifiedBase, useGH, interactive } = parseArgs(args);
 
   // Get current branch
   const currentBranch = await getCurrentBranch();
-  
+
   // Determine base branch
   let baseBranch: string;
   if (interactive || specifiedBase === null) {
@@ -403,7 +403,7 @@ export async function generatePR(args: string[]) {
     // Use specified base branch
     baseBranch = specifiedBase;
   }
-  
+
   if (currentBranch === baseBranch) {
     console.error(t('pr.sameBranch', { current: currentBranch }));
     console.error(t('pr.switchBranch'));
@@ -456,19 +456,19 @@ export async function generatePR(args: string[]) {
   console.log('━'.repeat(60));
   console.log('');
 
-  // 自动创建 PR/MR（默认行为）
+  // Auto-create PR/MR (default behavior)
   console.log(t('pr.creating'));
 
   if (useGH) {
-    // 使用 GitHub CLI
+    // Use GitHub CLI
     await createPRWithGH(title, body, baseBranch);
   } else if (repoInfo) {
-    // 获取所有平台配置
+    // Get all platform configurations
     const platformConfigs = getPlatformConfigs();
-    
-    // 查找匹配当前仓库平台的配置
+
+    // Find configuration matching current repository platform
     const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
-    
+
     if (!matchingConfig) {
       console.error(t('pr.noToken'));
       console.error(`   请为 ${repoInfo.platform} 配置 token`);
@@ -476,7 +476,7 @@ export async function generatePR(args: string[]) {
       process.exit(1);
     }
 
-    // 使用策略模式创建PR/MR
+    // Use strategy pattern to create PR/MR
     const strategy = PlatformStrategyFactory.create(matchingConfig);
     const result = await createPullRequestWithStrategy(
       strategy,
@@ -487,7 +487,7 @@ export async function generatePR(args: string[]) {
       currentBranch,
       baseBranch
     );
-    
+
     console.log(t('pr.success'));
     console.log(`🔗 ${result.url}`);
   } else {

@@ -1,8 +1,8 @@
 //cli/utils/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import {PlatformConfig, QuartzConfig} from '../types/config';
-import {CONFIG_FILE, DEFAULT_VALUES} from '../constants';
+import { PlatformConfig, QuartzConfig } from '@/types/config';
+import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
 
 /**
  * 获取 quartz.json 文件路径
@@ -51,7 +51,7 @@ export function readQuartzConfig(): QuartzConfig {
 }
 
 /**
- * 写入配置文件
+ * Write configuration file
  */
 export function writeQuartzConfig(config: QuartzConfig, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
     const quartzPath = getQuartzPath();
@@ -78,7 +78,7 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
 }
 
 /**
- * 加载配置（对外接口，保持兼容性）
+ * Load configuration (external interface, maintain compatibility)
  */
 export function loadConfig(): QuartzConfig {
     return readQuartzConfig();

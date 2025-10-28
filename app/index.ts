@@ -1,9 +1,9 @@
 // cli/index.ts
-import { reviewCode } from './commands/review';
+import { reviewCode } from '@/commands/review';
 import { generateCommit } from './commands/commit';
 import { generatePR } from './commands/pr';
 import { configCommand } from './commands/config';
-import { i18n } from './i18n';
+import { i18n } from '../i18n';
 
 /**
  * Print ASCII art logo
@@ -87,30 +87,30 @@ function getUsageText(): string {
   return '';
 }
 
-// 初始化语言
+// Initialize language
 i18n.init();
 const t = i18n.t;
 
-// 获取命令行参数
+// Get command line arguments
 const args = process.argv.slice(2);
 
-// 处理帮助标志
+// Handle help flag
 if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
   getUsageText();
   process.exit(0);
 }
 
-// 处理版本标志
+// Handle version flag
 if (args.includes('-v') || args.includes('--version')) {
   const pkg = await import('../package.json');
   console.log(`${pkg.version}`);
   process.exit(0);
 }
 
-// 获取命令
+// Get command
 const command = args[0];
 
-// 执行命令
+// Execute command
 try {
   switch (command) {
     // Config management

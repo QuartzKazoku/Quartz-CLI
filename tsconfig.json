@@ -14,7 +14,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths":{
+      "@/*":["./*"]
+    }
   },
-  "include": ["scripts/**/*", "*.ts", "cli/**/*"],
+  "include": ["scripts/**/*", "*.ts", "app/**/*", "constants", "types", "i18n", "utils"],
   "exclude": ["node_modules"]
 }
