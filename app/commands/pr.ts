@@ -1,10 +1,15 @@
+//cli/commands/pr.ts
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '../i18n';
-import { getPRPrompt } from '../utils/prompt';
-import { loadConfig } from '../utils/config';
+import { t } from '@/i18n/index';
+import { getPRPrompt } from '@/utils/prompt';
+import { getPlatformConfigs, loadConfig } from '@/utils/config';
+import { PlatformStrategy } from '@/app/strategies/platform';
+import { PlatformStrategyFactory } from "@/app/strategies/factory";
+import { logger } from '@/utils/logger';
+import { select } from '@/utils/enquirer';
 
 /**
  * Get current branch name
@@ -14,7 +19,7 @@ async function getCurrentBranch(): Promise<string> {
   try {
     return (await $`git branch --show-current`.text()).trim();
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     process.exit(1);
   }
 }
@@ -25,28 +30,27 @@ async function getCurrentBranch(): Promise<string> {
  */
 async function getAllBranches(): Promise<string[]> {
   try {
-    const branches = (await $`git branch --format='%(refname:short)'`.text())
+    return (await $`git branch --format='%(refname:short)'`.text())
       .trim()
       .split('\n')
       .filter(Boolean);
-    return branches;
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     process.exit(1);
   }
 }
 
 /**
- * Interactive branch selector with arrow keys
+ * Interactive branch selector using enquirer
  * @param currentBranch - Current branch to exclude from selection
  * @returns Selected branch name
  */
 async function selectBranch(currentBranch: string): Promise<string> {
   const allBranches = await getAllBranches();
   const branches = allBranches.filter(b => b !== currentBranch);
-  
+
   if (branches.length === 0) {
-    console.error(t('pr.noBranches'));
+    logger.error(t('pr.noBranches'));
     process.exit(1);
   }
 
@@ -56,67 +60,13 @@ async function selectBranch(currentBranch: string): Promise<string> {
   const otherBranches = branches.filter(b => !commonBases.has(b));
   const sortedBranches = [...priorityBranches, ...otherBranches];
 
-  let selectedIndex = 0;
+  const choices = sortedBranches.map(branch => ({
+    name: branch,
+    value: branch,
+    message: branch,
+  }));
 
-  return new Promise<string>((resolve) => {
-    // Set up raw mode for arrow key detection
-    if (process.stdin.isTTY) {
-      process.stdin.setRawMode(true);
-    }
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-
-    const render = () => {
-      // Clear previous output
-      if (selectedIndex > 0) {
-        process.stdout.write('\x1b[' + (sortedBranches.length + 2) + 'A');
-      }
-      process.stdout.write('\x1b[J');
-
-      // Display title
-      console.log(`\n${t('pr.selectBranch')}:\n`);
-
-      // Display branches
-      for (let index = 0; index < sortedBranches.length; index++) {
-        const branch = sortedBranches[index];
-        if (index === selectedIndex) {
-          // Highlighted option with cyan color
-          console.log(`  \x1b[36m❯ ${branch}\x1b[0m`);
-        } else {
-          // Normal option
-          console.log(`    ${branch}`);
-        }
-      }
-    };
-
-    const cleanup = () => {
-      if (process.stdin.isTTY) {
-        process.stdin.setRawMode(false);
-      }
-      process.stdin.pause();
-      process.stdin.removeAllListeners('data');
-    };
-
-    render();
-
-    process.stdin.on('data', (key: string) => {
-      if (key === '\u001B[A') { // Up arrow
-        selectedIndex = (selectedIndex - 1 + sortedBranches.length) % sortedBranches.length;
-        render();
-      } else if (key === '\u001B[B') { // Down arrow
-        selectedIndex = (selectedIndex + 1) % sortedBranches.length;
-        render();
-      } else if (key === '\r' || key === '\n') { // Enter
-        cleanup();
-        console.log('');
-        resolve(sortedBranches[selectedIndex]);
-      } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
-        cleanup();
-        console.log('\n');
-        process.exit(0);
-      }
-    });
-  });
+  return await select(t('pr.selectBranch'), choices, 0);
 }
 
 /**
@@ -147,9 +97,9 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
     const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
     const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
 
-    if (gitlabSshMatch && gitlabSshMatch[1].includes('gitlab')) {
+    if (gitlabSshMatch?.[1]?.includes('gitlab')) {
       return { owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab' };
-    } else if (gitlabHttpsMatch && gitlabHttpsMatch[1].includes('gitlab')) {
+    } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
       return { owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab' };
     }
 
@@ -169,14 +119,14 @@ async function getDiffWithBase(baseBranch: string): Promise<string> {
     const diff = await $`git diff ${baseBranch}...HEAD`.text();
 
     if (!diff) {
-      console.error(t('pr.noDiff', { base: baseBranch }));
+      logger.error(t('pr.noDiff', { base: baseBranch }));
       process.exit(1);
     }
 
     return diff;
   } catch (error) {
-    console.error(t('errors.gitError'), error);
-    console.error(t('pr.ensureBranch', { base: baseBranch }));
+    logger.error(t('errors.gitError'), error);
+    logger.error(t('pr.ensureBranch', { base: baseBranch }));
     process.exit(1);
   }
 }
@@ -188,12 +138,10 @@ async function getDiffWithBase(baseBranch: string): Promise<string> {
  */
 async function getCommitHistory(baseBranch: string): Promise<string[]> {
   try {
-    const commits = (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
+    return (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
       .trim()
       .split('\n')
       .filter(Boolean);
-
-    return commits;
   } catch {
     return [];
   }
@@ -206,12 +154,10 @@ async function getCommitHistory(baseBranch: string): Promise<string[]> {
  */
 async function getChangedFiles(baseBranch: string): Promise<string[]> {
   try {
-    const files = (await $`git diff ${baseBranch}...HEAD --name-only`.text())
+    return (await $`git diff ${baseBranch}...HEAD --name-only`.text())
       .trim()
       .split('\n')
       .filter(Boolean);
-
-    return files;
   } catch {
     return [];
   }
@@ -264,7 +210,7 @@ async function generatePRDescription(
       body: parsed.body || 'Update code',
     };
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -296,82 +242,17 @@ async function pushBranchToRemote(branch: string): Promise<void> {
 }
 
 /**
- * Create GitHub PR using API
- * @param token - GitHub token
+ * Create PR/MR using strategy pattern
+ * @param strategy - Platform strategy instance
  * @param owner - Repository owner
  * @param repo - Repository name
  * @param title - PR title
  * @param body - PR body
- * @param head - Head branch
- * @param base - Base branch
- * @returns Created PR object
- */
-async function createGitHubPR(
-  token: string,
-  owner: string,
-  repo: string,
-  title: string,
-  body: string,
-  head: string,
-  base: string
-) {
-  try {
-    // Check if head branch exists on remote
-    const isHeadOnRemote = await isBranchOnRemote(head);
-    if (!isHeadOnRemote) {
-      console.log(t('pr.pushingBranch', { branch: head }));
-      await pushBranchToRemote(head);
-      console.log(t('pr.branchPushed'));
-    }
-
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title,
-        body,
-        head,
-        base,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      // Display more detailed error information
-      let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
-      if (error.errors) {
-        errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
-      }
-      throw new Error(errorMessage);
-    }
-
-    const pr = await response.json();
-    return pr;
-  } catch (error) {
-    console.error(t('pr.failed'), error);
-    process.exit(1);
-  }
-}
-
-/**
- * Create GitLab MR using API
- * @param token - GitLab token
- * @param gitlabUrl - GitLab server URL
- * @param owner - Project namespace
- * @param repo - Project name
- * @param title - MR title
- * @param body - MR description
  * @param head - Source branch
  * @param base - Target branch
- * @returns Created MR object
  */
-async function createGitLabMR(
-  token: string,
-  gitlabUrl: string,
+async function createPullRequestWithStrategy(
+  strategy: PlatformStrategy,
   owner: string,
   repo: string,
   title: string,
@@ -380,45 +261,18 @@ async function createGitLabMR(
   base: string
 ) {
   try {
-    // Check if head branch exists on remote
-    const isHeadOnRemote = await isBranchOnRemote(head);
+    // Check if branch exists on remote
+    const isHeadOnRemote = await strategy.isBranchOnRemote(head);
     if (!isHeadOnRemote) {
-      console.log(t('pr.pushingBranch', { branch: head }));
-      await pushBranchToRemote(head);
-      console.log(t('pr.branchPushed'));
+      logger.info(t('pr.pushingBranch', { branch: head }));
+      await strategy.pushBranchToRemote(head);
+      logger.success(t('pr.branchPushed'));
     }
 
-    // Encode project path for GitLab API
-    const projectPath = encodeURIComponent(`${owner}/${repo}`);
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/merge_requests`;
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'PRIVATE-TOKEN': token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_branch: head,
-        target_branch: base,
-        title,
-        description: body,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      let errorMessage = `GitLab API error: ${error.message || response.statusText}`;
-      if (error.error) {
-        errorMessage += '\nDetails: ' + error.error;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const mr = await response.json();
-    return mr;
+    // Create PR/MR
+    return await strategy.createPullRequest(owner, repo, title, body, head, base);
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -440,10 +294,10 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
 
     // Delete temporary file
     fs.unlinkSync(tempFile);
-    
-    console.log(t('pr.success'));
+
+    logger.success(t('pr.success'));
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -473,21 +327,21 @@ function parseArgs(args: string[]): { base: string | null; useGH: boolean; inter
  * @param args - Command line arguments
  */
 export async function generatePR(args: string[]) {
-  console.log(t('pr.starting'));
+  logger.section(t('pr.starting'));
 
   const config = loadConfig();
-  
-  if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
+  let openAIConfig = config.openai;
+  if (!openAIConfig.apiKey) {
+    logger.error(t('errors.noApiKey'));
+    logger.error(t('errors.setApiKey'));
     process.exit(1);
   }
-  
+
   const { base: specifiedBase, useGH, interactive } = parseArgs(args);
 
   // Get current branch
   const currentBranch = await getCurrentBranch();
-  
+
   // Determine base branch
   let baseBranch: string;
   if (interactive || specifiedBase === null) {
@@ -497,111 +351,100 @@ export async function generatePR(args: string[]) {
     // Use specified base branch
     baseBranch = specifiedBase;
   }
-  
+
   if (currentBranch === baseBranch) {
-    console.error(t('pr.sameBranch', { current: currentBranch }));
-    console.error(t('pr.switchBranch'));
+    logger.error(t('pr.sameBranch', { current: currentBranch }));
+    logger.error(t('pr.switchBranch'));
     process.exit(1);
   }
 
-  console.log(`${t('pr.currentBranch')}: ${currentBranch}`);
-  console.log(`${t('pr.targetBranch')}: ${baseBranch}\n`);
+  logger.line();
+  logger.keyValue(t('pr.currentBranch'), logger.text.primary(currentBranch));
+  logger.keyValue(t('pr.targetBranch'), logger.text.primary(baseBranch));
 
   // Get repository information
   const repoInfo = await getRepoInfo();
   if (repoInfo) {
-    console.log(`${t('pr.repository')}: ${repoInfo.owner}/${repoInfo.repo}\n`);
+    logger.keyValue(t('pr.repository'), logger.text.primary(`${repoInfo.owner}/${repoInfo.repo}`));
   }
+  logger.line();
 
   // Get change information
   const diff = await getDiffWithBase(baseBranch);
   const commits = await getCommitHistory(baseBranch);
   const files = await getChangedFiles(baseBranch);
 
-  console.log(t('pr.statistics'));
-  console.log(`   - ${commits.length} ${t('pr.commits')}`);
-  console.log(`   - ${files.length} ${t('pr.filesChanged')}\n`);
+  logger.section(t('pr.statistics'));
+  logger.listItem(`${logger.text.primary(commits.length.toString())} ${t('pr.commits')}`);
+  logger.listItem(`${logger.text.primary(files.length.toString())} ${t('pr.filesChanged')}`);
+  logger.line();
 
   // Initialize OpenAI client
   const openai = new OpenAI({
-    apiKey: config.openaiApiKey,
-    baseURL: config.openaiBaseUrl,
+    apiKey: openAIConfig.apiKey,
+    baseURL: openAIConfig.baseUrl,
   });
 
   // Generate PR description
-  console.log(t('pr.generating'));
+  const spinner = logger.spinner(t('pr.generating'));
   const { title, body } = await generatePRDescription(
     openai,
-    config.openaiModel,
+    openAIConfig.model,
     diff,
     commits,
     files,
     currentBranch,
     baseBranch
   );
+  spinner.succeed(t('pr.generating'));
 
-  console.log(t('pr.generatedTitle'));
-  console.log('━'.repeat(60));
-  console.log(title);
-  console.log('━'.repeat(60));
-  console.log(t('pr.generatedBody'));
-  console.log('━'.repeat(60));
-  console.log(body);
-  console.log('━'.repeat(60));
-  console.log('');
+  logger.line();
+  logger.section(t('pr.generatedTitle'));
+  logger.box(title, { padding: 1 });
 
-  // Auto create PR/MR (default behavior)
-  console.log(t('pr.creating'));
+  logger.section(t('pr.generatedBody'));
+  logger.box(body, { padding: 1 });
+  logger.line();
+
+  // Auto-create PR/MR (default behavior)
+  const createSpinner = logger.spinner(t('pr.creating'));
 
   if (useGH) {
     // Use GitHub CLI
     await createPRWithGH(title, body, baseBranch);
+    createSpinner.succeed(t('pr.success'));
   } else if (repoInfo) {
-    const platform = config.gitPlatform || repoInfo.platform;
-    
-    if (platform === 'github') {
-      if (config.githubToken) {
-        // Use GitHub API
-        const pr = await createGitHubPR(
-          config.githubToken,
-          repoInfo.owner,
-          repoInfo.repo,
-          title,
-          body,
-          currentBranch,
-          baseBranch
-        );
-        console.log(t('pr.success'));
-        console.log(`🔗 ${pr.html_url}`);
-      } else {
-        console.error(t('pr.noToken'));
-        console.error(t('pr.useGHTip'));
-        process.exit(1);
-      }
-    } else if (platform === 'gitlab') {
-      if (config.gitlabToken) {
-        // Use GitLab API
-        const mr = await createGitLabMR(
-          config.gitlabToken,
-          config.gitlabUrl,
-          repoInfo.owner,
-          repoInfo.repo,
-          title,
-          body,
-          currentBranch,
-          baseBranch
-        );
-        console.log(t('pr.success'));
-        console.log(`🔗 ${mr.web_url}`);
-      } else {
-        console.error(t('pr.noToken'));
-        console.error('   Please set GITLAB_TOKEN in configuration');
-        process.exit(1);
-      }
+    // Get all platform configurations
+    const platformConfigs = getPlatformConfigs();
+
+    // Find configuration matching current repository platform
+    const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
+
+    if (!matchingConfig) {
+      createSpinner.fail(t('pr.noToken'));
+      logger.error(`   请为 ${repoInfo.platform} 配置 token`);
+      logger.error(t('pr.useGHTip'));
+      process.exit(1);
     }
+
+    // Use strategy pattern to create PR/MR
+    const strategy = PlatformStrategyFactory.create(matchingConfig);
+    const result = await createPullRequestWithStrategy(
+      strategy,
+      repoInfo.owner,
+      repoInfo.repo,
+      title,
+      body,
+      currentBranch,
+      baseBranch
+    );
+
+    createSpinner.succeed(t('pr.success'));
+    logger.line();
+    logger.box(`🔗 ${result.url}`, { title: 'PR/MR URL', padding: 1 });
   } else {
-    console.error(t('pr.noToken'));
-    console.error(t('pr.useGHTip'));
+    createSpinner.fail(t('pr.noToken'));
+    logger.error(t('pr.useGHTip'));
     process.exit(1);
   }
 }

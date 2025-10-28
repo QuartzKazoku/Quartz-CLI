@@ -1,32 +1,43 @@
 {
   "name": "quartz-cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "AI-powered Git workflow automation for humans.Streamline your development workflow with intelligent commit messages, pull requests, and code reviews",
   "type": "module",
-  "module": "index.ts",
-  "main": "index.ts",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "quartz": "cli/index.ts"
+    "quartz": "dist/index.js"
   },
   "scripts": {
-    "review": "bun run scripts/review.ts",
-    "cli": "bun run cli/index.ts",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
-    "test:specific": "bun test",
-    "start": "bun run cli/index.ts",
-    "build": "bun build ./cli/index.ts --outdir ./dist --target bun",
-    "dev": "bun --watch cli/index.ts",
+    "add-path-comments": "tsx scripts/add-path-comments.ts",
+    "review": "tsx scripts/review.ts",
+    "cli": "tsx app/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "start": "tsx app/index.ts",
+    "build": "tsup",
+    "dev": "tsx watch app/index.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "release": "bun run build && npm publish",
-    "prepublishOnly": "bun run build"
+    "release": "npm run build && npm publish",
+    "release:dry": "npm run build && npm publish --dry-run",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint . --write",
+    "format": "biome format .",
+    "format:fix": "biome format . --write",
+    "check": "biome check .",
+    "check:fix": "biome check . --write",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "postversion": "git push --follow-tags"
   },
   "files": [
     "dist",
-    "cli",
+    "app",
     "README.md",
     "LICENSE"
   ],
@@ -47,22 +58,40 @@
     "cli",
     "commit-message",
     "pull-request",
-    "bun"
+    "typescript"
   ],
   "author": "",
   "license": "MIT",
   "engines": {
-    "bun": ">=1.0.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@octokit/rest": "^20.0.2",
-    "openai": "^4.28.0"
+    "boxen": "^8.0.1",
+    "chalk": "^5.6.2",
+    "cli-progress": "^3.12.0",
+    "commander": "^14.0.2",
+    "consola": "^3.4.2",
+    "enquirer": "^2.4.1",
+    "execa": "^9.6.0",
+    "figlet": "^1.9.3",
+    "gradient-string": "^3.0.0",
+    "jsonc-parser": "^3.3.1",
+    "openai": "^4.28.0",
+    "ora": "^9.0.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "bun-types": "latest",
+    "@types/node": "^24.9.1",
+    "@vitest/coverage-v8": "^4.0.4",
+    "@vitest/ui": "^4.0.4",
+    "biome": "^0.3.3",
+    "happy-dom": "^20.0.8",
+    "husky": "^9.1.7",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.2",
     "vitepress": "^2.0.0-alpha.12",
-    "vitepress-plugin-tabs": "^0.7.3"
-  },
-  "packageManager": "bun@1.0.0"
+    "vitepress-plugin-tabs": "^0.7.3",
+    "vitest": "^4.0.4"
+  }
 }

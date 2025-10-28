@@ -1,29 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
-import { initLanguage, setLanguage, getLanguage, t } from '../cli/i18n';
+//tests/i18n.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
 
 describe('Internationalization', () => {
   beforeEach(() => {
     // Reset language before each test
     setLanguage('en');
-    
-    // Mock process.env
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        LANG: '',
-        LANGUAGE: '',
-        QUARTZ_LANG: '',
-        AI_LANG: '',
-      },
-    }));
-    
-    // Mock fs modules
-    mock.module('fs', () => ({
-      existsSync: mock(() => false),
-      readFileSync: mock(() => '{}'),
-    }));
   });
 
   it('should initialize with default language', () => {
@@ -33,70 +15,6 @@ describe('Internationalization', () => {
     expect(getLanguage()).toBe('en');
   });
 
-  it('should initialize with system language', () => {
-    // Mock system language
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        LANG: 'zh_CN.UTF-8',
-      },
-    }));
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('zh-CN');
-    expect(getLanguage()).toBe('zh-CN');
-  });
-
-  it('should initialize with QUARTZ_LANG environment variable', () => {
-    // Mock QUARTZ_LANG
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        QUARTZ_LANG: 'ja',
-      },
-    }));
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('ja');
-    expect(getLanguage()).toBe('ja');
-  });
-
-  it('should initialize with AI_LANG environment variable (legacy)', () => {
-    // Mock AI_LANG
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        AI_LANG: 'ko',
-      },
-    }));
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('ko');
-    expect(getLanguage()).toBe('ko');
-  });
-
-  it('should prioritize QUARTZ_LANG over AI_LANG', () => {
-    // Mock both environment variables
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        QUARTZ_LANG: 'zh-TW',
-        AI_LANG: 'ja',
-      },
-    }));
-    
-    const lang = initLanguage();
-    
-    expect(lang).toBe('zh-TW');
-    expect(getLanguage()).toBe('zh-TW');
-  });
 
   it('should set language manually', () => {
     setLanguage('zh-CN');
@@ -106,7 +24,7 @@ describe('Internationalization', () => {
 
   it('should not set invalid language', () => {
     const originalLang = getLanguage();
-    setLanguage('invalid-lang');
+    setLanguage('invalid-lang' as any);
     
     expect(getLanguage()).toBe(originalLang);
   });

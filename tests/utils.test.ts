@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
-import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '../cli/utils/prompt';
-import { initLanguage, setLanguage, getLanguage, t } from '../cli/i18n';
+//tests/utils.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '@/utils/prompt';
+import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
 
 describe('Utils Functions', () => {
   describe('Prompt Functions', () => {
