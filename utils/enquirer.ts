@@ -1,5 +1,7 @@
 // utils/enquirer.ts
-import enquirer from 'enquirer';
+import Enquirer from 'enquirer';
+
+const enquirer = new Enquirer();
 
 /**
  * Select from a list of options
@@ -13,9 +15,8 @@ export async function select<T = string>(
   choices: Array<{ name: string; value: T; message?: string }>,
   initial: number = 0
 ): Promise<T> {
-  const { Select } = enquirer;
-  
-  const prompt = new Select({
+  const response = await enquirer.prompt({
+    type: 'select',
     name: 'value',
     message,
     choices: choices.map(c => ({
@@ -24,10 +25,9 @@ export async function select<T = string>(
       value: c.value,
     })),
     initial,
-  });
+  }) as any;
 
-  const result = await prompt.run();
-  return result as T;
+  return response.value;
 }
 
 /**
@@ -42,15 +42,15 @@ export async function input(
   initial?: string,
   validate?: (value: string) => boolean | string
 ): Promise<string> {
-  const { Input } = enquirer;
-  
-  const prompt = new Input({
+  const response = await enquirer.prompt({
+    type: 'input',
+    name: 'value',
     message,
     initial,
     validate,
-  });
+  }) as any;
 
-  return await prompt.run();
+  return response.value;
 }
 
 /**
@@ -59,13 +59,13 @@ export async function input(
  * @returns User input (hidden)
  */
 export async function password(message: string): Promise<string> {
-  const { Password } = enquirer;
-  
-  const prompt = new Password({
+  const response = await enquirer.prompt({
+    type: 'password',
+    name: 'value',
     message,
-  });
+  }) as any;
 
-  return await prompt.run();
+  return response.value;
 }
 
 /**
@@ -78,14 +78,14 @@ export async function confirm(
   message: string,
   initial: boolean = false
 ): Promise<boolean> {
-  const { Confirm } = enquirer;
-  
-  const prompt = new Confirm({
+  const response = await enquirer.prompt({
+    type: 'confirm',
+    name: 'value',
     message,
     initial,
-  });
+  }) as any;
 
-  return await prompt.run();
+  return response.value;
 }
 
 /**
@@ -100,9 +100,8 @@ export async function multiselect<T = string>(
   choices: Array<{ name: string; value: T; message?: string }>,
   initial?: number[]
 ): Promise<T[]> {
-  const { MultiSelect } = enquirer;
-  
-  const prompt = new MultiSelect({
+  const response = await enquirer.prompt({
+    type: 'multiselect',
     name: 'value',
     message,
     choices: choices.map(c => ({
@@ -111,10 +110,9 @@ export async function multiselect<T = string>(
       value: c.value,
     })),
     initial,
-  });
+  }) as any;
 
-  const result = await prompt.run();
-  return result as T[];
+  return response.value;
 }
 
 /**
@@ -129,9 +127,8 @@ export async function autocomplete<T = string>(
   choices: Array<{ name: string; value: T; message?: string }>,
   initial?: number
 ): Promise<T> {
-  const { AutoComplete } = enquirer;
-  
-  const prompt = new AutoComplete({
+  const response = await enquirer.prompt({
+    type: 'autocomplete',
     name: 'value',
     message,
     choices: choices.map(c => ({
@@ -140,10 +137,9 @@ export async function autocomplete<T = string>(
       value: c.value,
     })),
     initial,
-  });
+  }) as any;
 
-  const result = await prompt.run();
-  return result as T;
+  return response.value;
 }
 
 /**
@@ -195,8 +191,6 @@ export async function message(
   details?: string,
   type: 'success' | 'info' | 'error' | 'warning' = 'info'
 ): Promise<void> {
-  const { Snippet } = enquirer;
-  
   const icons = {
     success: '✅',
     info: 'ℹ️',
