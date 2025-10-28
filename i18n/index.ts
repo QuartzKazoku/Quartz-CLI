@@ -1,35 +1,13 @@
 //cli/i18n/index.ts
 import type { Language, Translations } from './locales';
 import { locales, defaultLanguage } from './locales';
-import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
 
 // Current language
 let currentLanguage: Language = defaultLanguage;
 
-// Load language settings from config file
-function loadLanguageFromConfig(): Language | null {
-  // Priority 1: .ai-config.json file (legacy support)
-  try {
-    const configPath = join(process.cwd(), '.ai-config.json');
-    if (existsSync(configPath)) {
-      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-      if (config.language && locales[config.language as Language]) {
-        return config.language as Language;
-      }
-    }
-  } catch (error) {
-      console.warn('Failed to load or parse .ai-config.json:', error);
-  }
-  
-  return null;
-}
-
 // Initialize language
 export function initLanguage(): Language {
-  // Priority: .ai-config.json > default language
-  const configLang = loadLanguageFromConfig();
-  currentLanguage = configLang || defaultLanguage;
+  currentLanguage = defaultLanguage;
   return currentLanguage;
 }
 
