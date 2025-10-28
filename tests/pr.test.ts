@@ -2,10 +2,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generatePR } from '@/app/commands/pr';
 
-// Mock console methods
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-
 // Mock shell module
 vi.mock('@/utils/shell', () => ({
   $: vi.fn((strings: TemplateStringsArray) => {
@@ -89,9 +85,12 @@ vi.mock('@/utils/enquirer', () => ({
 
 describe('PR Command', () => {
   beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+    
     // Mock console methods
-    console.log = vi.fn();
-    console.error = vi.fn();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     
     // Mock process.exit
     vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
@@ -106,11 +105,7 @@ describe('PR Command', () => {
   });
 
   afterEach(() => {
-    // Restore console methods
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
-    
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should generate and create PR automatically', async () => {

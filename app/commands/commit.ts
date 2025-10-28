@@ -1,3 +1,4 @@
+//app/commands/commit.ts
 //cli/commands/commit.ts
 import OpenAI from 'openai';
 import { $ } from '@/utils/shell';

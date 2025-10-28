@@ -1,3 +1,4 @@
+//app/index.ts
 // cli/index.ts
 import { reviewCode, generateCommit, generatePR, configCommand }
   from '@/app/commands';

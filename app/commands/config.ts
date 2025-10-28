@@ -1,3 +1,4 @@
+//app/commands/config.ts
 //cli/commands/config.ts
 import fs from 'node:fs';
 import path from 'node:path';

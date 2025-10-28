@@ -11,7 +11,7 @@ import { join, relative } from 'node:path';
 const ROOT_DIR = process.cwd();
 
 // Directories to process
-const TARGET_DIRS = ['cli', 'tests', 'scripts'];
+const TARGET_DIRS = ['app', 'tests', 'scripts'];
 
 // Directories to exclude
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'docs']);
@@ -91,10 +91,10 @@ function main() {
   // Process each target directory
   for (const targetDir of TARGET_DIRS) {
     const dirPath = join(ROOT_DIR, targetDir);
-    
+
     try {
       const files = getAllTsFiles(dirPath);
-      
+
       console.log(`\n📁 处理目录: ${targetDir} (共 ${files.length} 个文件)`);
       console.log('─'.repeat(50));
 
@@ -107,7 +107,7 @@ function main() {
         }
       }
     } catch (error) {
-      console.error(`❌ 无法访问目录: ${targetDir}`,error);
+      console.error(`❌ 无法访问目录: ${targetDir}`, error);
     }
   }
 
