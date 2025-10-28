@@ -1,3 +1,4 @@
+//app/strategies/factory.ts
 //cli/strategies/factory.ts
 import { PlatformConfig } from "@/types/config";
 import { PlatformStrategy } from "./platform";
