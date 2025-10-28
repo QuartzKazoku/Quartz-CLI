@@ -1,7 +1,7 @@
 //tests/utils.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '../utils/prompt';
-import { initLanguage, setLanguage, getLanguage, t } from '../i18n';
+import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '@/utils/prompt';
+import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
 
 describe('Utils Functions', () => {
   describe('Prompt Functions', () => {

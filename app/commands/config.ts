@@ -1,13 +1,13 @@
 //cli/commands/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import { setLanguage, t } from '../../i18n';
+import { setLanguage, t } from '@/i18n';
 import {
     readQuartzConfig as readConfig,
     upsertPlatformConfig,
     writeQuartzConfig as writeConfig
-} from '../../utils/config';
-import { QuartzConfig } from '../../types/config';
+} from '@/utils/config';
+import { QuartzConfig } from '@/types/config';
 import {
     CONFIG_FILE,
     CONFIG_KEYS,
@@ -20,9 +20,9 @@ import {
     TOKEN_DISPLAY_LENGTH,
     SEPARATOR_LENGTH,
     INDENT,
-} from '../../constants';
-import { select, input, message } from '../../utils/enquirer';
-import { logger } from '../../utils/logger';
+} from '@/constants';
+import { select, input, message } from '@/utils/enquirer';
+import { logger } from '@/utils/logger';
 
 /**
  * Get quartz.jsonc file path

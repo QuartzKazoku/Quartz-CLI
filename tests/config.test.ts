@@ -1,6 +1,6 @@
 //tests/config.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { configCommand } from '../app/commands/config';
+import { configCommand } from '@/app/commands/config';
 
 // Mock console methods
 const originalConsoleLog = console.log;

@@ -1,6 +1,6 @@
 //tests/commit.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { generateCommit } from '../app/commands/commit';
+import { generateCommit } from '@/app/commands/commit';
 
 // Mock console methods
 const originalConsoleLog = console.log;

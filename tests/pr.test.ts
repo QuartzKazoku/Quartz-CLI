@@ -1,6 +1,6 @@
 //tests/pr.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { generatePR } from '../app/commands/pr';
+import { generatePR } from '@/app/commands/pr';
 
 // Mock console methods
 const originalConsoleLog = console.log;

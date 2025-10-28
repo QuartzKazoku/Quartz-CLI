@@ -1,5 +1,5 @@
 // Traditional Chinese translations
-import type { Translations } from '../locales';
+import type { Translations } from '@/i18n/locales';
 
 export const zhTW: Translations = {
   common: {

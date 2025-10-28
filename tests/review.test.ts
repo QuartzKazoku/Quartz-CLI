@@ -1,6 +1,6 @@
 //tests/review.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { reviewCode } from '../app/commands/review';
+import { reviewCode } from '@/app/commands/review';
 
 // Mock console methods
 const originalConsoleLog = console.log;

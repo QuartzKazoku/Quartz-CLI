@@ -1,6 +1,6 @@
 //cli/strategies/github.ts
-import { BasePlatformStrategy, PullRequestResult } from "./platform.ts";
-import { PlatformConfig } from "../../types/config.ts";
+import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { PlatformConfig } from "@/types/config";
 
 /**
  * GitHub platform strategy implementation class for interacting with GitHub API to create Pull Requests, check branch status, and push branches.
@@ -59,7 +59,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
 
         // Handle API response exception cases and construct detailed error messages
         if (!response.ok) {
-            const error = await response.json();
+            const error = await response.json() as { message?: string; errors?: unknown };
             let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
             if (error.errors) {
                 errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
@@ -67,7 +67,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
             throw new Error(errorMessage);
         }
 
-        const pr = await response.json();
+        const pr = await response.json() as { html_url: string; number: number };
         return {
             url: pr.html_url,
             number: pr.number,

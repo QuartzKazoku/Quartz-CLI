@@ -3,13 +3,13 @@ import OpenAI from 'openai';
 import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '../../i18n/index.ts';
-import { getPRPrompt } from '../../utils/prompt.ts';
-import { getPlatformConfigs, loadConfig } from '../../utils/config.ts';
-import { PlatformStrategy } from '../strategies/platform.ts';
-import { PlatformStrategyFactory } from "../strategies/factory.ts";
-import { logger } from '../../utils/logger.ts';
-import { select } from '../../utils/enquirer.ts';
+import { t } from '@/i18n/index';
+import { getPRPrompt } from '@/utils/prompt';
+import { getPlatformConfigs, loadConfig } from '@/utils/config';
+import { PlatformStrategy } from '@/app/strategies/platform';
+import { PlatformStrategyFactory } from "@/app/strategies/factory";
+import { logger } from '@/utils/logger';
+import { select } from '@/utils/enquirer';
 
 /**
  * Get current branch name

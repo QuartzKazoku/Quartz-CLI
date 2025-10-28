@@ -1,6 +1,6 @@
 //cli/strategies/gitlab.ts
-import { BasePlatformStrategy, PullRequestResult } from "./platform.ts";
-import { PlatformConfig } from "../../types/config.ts";
+import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { PlatformConfig } from "@/types/config";
 
 /**
  * GitLab platform strategy implementation class for interacting with GitLab, including creating merge requests, checking branch status, and other operations.
@@ -60,7 +60,7 @@ export class GitLabStrategy extends BasePlatformStrategy {
 
         // Handle possible API error responses
         if (!response.ok) {
-            const error = await response.json();
+            const error = await response.json() as { message?: string; error?: string };
             let errorMessage = `GitLab API error: ${error.message || response.statusText}`;
             if (error.error) {
                 errorMessage += '\nDetails: ' + error.error;
@@ -69,7 +69,7 @@ export class GitLabStrategy extends BasePlatformStrategy {
         }
 
         // Parse successful response data and return result
-        const mr = await response.json();
+        const mr = await response.json() as { web_url: string; iid: number };
         return {
             url: mr.web_url,
             id: mr.iid,

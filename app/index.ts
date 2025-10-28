@@ -1,8 +1,8 @@
 // cli/index.ts
 import { reviewCode, generateCommit, generatePR, configCommand }
   from '@/app/commands';
-import { i18n } from '../i18n';
-import { logger } from '../utils/logger';
+import { i18n } from '@/i18n';
+import { logger } from '@/utils/logger';
 
 /**
  * Print ASCII art logo

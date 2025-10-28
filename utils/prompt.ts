@@ -1,5 +1,5 @@
 //cli/utils/prompt.ts
-import { getLanguage } from '../i18n';
+import { getLanguage } from '@/i18n';
 
 // Get prompt language from UI language
 function getPromptLanguage(): string {

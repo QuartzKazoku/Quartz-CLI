@@ -1,6 +1,6 @@
 //tests/i18n.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initLanguage, setLanguage, getLanguage, t } from '../i18n';
+import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
 
 describe('Internationalization', () => {
   beforeEach(() => {
