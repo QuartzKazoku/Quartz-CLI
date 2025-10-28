@@ -27,7 +27,7 @@
  */
 export const CONFIG_FILE = {
     /** Configuration file name with JSONC extension (JSON with comments) */
-    NAME: 'quartz.jsonc',
+    NAME: process.env.NODE_ENV === 'test' ? 'quartz.example.jsonc' : 'quartz.jsonc',
     /** Default profile name used when no profile is specified */
     DEFAULT_PROFILE: 'default',
 } as const;
