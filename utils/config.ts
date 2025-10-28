@@ -45,7 +45,7 @@ export function readQuartzConfig(): QuartzConfig {
 
         return defaultConfig;
     } catch (error) {
-        console.error('Failed to parse quartz.json:', error);
+        // console.error('Failed to parse quartz.json:', error);
         return defaultConfig;
     }
 }
@@ -63,7 +63,7 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
             const content = fs.readFileSync(quartzPath, 'utf-8');
             data = JSON.parse(content);
         } catch (error) {
-            console.warn('Failed to read existing config, creating new one:', error);
+            // console.warn('Failed to read existing config, creating new one:', error);
             data = {};
         }
     }

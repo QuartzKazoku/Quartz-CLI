@@ -8,6 +8,7 @@ import { getPRPrompt } from '../../utils/prompt.ts';
 import { getPlatformConfigs, loadConfig } from '../../utils/config.ts';
 import { PlatformStrategy } from '../strategies/platform.ts';
 import { PlatformStrategyFactory } from "../strategies/factory.ts";
+import { logger } from '../../utils/logger.ts';
 
 /**
  * Get current branch name
@@ -17,7 +18,7 @@ async function getCurrentBranch(): Promise<string> {
   try {
     return (await $`git branch --show-current`.text()).trim();
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     process.exit(1);
   }
 }
@@ -33,7 +34,7 @@ async function getAllBranches(): Promise<string[]> {
       .split('\n')
       .filter(Boolean);
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     process.exit(1);
   }
 }
@@ -48,7 +49,7 @@ async function selectBranch(currentBranch: string): Promise<string> {
   const branches = allBranches.filter(b => b !== currentBranch);
 
   if (branches.length === 0) {
-    console.error(t('pr.noBranches'));
+    logger.error(t('pr.noBranches'));
     process.exit(1);
   }
 
@@ -83,7 +84,7 @@ async function selectBranch(currentBranch: string): Promise<string> {
         const branch = sortedBranches[index];
         if (index === selectedIndex) {
           // Highlighted option with cyan color
-          console.log(`  \x1b[36m❯ ${branch}\x1b[0m`);
+          console.log(`  ${logger.text.primary(`❯ ${branch}`)}`);
         } else {
           // Normal option
           console.log(`    ${branch}`);
@@ -110,11 +111,11 @@ async function selectBranch(currentBranch: string): Promise<string> {
         render();
       } else if (key === '\r' || key === '\n') { // Enter
         cleanup();
-        console.log('');
+        logger.line();
         resolve(sortedBranches[selectedIndex]);
       } else if (key === '\u001B' || key === '\u0003') { // Esc or Ctrl+C
         cleanup();
-        console.log('\n');
+        logger.line();
         process.exit(0);
       }
     });
@@ -171,14 +172,14 @@ async function getDiffWithBase(baseBranch: string): Promise<string> {
     const diff = await $`git diff ${baseBranch}...HEAD`.text();
 
     if (!diff) {
-      console.error(t('pr.noDiff', { base: baseBranch }));
+      logger.error(t('pr.noDiff', { base: baseBranch }));
       process.exit(1);
     }
 
     return diff;
   } catch (error) {
-    console.error(t('errors.gitError'), error);
-    console.error(t('pr.ensureBranch', { base: baseBranch }));
+    logger.error(t('errors.gitError'), error);
+    logger.error(t('pr.ensureBranch', { base: baseBranch }));
     process.exit(1);
   }
 }
@@ -262,7 +263,7 @@ async function generatePRDescription(
       body: parsed.body || 'Update code',
     };
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -316,15 +317,15 @@ async function createPullRequestWithStrategy(
     // Check if branch exists on remote
     const isHeadOnRemote = await strategy.isBranchOnRemote(head);
     if (!isHeadOnRemote) {
-      console.log(t('pr.pushingBranch', { branch: head }));
+      logger.info(t('pr.pushingBranch', { branch: head }));
       await strategy.pushBranchToRemote(head);
-      console.log(t('pr.branchPushed'));
+      logger.success(t('pr.branchPushed'));
     }
 
     // Create PR/MR
     return await strategy.createPullRequest(owner, repo, title, body, head, base);
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -347,9 +348,9 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
     // Delete temporary file
     fs.unlinkSync(tempFile);
 
-    console.log(t('pr.success'));
+    logger.success(t('pr.success'));
   } catch (error) {
-    console.error(t('pr.failed'), error);
+    logger.error(t('pr.failed'), error);
     process.exit(1);
   }
 }
@@ -379,13 +380,13 @@ function parseArgs(args: string[]): { base: string | null; useGH: boolean; inter
  * @param args - Command line arguments
  */
 export async function generatePR(args: string[]) {
-  console.log(t('pr.starting'));
+  logger.info(t('pr.starting'));
 
   const config = loadConfig();
   let openAIConfig = config.openai;
   if (!openAIConfig.apiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
+    logger.error(t('errors.noApiKey'));
+    logger.error(t('errors.setApiKey'));
     process.exit(1);
   }
 
@@ -405,18 +406,20 @@ export async function generatePR(args: string[]) {
   }
 
   if (currentBranch === baseBranch) {
-    console.error(t('pr.sameBranch', { current: currentBranch }));
-    console.error(t('pr.switchBranch'));
+    logger.error(t('pr.sameBranch', { current: currentBranch }));
+    logger.error(t('pr.switchBranch'));
     process.exit(1);
   }
 
-  console.log(`${t('pr.currentBranch')}: ${currentBranch}`);
-  console.log(`${t('pr.targetBranch')}: ${baseBranch}\n`);
+  logger.info(`${t('pr.currentBranch')}: ${logger.text.primary(currentBranch)}`);
+  logger.info(`${t('pr.targetBranch')}: ${logger.text.primary(baseBranch)}`);
+  logger.line();
 
   // Get repository information
   const repoInfo = await getRepoInfo();
   if (repoInfo) {
-    console.log(`${t('pr.repository')}: ${repoInfo.owner}/${repoInfo.repo}\n`);
+    logger.info(`${t('pr.repository')}: ${logger.text.primary(`${repoInfo.owner}/${repoInfo.repo}`)}`);
+    logger.line();
   }
 
   // Get change information
@@ -424,9 +427,10 @@ export async function generatePR(args: string[]) {
   const commits = await getCommitHistory(baseBranch);
   const files = await getChangedFiles(baseBranch);
 
-  console.log(t('pr.statistics'));
-  console.log(`   - ${commits.length} ${t('pr.commits')}`);
-  console.log(`   - ${files.length} ${t('pr.filesChanged')}\n`);
+  logger.info(t('pr.statistics'));
+  logger.listItem(`${commits.length} ${t('pr.commits')}`);
+  logger.listItem(`${files.length} ${t('pr.filesChanged')}`);
+  logger.line();
 
   // Initialize OpenAI client
   const openai = new OpenAI({
@@ -435,7 +439,7 @@ export async function generatePR(args: string[]) {
   });
 
   // Generate PR description
-  console.log(t('pr.generating'));
+  const spinner = logger.spinner(t('pr.generating'));
   const { title, body } = await generatePRDescription(
     openai,
     openAIConfig.model,
@@ -445,19 +449,20 @@ export async function generatePR(args: string[]) {
     currentBranch,
     baseBranch
   );
+  spinner.succeed(t('pr.generating'));
 
-  console.log(t('pr.generatedTitle'));
-  console.log('━'.repeat(60));
-  console.log(title);
-  console.log('━'.repeat(60));
-  console.log(t('pr.generatedBody'));
-  console.log('━'.repeat(60));
-  console.log(body);
-  console.log('━'.repeat(60));
-  console.log('');
+  logger.info(t('pr.generatedTitle'));
+  logger.separator(60);
+  logger.log(title);
+  logger.separator(60);
+  logger.info(t('pr.generatedBody'));
+  logger.separator(60);
+  logger.log(body);
+  logger.separator(60);
+  logger.line();
 
   // Auto-create PR/MR (default behavior)
-  console.log(t('pr.creating'));
+  logger.info(t('pr.creating'));
 
   if (useGH) {
     // Use GitHub CLI
@@ -470,9 +475,9 @@ export async function generatePR(args: string[]) {
     const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
 
     if (!matchingConfig) {
-      console.error(t('pr.noToken'));
-      console.error(`   请为 ${repoInfo.platform} 配置 token`);
-      console.error(t('pr.useGHTip'));
+      logger.error(t('pr.noToken'));
+      logger.error(`   请为 ${repoInfo.platform} 配置 token`);
+      logger.error(t('pr.useGHTip'));
       process.exit(1);
     }
 
@@ -488,11 +493,11 @@ export async function generatePR(args: string[]) {
       baseBranch
     );
 
-    console.log(t('pr.success'));
-    console.log(`🔗 ${result.url}`);
+    logger.success(t('pr.success'));
+    logger.info(`🔗 ${logger.text.primary(result.url)}`);
   } else {
-    console.error(t('pr.noToken'));
-    console.error(t('pr.useGHTip'));
+    logger.error(t('pr.noToken'));
+    logger.error(t('pr.useGHTip'));
     process.exit(1);
   }
 }

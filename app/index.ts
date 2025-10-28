@@ -2,6 +2,7 @@
 import { reviewCode, generateCommit, generatePR, configCommand }
   from '@/app/commands';
 import { i18n } from '../i18n';
+import { logger } from '../utils/logger';
 
 /**
  * Print ASCII art logo
@@ -15,72 +16,52 @@ function printLogo() {
   ╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ███████╗
    ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
   `;
-  console.log('\x1b[36m%s\x1b[0m', logo); // Cyan color
+  logger.gradient(logo);
 }
 
 // Get usage text from translations
 function getUsageText(): string {
   const t = i18n.t;
 
-  console.log('');
+  logger.line();
   printLogo();
-  console.log('');
-  console.log('\x1b[1m%s\x1b[0m', '  🚀 ' + t('cli.subtitle'));
-  console.log('');
-  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
-  console.log('');
+  logger.line();
+  logger.box(
+    logger.text.bold('🚀 ' + t('cli.subtitle')),
+    { title: '✨ Welcome', padding: 1 }
+  );
+  logger.line();
 
   // Usage section
-  console.log('\x1b[1m%s\x1b[0m', '📖 ' + t('cli.usage'));
-  console.log('  \x1b[36mquartz\x1b[0m \x1b[33m<command>\x1b[0m \x1b[2m[options]\x1b[0m');
-  console.log('');
+  logger.section(t('cli.usage'));
+  console.log(`  ${logger.text.primary('quartz')} ${logger.text.warning('<command>')} ${logger.text.dim('[options]')}`);
+  logger.line();
 
   // Commands section
-  console.log('\x1b[1m%s\x1b[0m', '⚡ ' + t('cli.commands'));
-  console.log('');
-  console.log('  \x1b[36mconfig\x1b[0m');
-  console.log('  \x1b[2m' + t('cli.configDesc') + '\x1b[0m');
-  console.log('');
-  console.log('  \x1b[36mreview\x1b[0m');
-  console.log('  \x1b[2m' + t('review.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('');
-  console.log('  \x1b[36mcommit\x1b[0m');
-  console.log('  \x1b[2m' + t('commit.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('');
-  console.log('  \x1b[36mpr\x1b[0m');
-  console.log('  \x1b[2m' + t('pr.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('');
+  logger.section(t('cli.commands'));
+  logger.command('config', t('cli.configDesc'));
+  logger.command('review', t('review.starting').replace('🚀 ', '').replace('...', '').trim());
+  logger.command('commit', t('commit.starting').replace('🚀 ', '').replace('...', '').trim());
+  logger.command('pr', t('pr.starting').replace('🚀 ', '').replace('...', '').trim());
 
   // Options section
-  console.log('\x1b[1m%s\x1b[0m', '🎛️  ' + t('cli.options'));
-  console.log('');
-  console.log('  \x1b[33m-h, --help\x1b[0m');
-  console.log('  \x1b[2m' + t('cli.help') + '\x1b[0m');
-  console.log('');
-  console.log('  \x1b[33m-v, --version\x1b[0m');
-  console.log('  \x1b[2m' + t('cli.version') + '\x1b[0m');
-  console.log('');
+  logger.section(t('cli.options'));
+  logger.listItem(`${logger.text.warning('-h, --help')} - ${logger.text.dim(t('cli.help'))}`);
+  logger.listItem(`${logger.text.warning('-v, --version')} - ${logger.text.dim(t('cli.version'))}`);
+  logger.line();
 
   // Examples section
-  console.log('\x1b[1m%s\x1b[0m', '💡 ' + t('cli.examples'));
-  console.log('');
-  console.log('  \x1b[2m# ' + t('cli.initConfig') + '\x1b[0m');
-  console.log('  \x1b[32m$\x1b[0m quartz config init');
-  console.log('');
-  console.log('  \x1b[2m# ' + t('review.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('  \x1b[32m$\x1b[0m quartz review');
-  console.log('');
-  console.log('  \x1b[2m# ' + t('commit.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('  \x1b[32m$\x1b[0m quartz commit');
-  console.log('  \x1b[32m$\x1b[0m quartz commit --edit');
-  console.log('');
-  console.log('  \x1b[2m# ' + t('pr.starting').replace('🚀 ', '').replace('...', '').trim() + '\x1b[0m');
-  console.log('  \x1b[32m$\x1b[0m quartz pr --auto --base main');
-  console.log('');
-  console.log('\x1b[2m%s\x1b[0m', '━'.repeat(70));
-  console.log('');
-  console.log('\x1b[2m%s\x1b[0m', '📚 ' + t('cli.moreInfo') + ': \x1b[36mhttps://github.com/creedchung/quartz\x1b[0m');
-  console.log('');
+  logger.section(t('cli.examples'));
+  logger.example(t('cli.initConfig'), 'quartz config init');
+  logger.example(t('review.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz review');
+  logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
+  logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit --edit');
+  logger.example(t('pr.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz pr --auto --base main');
+  logger.line();
+  logger.box(
+    `📚 ${t('cli.moreInfo')}\n\n${logger.text.primary('https://github.com/QuartzKazoku/Quartz-CLI.git')}`,
+    { title: '🔗 Resources', padding: 1 }
+  );
 
   return '';
 }
@@ -101,7 +82,12 @@ if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
 // Handle version flag
 if (args.includes('-v') || args.includes('--version')) {
   const pkg = await import('../package.json');
-  console.log(`${pkg.version}`);
+  logger.line();
+  logger.box(
+    `${logger.text.bold('Quartz CLI')}\n\n${logger.text.primary('Version:')} ${logger.text.success('v' + pkg.version)}\n\n${logger.text.dim('AI-Powered Git Workflow Assistant')}`,
+    { title: '📦 Version Info', padding: 1 }
+  );
+  logger.line();
   process.exit(0);
 }
 
@@ -129,11 +115,20 @@ try {
       break;
     // Handle unknown command
     default:
-      console.error(`\n\x1b[31m${t('common.error')}\x1b[0m Unknown command: \x1b[33m${command}\x1b[0m\n`);
-      getUsageText();
+      logger.line();
+      logger.box(
+        `${logger.text.error('Unknown command:')} ${logger.text.warning(command)}\n\n${logger.text.dim('Run')} ${logger.text.success('quartz --help')} ${logger.text.dim('to see available commands.')}`,
+        { title: '⚠️  Error', padding: 1 }
+      );
+      logger.line();
       process.exit(1);
   }
 } catch (error) {
-  console.error(`${t('common.error')} Execution failed:`, error);
+  logger.line();
+  logger.box(
+    `${logger.text.error(t('common.error'))} ${logger.text.dim('Execution failed')}\n\n${error instanceof Error ? error.message : String(error)}`,
+    { title: '❌ Error', padding: 1 }
+  );
+  logger.line();
   process.exit(1);
 }

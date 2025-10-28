@@ -7,6 +7,7 @@ import { t } from '../../i18n';
 import { getCommitPrompt } from '../../utils/prompt';
 import { loadConfig } from '../../utils/config';
 import { selectFromList, formatCommitMessage } from '../../utils/enquirer';
+import { logger } from '../../utils/logger';
 
 /**
  * Stage all changes using git add .
@@ -14,9 +15,9 @@ import { selectFromList, formatCommitMessage } from '../../utils/enquirer';
 async function stageAllChanges(): Promise<void> {
   try {
     await $`git add .`;
-    console.log(t('commit.autoStaged'));
+    logger.success(t('commit.autoStaged'));
   } catch (error) {
-    console.error(t('commit.stageFailed'), error);
+    logger.error(t('commit.stageFailed'), error);
     process.exit(1);
   }
 }
@@ -31,13 +32,13 @@ async function getGitDiff(): Promise<string> {
     const diff = await $`git diff --cached`.text();
 
     if (!diff) {
-      console.error(t('commit.noStaged'));
+      logger.error(t('commit.noStaged'));
       process.exit(1);
     }
 
     return diff;
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     process.exit(1);
   }
 }
@@ -53,7 +54,7 @@ async function getChangedFiles(): Promise<string[]> {
       .split('\n')
       .filter(Boolean);
   } catch (error) {
-    console.error('Failed to get changed files:', error);
+    logger.error('Failed to get changed files:', error);
     return [];
   }
 }
@@ -77,7 +78,7 @@ async function generateCommitMessages(
   const prompt = getCommitPrompt(diff, files);
   const messages: string[] = [];
 
-  console.log(t('commit.generatingOptions', { count }));
+  const spinner = logger.spinner(t('commit.generatingOptions', { count }));
 
   try {
     // Generate multiple messages in parallel
@@ -104,9 +105,11 @@ async function generateCommitMessages(
     const results = await Promise.all(promises);
     messages.push(...results);
 
+    spinner.succeed(t('commit.generatingOptions', { count }));
     return messages;
   } catch (error) {
-    console.error(t('commit.failed'), error);
+    spinner.fail(t('commit.failed'));
+    logger.error(t('commit.failed'), error);
     process.exit(1);
   }
 }
@@ -126,7 +129,8 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
     );
   } catch (error) {
     // User cancelled (Ctrl+C)
-    console.log('\n' + t('commit.cancelled'));
+    logger.line();
+    logger.warn(t('commit.cancelled'));
     process.exit(0);
   }
 }
@@ -138,9 +142,9 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
 async function executeCommit(message: string) {
   try {
     await $`git commit -m ${message}`;
-    console.log(t('commit.success'));
+    logger.success(t('commit.success'));
   } catch (error) {
-    console.error(t('commit.failed'), error);
+    logger.error(t('commit.failed'), error);
     process.exit(1);
   }
 }
@@ -161,13 +165,13 @@ function parseArgs(args: string[]): { edit: boolean } {
  * @param args - Command line arguments
  */
 export async function generateCommit(args: string[]) {
-  console.log(t('commit.starting'));
+  logger.info(t('commit.starting'));
 
   const config = loadConfig();
   const openAIConfig = config.openai
   if (!openAIConfig.apiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
+    logger.error(t('errors.noApiKey'));
+    logger.error(t('errors.setApiKey'));
     process.exit(1);
   }
 
@@ -180,11 +184,11 @@ export async function generateCommit(args: string[]) {
   const diff = await getGitDiff();
   const files = await getChangedFiles();
 
-  console.log(t('commit.foundStaged', { count: files.length }));
+  logger.info(t('commit.foundStaged', { count: files.length }));
   for (const f of files) {
-    console.log(`   - ${f}`);
+    logger.listItem(f);
   }
-  console.log('');
+  logger.line();
 
   // Initialize OpenAI client
   const openai = new OpenAI({
@@ -197,27 +201,27 @@ export async function generateCommit(args: string[]) {
 
   if (edit) {
     // Edit mode - show first message in editor
-    console.log(t('commit.editMode'));
+    logger.info(t('commit.editMode'));
     const tempFile = path.join(process.cwd(), '.git', 'COMMIT_EDITMSG');
     fs.writeFileSync(tempFile, messages[0]);
 
     try {
       await $`git commit -e -F ${tempFile}`;
-      console.log(t('commit.success'));
+      logger.success(t('commit.success'));
     } catch (error) {
-      console.error('Commit cancelled or failed:', error);
-      console.log(t('commit.cancelled'));
+      logger.error('Commit cancelled or failed:', error);
+      logger.warn(t('commit.cancelled'));
     }
   } else {
     // Interactive selection mode
     const selectedIndex = await selectCommitMessage(messages);
     const selectedMessage = messages[selectedIndex];
 
-    console.log(t('commit.selectedMessage', { index: selectedIndex + 1 }));
-    console.log('━'.repeat(80));
-    console.log(selectedMessage);
-    console.log('━'.repeat(80));
-    console.log('');
+    logger.info(t('commit.selectedMessage', { index: selectedIndex + 1 }));
+    logger.separator(80);
+    logger.log(selectedMessage);
+    logger.separator(80);
+    logger.line();
 
     // Execute commit with selected message
     await executeCommit(selectedMessage);
