@@ -61,7 +61,7 @@ function addPathComment(filePath: string): boolean {
 
     // If already has path comment, skip
     if (hasPathComment(content, relativePath)) {
-      console.log(`⏭️  跳过(已存在): ${relativePath}`);
+      console.log(`⏭️  Skipped (already exists): ${relativePath}`);
       return false;
     }
 
@@ -70,10 +70,10 @@ function addPathComment(filePath: string): boolean {
     const newContent = pathComment + content;
 
     writeFileSync(filePath, newContent, 'utf-8');
-    console.log(`✅ 已添加: ${relativePath}`);
+    console.log(`✅ Added: ${relativePath}`);
     return true;
   } catch (error) {
-    console.error(`❌ 处理失败: ${filePath}`, error);
+    console.error(`❌ Failed to process: ${filePath}`, error);
     return false;
   }
 }
@@ -82,7 +82,7 @@ function addPathComment(filePath: string): boolean {
  * Main function
  */
 function main() {
-  console.log('🚀 开始为 TypeScript 文件添加路径注释...\n');
+  console.log('🚀 Adding path comments to TypeScript files...\n');
 
   let totalFiles = 0;
   let addedFiles = 0;
@@ -95,7 +95,7 @@ function main() {
     try {
       const files = getAllTsFiles(dirPath);
 
-      console.log(`\n📁 处理目录: ${targetDir} (共 ${files.length} 个文件)`);
+      console.log(`\n📁 Processing directory: ${targetDir} (${files.length} files)`);
       console.log('─'.repeat(50));
 
       for (const file of files) {
@@ -107,16 +107,16 @@ function main() {
         }
       }
     } catch (error) {
-      console.error(`❌ 无法访问目录: ${targetDir}`, error);
+      console.error(`❌ Cannot access directory: ${targetDir}`, error);
     }
   }
 
   // Output statistics
   console.log('\n' + '='.repeat(50));
-  console.log('📊 处理完成!');
-  console.log(`   总文件数: ${totalFiles}`);
-  console.log(`   已添加: ${addedFiles}`);
-  console.log(`   已跳过: ${skippedFiles}`);
+  console.log('📊 Processing completed!');
+  console.log(`   Total files: ${totalFiles}`);
+  console.log(`   Added: ${addedFiles}`);
+  console.log(`   Skipped: ${skippedFiles}`);
   console.log('='.repeat(50));
 }
 
