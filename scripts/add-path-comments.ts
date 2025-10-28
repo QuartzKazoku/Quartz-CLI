@@ -1,12 +1,11 @@
 //scripts/add-path-comments.ts
-#!/usr/bin/env bun
 /**
  * 自动为 TypeScript 文件添加路径注释
  * 用法: bun run scripts/add-path-comments.ts
  */
 
-import { readdirSync, readFileSync, writeFileSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
 // 项目根目录
 const ROOT_DIR = process.cwd();
@@ -15,7 +14,7 @@ const ROOT_DIR = process.cwd();
 const TARGET_DIRS = ['cli', 'tests', 'scripts'];
 
 // 需要排除的目录
-const EXCLUDE_DIRS = ['node_modules', 'dist', '.git', 'docs'];
+const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'docs']);
 
 /**
  * 递归获取所有 TypeScript 文件
@@ -29,7 +28,7 @@ function getAllTsFiles(dir: string, fileList: string[] = []): string[] {
 
     if (stat.isDirectory()) {
       // 排除指定目录
-      if (!EXCLUDE_DIRS.includes(file)) {
+      if (!EXCLUDE_DIRS.has(file)) {
         getAllTsFiles(filePath, fileList);
       }
     } else if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {
@@ -58,7 +57,7 @@ function hasPathComment(content: string, relativePath: string): boolean {
 function addPathComment(filePath: string): boolean {
   try {
     const content = readFileSync(filePath, 'utf-8');
-    const relativePath = relative(ROOT_DIR, filePath).replace(/\\/g, '/');
+    const relativePath = relative(ROOT_DIR, filePath).replaceAll('\\', '/');
 
     // 如果已经有路径注释,跳过
     if (hasPathComment(content, relativePath)) {
@@ -108,7 +107,7 @@ function main() {
         }
       }
     } catch (error) {
-      console.error(`❌ 无法访问目录: ${targetDir}`);
+      console.error(`❌ 无法访问目录: ${targetDir}`,error);
     }
   }
 
