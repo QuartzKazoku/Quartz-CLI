@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "bundler",
-    "types": ["bun-types"],
+    "lib": ["ES2022"],
+    "moduleResolution": "node",
+    "types": ["node", "vitest/globals"],
     "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
@@ -12,9 +12,15 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": ["scripts/**/*", "*.ts", "cli/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["scripts/**/*", "*.ts", "app/**/*", "constants", "types", "i18n", "utils", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

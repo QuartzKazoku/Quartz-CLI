@@ -1,0 +1,68 @@
+//cli/i18n/index.ts
+import type { Language, Translations } from './locales';
+import { locales, defaultLanguage } from './locales';
+
+// Current language
+let currentLanguage: Language = defaultLanguage;
+
+// Initialize language
+export function initLanguage(): Language {
+  currentLanguage = defaultLanguage;
+  return currentLanguage;
+}
+
+// Set language
+export function setLanguage(lang: Language) {
+  if (locales[lang]) {
+    currentLanguage = lang;
+  }
+}
+
+// Get current language
+export function getLanguage(): Language {
+  return currentLanguage;
+}
+
+// Get translations
+export function getTranslations(): Translations {
+  return locales[currentLanguage] || locales[defaultLanguage];
+}
+
+// Translation function
+export function t(key: string, params?: Record<string, string | number>): string {
+  const translations = getTranslations();
+  
+  // Support nested keys, e.g., 'review.starting'
+  const keys = key.split('.');
+  let value: any = translations;
+  
+  for (const k of keys) {
+    value = value?.[k];
+    if (value === undefined) {
+      return key; // If translation not found, return the key itself
+    }
+  }
+  
+  let result = String(value);
+  
+  // Replace parameters
+  if (params) {
+    for (const [key1, val] of Object.entries(params)) {
+      result = result.replace(`{${key1}}`, String(val));
+    }
+  }
+  
+  return result;
+}
+
+// Export common translation shortcuts
+export const i18n = {
+  init: initLanguage,
+  set: setLanguage,
+  get: getLanguage,
+  t,
+  translations: getTranslations,
+};
+
+// Auto-initialize
+initLanguage();

@@ -1,12 +1,13 @@
 //cli/commands/review.ts
 import OpenAI from 'openai';
-import {$} from 'bun';
+import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
-import {t} from '../i18n';
-import {getReviewPrompt, getSummaryPrompt} from '../utils/prompt';
-import {readQuartzConfig} from '../utils/config';
-import {DEFAULT_VALUES} from '../constants';
+import { t } from '@/i18n';
+import { getReviewPrompt, getSummaryPrompt } from '@/utils/prompt';
+import { readQuartzConfig } from '@/utils/config';
+import { DEFAULT_VALUES } from '@/constants';
+import { logger } from '@/utils/logger';
 
 interface ReviewComment {
   file: string;
@@ -29,24 +30,24 @@ interface ReviewResult {
  */
 function validateConfig(config: { openaiApiKey: string }): void {
   if (!config.openaiApiKey) {
-    console.error(t('errors.noApiKey'));
-    console.error(t('errors.setApiKey'));
+    logger.error(t('errors.noApiKey'));
+    logger.error(t('errors.setApiKey'));
     process.exit(1);
   }
 }
 
 /**
- * Load configuration from environment variables and quartz.json
+ * Load configuration from quartz.json
  * @returns Configuration object
  */
 function loadConfig() {
-  // 使用新的配置读取方式
+  // Use new configuration reading method
   const quartzConfig = readQuartzConfig();
-  
+
   const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || quartzConfig.openai.apiKey || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
-    openaiModel: process.env.OPENAI_MODEL || quartzConfig.openai.model || DEFAULT_VALUES.OPENAI_MODEL,
+    openaiApiKey: quartzConfig.openai.apiKey || '',
+    openaiBaseUrl: quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
+    openaiModel: quartzConfig.openai.model || DEFAULT_VALUES.OPENAI_MODEL,
   };
 
   validateConfig(config);
@@ -79,14 +80,14 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
 
     // Merge and deduplicate
     const allFiles = [...new Set([...staged, ...unstaged])];
-    
+
     // Only return supported file types
     return allFiles.filter(f =>
       f && fs.existsSync(f) &&
       (f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx'))
     );
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     return [];
   }
 }
@@ -114,7 +115,7 @@ async function getFileDiff(file: string): Promise<string> {
 
     return diff;
   } catch (error) {
-    console.error(t('errors.gitError'), error);
+    logger.error(t('errors.gitError'), error);
     return '';
   }
 }
@@ -128,7 +129,7 @@ function readFileContent(file: string): string {
   try {
     return fs.readFileSync(file, 'utf-8');
   } catch (error) {
-    console.warn(t('errors.fileNotFound'), error);
+    logger.warn(t('errors.fileNotFound'), error);
     return '';
   }
 }
@@ -170,15 +171,15 @@ async function reviewCodeWithAI(
     }
 
     const parsed = JSON.parse(result);
-      return (parsed.comments || []).map((c: any) => ({
-        file,
-        line: typeof c.line === 'number' ? c.line : 1,
-        severity: c.severity || 'info',
-        message: c.message || 'Unknown issue',
-        suggestion: c.suggestion,
+    return (parsed.comments || []).map((c: any) => ({
+      file,
+      line: typeof c.line === 'number' ? c.line : 1,
+      severity: c.severity || 'info',
+      message: c.message || 'Unknown issue',
+      suggestion: c.suggestion,
     }));
   } catch (error) {
-    console.error(t('review.error'), error);
+    logger.error(t('review.error'), error);
     return [];
   }
 }
@@ -219,7 +220,7 @@ async function generateSummary(
     const summary = response.choices[0]?.message?.content?.trim() || t('review.result');
     return { score, summary };
   } catch (error) {
-    console.error(t('errors.apiFailed'), error);
+    logger.error(t('errors.apiFailed'), error);
     return { score, summary: t('review.result') };
   }
 }
@@ -234,7 +235,7 @@ function printResult(result: ReviewResult) {
   // Score and level
   let scoreEmoji: string;
   let scoreDesc: string;
-  
+
   if (score >= 90) {
     scoreEmoji = '🌟';
     scoreDesc = t('scoreLevel.excellent');
@@ -249,26 +250,31 @@ function printResult(result: ReviewResult) {
     scoreDesc = t('scoreLevel.needImprovement');
   }
 
-  console.log('\n' + '='.repeat(60));
-  console.log(`${scoreEmoji} ${t('review.result')}`);
-  console.log('='.repeat(60));
-  console.log(`\n${t('review.score')}: ${score}/100 (${scoreDesc})`);
-  console.log(`${t('review.summary')}: ${summary}\n`);
+  logger.line();
+  logger.separator(60, '=');
+  logger.log(`${scoreEmoji} ${t('review.result')}`);
+  logger.separator(60, '=');
+  logger.line();
+  const scoreText = `${score}/100`;
+  logger.info(`${t('review.score')}: ${logger.text.bold(scoreText)} (${scoreDesc})`);
+  logger.info(`${t('review.summary')}: ${summary}`);
+  logger.line();
 
   // Issue statistics
   const errorCount = comments.filter(c => c.severity === 'error').length;
   const warningCount = comments.filter(c => c.severity === 'warning').length;
   const infoCount = comments.filter(c => c.severity === 'info').length;
 
-  console.log(t('review.statistics'));
-  console.log(`   ❌ ${t('review.error')}:   ${errorCount}`);
-  console.log(`   ⚠️  ${t('review.warning')}:   ${warningCount}`);
-  console.log(`   ℹ️  ${t('review.suggestion')}:   ${infoCount}`);
-  console.log(`   📌 ${t('review.total')}:   ${comments.length}\n`);
+  logger.info(t('review.statistics'));
+  logger.listItem(`❌ ${t('review.error')}:   ${errorCount}`);
+  logger.listItem(`⚠️  ${t('review.warning')}:   ${warningCount}`);
+  logger.listItem(`ℹ️  ${t('review.suggestion')}:   ${infoCount}`);
+  logger.listItem(`📌 ${t('review.total')}:   ${comments.length}`);
+  logger.line();
 
   // Detailed issues
   if (comments.length > 0) {
-    console.log(t('review.details'));
+    logger.info(t('review.details'));
     for (let index = 0; index < comments.length; index++) {
       const comment = comments[index];
       let emoji: string;
@@ -279,16 +285,17 @@ function printResult(result: ReviewResult) {
       } else {
         emoji = 'ℹ️';
       }
-      console.log(`${index + 1}. ${emoji} ${comment.file}:${comment.line}`);
-      console.log(`   ${comment.message}`);
+      logger.log(`${index + 1}. ${emoji} ${comment.file}:${comment.line}`);
+      logger.log(`   ${comment.message}`);
       if (comment.suggestion) {
-        console.log(`   💡 ${comment.suggestion.split('\n')[0]}...`);
+        logger.log(`   💡 ${comment.suggestion.split('\n')[0]}...`);
       }
-      console.log('');
+      logger.line();
     }
   }
 
-  console.log('='.repeat(60) + '\n');
+  logger.separator(60, '=');
+  logger.line();
 }
 
 /**
@@ -298,7 +305,7 @@ function printResult(result: ReviewResult) {
  */
 function parseArgs(args: string[]): { files?: string[]; output?: string } {
   const result: { files?: string[]; output?: string } = {};
-  
+
   let i = 0;
   while (i < args.length) {
     if (args[i] === '--files' || args[i] === '-f') {
@@ -318,7 +325,7 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
       i++;
     }
   }
-  
+
   return result;
 }
 
@@ -327,7 +334,7 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
  * @param args - Command line arguments
  */
 export async function reviewCode(args: string[]) {
-  console.log(t('review.starting'));
+  logger.info(t('review.starting'));
 
   const config = loadConfig();
   const { files: specificFiles, output } = parseArgs(args);
@@ -342,38 +349,34 @@ export async function reviewCode(args: string[]) {
   const files = await getChangedFiles(specificFiles);
 
   if (files.length === 0) {
-    console.log(t('review.noFiles'));
-    console.log(t('review.tip'));
+    logger.info(t('review.noFiles'));
+    logger.info(t('review.tip'));
     return;
   }
 
-  console.log(t('review.foundFiles', { count: files.length }));
+  logger.info(t('review.foundFiles', { count: files.length }));
   for (const f of files) {
-    console.log(`   - ${f}`);
+    logger.listItem(f);
   }
-  console.log('');
+  logger.line();
 
   // Review each file
   const allComments: ReviewComment[] = [];
   for (const file of files) {
-    console.log(t('review.reviewing', { file }));
-    
     const diff = await getFileDiff(file);
     if (!diff) {
-      console.log(`   ⏭️  Skip\n`);
       continue;
     }
 
     const content = readFileContent(file);
     const comments = await reviewCodeWithAI(openai, config.openaiModel, file, diff, content);
-    
-    console.log(`   ✅ ${t('review.found')} ${comments.length} ${t('review.issues')}\n`);
     allComments.push(...comments);
   }
 
   // Generate summary
-  console.log(t('review.generating'));
+  const spinner = logger.spinner(t('review.generating'));
   const { score, summary } = await generateSummary(openai, config.openaiModel, allComments);
+  spinner.succeed(t('review.generating'));
 
   // Output results
   const result: ReviewResult = {
@@ -385,7 +388,7 @@ export async function reviewCode(args: string[]) {
   // Save to file
   if (output) {
     fs.writeFileSync(output, JSON.stringify(result, null, 2));
-    console.log(t('review.saved', { path: output }));
+    logger.success(t('review.saved', { path: output }));
   }
 
   // Print results

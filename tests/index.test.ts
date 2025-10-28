@@ -1,6 +1,5 @@
 //tests/index.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -11,14 +10,11 @@ const originalConsoleError = console.error;
 describe('CLI Entry Point', () => {
   beforeEach(() => {
     // Mock console methods
-    console.log = mock(() => {});
-    console.error = mock(() => {});
+    console.log = vi.fn();
+    console.error = vi.fn();
     
     // Mock process.exit
-    mock.module('process', () => ({
-      ...process,
-      exit: mock(() => {}),
-    }));
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
@@ -33,7 +29,7 @@ describe('CLI Entry Point', () => {
     process.argv = ['node', 'cli/index.ts'];
 
     try {
-      await import('../cli/index.ts');
+      await import('../app/index.ts');
       
       // Check if help was displayed
       expect(console.log).toHaveBeenCalled();
@@ -49,7 +45,7 @@ describe('CLI Entry Point', () => {
     process.argv = ['node', 'cli/index.ts', '-h'];
 
     try {
-      await import('../cli/index.ts');
+      await import('../app/index.ts');
       
       expect(console.log).toHaveBeenCalled();
     } catch (error) {
@@ -64,7 +60,7 @@ describe('CLI Entry Point', () => {
     process.argv = ['node', 'cli/index.ts', '-v'];
 
     try {
-      await import('../cli/index.ts');
+      await import('../app/index.ts');
       
       expect(console.log).toHaveBeenCalled();
     } catch (error) {
@@ -79,7 +75,7 @@ describe('CLI Entry Point', () => {
     process.argv = ['node', 'cli/index.ts', 'unknown'];
 
     try {
-      await import('../cli/index.ts');
+      await import('../app/index.ts');
       
       expect(console.error).toHaveBeenCalled();
     } catch (error) {

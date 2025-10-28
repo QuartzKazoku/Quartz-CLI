@@ -4,23 +4,32 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/**'
+      - '!.github/workflows/release.yml'
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -30,35 +39,55 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Run tests
+        run: bun test
+
       - name: Build project
         run: bun run build
 
-      - name: Generate changelog
+      - name: Create Release and Changelog
         id: changelog
         uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           output-file: 'CHANGELOG.md'
-          skip-version-file: 'true'
-          skip-commit: 'true'
-          git-push: 'false'
+          release-count: '0'
+          skip-on-empty: 'true'
+          skip-version-file: 'false'
+          skip-commit: 'false'
+          git-message: 'chore(release): {version}'
+          tag-prefix: 'v'
+          preset: 'conventionalcommits'
+          config-file-path: '.changelogrc.json'
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          name: Release ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
-          files: |
-            dist/**/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js for npm
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish to npm
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Output Release Info
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          echo "✅ Release created successfully!"
+          echo "📦 Version: ${{ steps.changelog.outputs.version }}"
+          echo "🏷️ Tag: ${{ steps.changelog.outputs.tag }}"
+          echo "📝 Changelog: ${{ steps.changelog.outputs.clean_changelog }}"

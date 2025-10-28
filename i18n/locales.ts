@@ -2,13 +2,13 @@
 // Multi-language type definitions and configuration
 
 /**
- * 支持的语言类型定义
+ * Supported language type definitions
  */
 export type Language = 'zh-CN' | 'zh-TW' | 'ja' | 'ko' | 'en';
 
 /**
- * 多语言翻译文本接口定义
- * 包含各个功能模块的翻译字段
+ * Multi-language translation text interface definition
+ * Contains translation fields for each functional module
  */
 export interface Translations {
   // Common
@@ -207,7 +207,7 @@ import { ko } from './locales/ko';
 import { en } from './locales/en';
 
 /**
- * 语言与翻译内容的映射关系
+ * Mapping relationship between languages and translation content
  */
 export const locales: Record<Language, Translations> = {
   'zh-CN': zhCN,
@@ -218,6 +218,6 @@ export const locales: Record<Language, Translations> = {
 };
 
 /**
- * 默认语言设置
+ * Default language setting
  */
 export const defaultLanguage: Language = 'en';
