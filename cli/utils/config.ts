@@ -49,7 +49,7 @@ export function readQuartzConfig(): QuartzConfig {
 }
 
 /**
- * 写入配置文件（新版格式）
+ * 写入配置文件
  */
 export function writeQuartzConfig(config: QuartzConfig, profileName: string = 'default'): void {
     const quartzPath = getQuartzPath();

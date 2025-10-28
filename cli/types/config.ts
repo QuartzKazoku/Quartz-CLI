@@ -46,18 +46,3 @@ export interface QuartzConfigFile {
     config: QuartzConfig;
   };
 }
-
-/**
- * 旧版配置键名（用于兼容性）
- */
-export const LEGACY_CONFIG_KEYS = {
-  OPENAI_API_KEY: 'OPENAI_API_KEY',
-  OPENAI_BASE_URL: 'OPENAI_BASE_URL',
-  OPENAI_MODEL: 'OPENAI_MODEL',
-  GIT_PLATFORM: 'GIT_PLATFORM',
-  GITHUB_TOKEN: 'GITHUB_TOKEN',
-  GITLAB_TOKEN: 'GITLAB_TOKEN',
-  GITLAB_URL: 'GITLAB_URL',
-  QUARTZ_LANG: 'QUARTZ_LANG',
-  PROMPT_LANG: 'PROMPT_LANG',
-} as const;
