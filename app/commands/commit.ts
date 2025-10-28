@@ -3,11 +3,11 @@ import OpenAI from 'openai';
 import { $ } from 'bun';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '../../i18n';
-import { getCommitPrompt } from '../../utils/prompt';
-import { loadConfig } from '../../utils/config';
-import { selectFromList, formatCommitMessage } from '../../utils/enquirer';
-import { logger } from '../../utils/logger';
+import { t } from '@/i18n';
+import { getCommitPrompt } from '@/utils/prompt';
+import { loadConfig } from '@/utils/config';
+import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
+import { logger } from '@/utils/logger';
 
 /**
  * Stage all changes using git add .
