@@ -173,6 +173,11 @@ export interface Translations {
     availableProfiles: string;
     noProfiles: string;
     configItems: string;
+    configuredPlatforms: string;
+    platformCount: string;
+    gitlabTokenSetFirst: string;
+    gitPlatformDeprecated: string;
+    unknownKey: string;
   };
 
   // Error messages
@@ -351,6 +356,11 @@ export const zhCN: Translations = {
     availableProfiles: '可用的配置文件:',
     noProfiles: '📋 没有保存的配置文件\n   使用 "quartz config save-profile <name>" 保存当前配置',
     configItems: '项配置',
+    configuredPlatforms: '配置的代码托管平台:',
+    platformCount: '{count} 个平台配置',
+    gitlabTokenSetFirst: '请先设置 GITLAB_TOKEN',
+    gitPlatformDeprecated: '警告: GIT_PLATFORM 配置已废弃，请直接配置对应平台的 TOKEN',
+    unknownKey: '未知的配置键: {key}',
   },
 
   errors: {
@@ -527,6 +537,11 @@ export const zhTW: Translations = {
     availableProfiles: '可用的配置檔案:',
     noProfiles: '📋 沒有儲存的配置檔案\n   使用 "quartz config save-profile <name>" 儲存當前配置',
     configItems: '項配置',
+    configuredPlatforms: '配置的程式碼託管平台:',
+    platformCount: '{count} 個平台配置',
+    gitlabTokenSetFirst: '請先設定 GITLAB_TOKEN',
+    gitPlatformDeprecated: '警告: GIT_PLATFORM 配置已廢棄，請直接配置對應平台的 TOKEN',
+    unknownKey: '未知的配置鍵: {key}',
   },
 
 
@@ -698,6 +713,11 @@ export const ja: Translations = {
     availableProfiles: '利用可能なプロファイル:',
     noProfiles: '📋 保存されたプロファイルがありません\n   "quartz config save-profile <name>" で現在の設定を保存',
     configItems: '個の設定',
+    configuredPlatforms: '設定済みコード管理プラットフォーム:',
+    platformCount: '{count} 個のプラットフォーム設定',
+    gitlabTokenSetFirst: '先に GITLAB_TOKEN を設定してください',
+    gitPlatformDeprecated: '警告: GIT_PLATFORM 設定は非推奨です。対応するプラットフォームの TOKEN を直接設定してください',
+    unknownKey: '不明な設定キー: {key}',
   },
 
   scoreLevel: {
@@ -875,6 +895,11 @@ export const ko: Translations = {
     availableProfiles: '사용 가능한 프로필:',
     noProfiles: '📋 저장된 프로필이 없습니다\n   "quartz config save-profile <name>"으로 현재 설정 저장',
     configItems: '개 설정',
+    configuredPlatforms: '설정된 코드 호스팅 플랫폼:',
+    platformCount: '{count}개 플랫폼 설정',
+    gitlabTokenSetFirst: '먼저 GITLAB_TOKEN을 설정하세요',
+    gitPlatformDeprecated: '경고: GIT_PLATFORM 설정은 더 이상 사용되지 않습니다. 해당 플랫폼의 TOKEN을 직접 설정하세요',
+    unknownKey: '알 수 없는 설정 키: {key}',
   },
 
   scoreLevel: {
@@ -1059,6 +1084,11 @@ export const en: Translations = {
     availableProfiles: 'Available profiles:',
     noProfiles: '📋 No saved profiles\n   Use "quartz config save-profile <name>" to save current configuration',
     configItems: 'config items',
+    configuredPlatforms: 'Configured Code Hosting Platforms:',
+    platformCount: '{count} platform configurations',
+    gitlabTokenSetFirst: 'Please set GITLAB_TOKEN first',
+    gitPlatformDeprecated: 'Warning: GIT_PLATFORM config is deprecated, please configure the corresponding platform TOKEN directly',
+    unknownKey: 'Unknown configuration key: {key}',
   },
 
   errors: {

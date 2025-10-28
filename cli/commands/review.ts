@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {t} from '../i18n';
 import {getReviewPrompt, getSummaryPrompt} from '../utils/prompt';
+import {readQuartzConfig} from '../utils/config';
+import {DEFAULT_VALUES} from '../constants';
 
 interface ReviewComment {
   file: string;
@@ -19,39 +21,6 @@ interface ReviewResult {
   comments: ReviewComment[];
 }
 
-/**
- * Load configuration from quartz.json
- * @param config - Configuration object to update
- */
-function loadQuartzConfig(config: { openaiApiKey: string; openaiBaseUrl: string; openaiModel: string }): void {
-  const quartzPath = path.join(process.cwd(), 'quartz.json');
-  
-  if (!fs.existsSync(quartzPath)) {
-    return;
-  }
-  
-  try {
-    const content = fs.readFileSync(quartzPath, 'utf-8');
-    const data = JSON.parse(content);
-    
-    // Read from default profile
-    if (data.default?.configs) {
-      const configs = data.default.configs;
-      
-      if (configs.OPENAI_API_KEY && !config.openaiApiKey) {
-        config.openaiApiKey = configs.OPENAI_API_KEY;
-      }
-      if (configs.OPENAI_BASE_URL && process.env.OPENAI_BASE_URL === undefined) {
-        config.openaiBaseUrl = configs.OPENAI_BASE_URL;
-      }
-      if (configs.OPENAI_MODEL && process.env.OPENAI_MODEL === undefined) {
-        config.openaiModel = configs.OPENAI_MODEL;
-      }
-    }
-  } catch (error) {
-    console.error('Failed to parse quartz.json:', error);
-  }
-}
 
 /**
  * Validate configuration and exit if invalid
@@ -70,13 +39,15 @@ function validateConfig(config: { openaiApiKey: string }): void {
  * @returns Configuration object
  */
 function loadConfig() {
+  // 使用新的配置读取方式
+  const quartzConfig = readQuartzConfig();
+  
   const config = {
-    openaiApiKey: process.env.OPENAI_API_KEY || '',
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
+    openaiApiKey: process.env.OPENAI_API_KEY || quartzConfig.openai.apiKey || '',
+    openaiBaseUrl: process.env.OPENAI_BASE_URL || quartzConfig.openai.baseUrl || DEFAULT_VALUES.OPENAI_BASE_URL,
+    openaiModel: process.env.OPENAI_MODEL || quartzConfig.openai.model || DEFAULT_VALUES.OPENAI_MODEL,
   };
 
-  loadQuartzConfig(config);
   validateConfig(config);
 
   return config;

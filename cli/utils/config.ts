@@ -1,12 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {PlatformConfig, QuartzConfig} from '../types/config';
+import {CONFIG_FILE, DEFAULT_VALUES} from '../constants';
 
 /**
  * 获取 quartz.json 文件路径
  */
 function getQuartzPath(): string {
-    return path.join(process.cwd(), 'quartz.json');
+    return path.join(process.cwd(), CONFIG_FILE.NAME);
 }
 
 /**
@@ -19,13 +20,13 @@ export function readQuartzConfig(): QuartzConfig {
     const defaultConfig: QuartzConfig = {
         openai: {
             apiKey: '',
-            baseUrl: 'https://api.openai.com/v1',
-            model: 'gpt-4-turbo-preview',
+            baseUrl: DEFAULT_VALUES.OPENAI_BASE_URL,
+            model: DEFAULT_VALUES.OPENAI_MODEL,
         },
         platforms: [],
         language: {
-            ui: 'en',
-            prompt: 'en',
+            ui: DEFAULT_VALUES.LANGUAGE_UI,
+            prompt: DEFAULT_VALUES.LANGUAGE_PROMPT,
         },
     };
 
@@ -37,8 +38,8 @@ export function readQuartzConfig(): QuartzConfig {
         const content = fs.readFileSync(quartzPath, 'utf-8');
         const data = JSON.parse(content);
 
-        if (data.default?.config) {
-            return data.default.config;
+        if (data[CONFIG_FILE.DEFAULT_PROFILE]?.config) {
+            return data[CONFIG_FILE.DEFAULT_PROFILE].config;
         }
 
         return defaultConfig;
@@ -51,7 +52,7 @@ export function readQuartzConfig(): QuartzConfig {
 /**
  * 写入配置文件
  */
-export function writeQuartzConfig(config: QuartzConfig, profileName: string = 'default'): void {
+export function writeQuartzConfig(config: QuartzConfig, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
     const quartzPath = getQuartzPath();
     let data: any = {};
 
