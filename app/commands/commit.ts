@@ -1,6 +1,7 @@
 //cli/commands/commit.ts
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import { $ } from '@/utils/shell';
+import { execa } from 'execa';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
@@ -128,9 +129,11 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
       0
     );
   } catch (error) {
-    // User cancelled (Ctrl+C)
     logger.line();
     logger.warn(t('commit.cancelled'));
+    if (error instanceof Error) {
+      logger.error('Selection error:', error.message);
+    }
     process.exit(0);
   }
 }
@@ -141,7 +144,8 @@ async function selectCommitMessage(messages: string[]): Promise<number> {
  */
 async function executeCommit(message: string) {
   try {
-    await $`git commit -m ${message}`;
+    // Use execa with array arguments to properly handle multiline messages
+    await execa('git', ['commit', '-m', message]);
     logger.success(t('commit.success'));
   } catch (error) {
     logger.error(t('commit.failed'), error);

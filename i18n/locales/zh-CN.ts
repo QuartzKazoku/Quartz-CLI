@@ -174,7 +174,7 @@ export const zhCN: Translations = {
 
   errors: {
     noApiKey: '❌ 错误: 未设置 OPENAI_API_KEY',
-    setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.json 文件',
+    setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.jsonc 文件',
     apiFailed: '❌ API 调用失败',
     fileNotFound: '❌ 文件不存在',
     gitError: '❌ Git 操作失败',

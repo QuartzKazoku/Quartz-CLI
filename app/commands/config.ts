@@ -25,7 +25,7 @@ import { select, input, message } from '../../utils/enquirer';
 import { logger } from '../../utils/logger';
 
 /**
- * Get quartz.json file path
+ * Get quartz.jsonc file path
  */
 function getQuartzPath(): string {
     return path.join(process.cwd(), CONFIG_FILE.NAME);
@@ -242,7 +242,8 @@ async function askQuestion(
     try {
         return await input(message, initialValue);
     } catch (error) {
-        // User cancelled
+        // User cancelled the input prompt
+        logger.warn('Input cancelled by user');
         return initialValue || '';
     }
 }
@@ -267,7 +268,8 @@ async function selectPlatform(currentPlatform?: string): Promise<string> {
             initial
         );
     } catch (error) {
-        // User cancelled
+        // User cancelled the platform selection
+        logger.warn('Platform selection cancelled by user');
         return currentPlatform || PLATFORM_TYPES.GITHUB;
     }
 }
@@ -294,7 +296,8 @@ async function selectLanguage(currentLang?: string, title?: string): Promise<str
             selectedIndex
         );
     } catch (error) {
-        // User cancelled
+        // User cancelled the language selection
+        logger.warn('Language selection cancelled by user');
         return currentLang || DEFAULT_VALUES.LANGUAGE_UI;
     }
 }
@@ -313,111 +316,150 @@ async function setupWizard() {
     const config = readConfig();
 
     try {
-        // UI language
-        const currentLang = config.language.ui;
-        const lang = await selectLanguage(currentLang, t('config.keys.language'));
-        config.language.ui = lang;
-
-        process.env.QUARTZ_LANG = lang;
-        setLanguage(lang as any);
-
-        // Prompt language
-        const currentPromptLang = config.language.prompt || lang;
-        config.language.prompt = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
-
-        // Git platform
-        const currentPlatform = config.platforms.length > 0 ? config.platforms[0].type : PLATFORM_TYPES.GITHUB;
-        const platform = await selectPlatform(currentPlatform);
-
-        // OpenAI API Key
-        const currentApiKey = config.openai.apiKey;
-        const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
-        const apiKeyDesc = currentApiKey
-            ? t('config.wizard.apiKeyWithCurrent', { current: formatSensitiveValue(currentApiKey) })
-            : t('config.wizard.apiKey');
-
-        const apiKey = await askQuestion(apiKeyLabel, apiKeyDesc, currentApiKey);
-        if (apiKey.trim()) {
-            config.openai.apiKey = apiKey.trim();
-        }
-
-        // OpenAI Base URL
-        const currentBaseUrl = config.openai.baseUrl;
-        const defaultBaseUrl = currentBaseUrl || DEFAULT_VALUES.OPENAI_BASE_URL;
-        const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
-        const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
-
-        const baseUrl = await askQuestion(baseUrlLabel, baseUrlDesc, defaultBaseUrl);
-        if (baseUrl.trim()) {
-            config.openai.baseUrl = baseUrl.trim();
-        } else if (!currentBaseUrl) {
-            config.openai.baseUrl = defaultBaseUrl;
-        }
-
-        // OpenAI Model
-        const currentModel = config.openai.model;
-        const defaultModel = currentModel || DEFAULT_VALUES.OPENAI_MODEL;
-        const modelLabel = '🤖 ' + t('config.keys.model');
-        const modelDesc = t('config.wizard.model', { default: defaultModel });
-
-        const model = await askQuestion(modelLabel, modelDesc, defaultModel);
-        if (model.trim()) {
-            config.openai.model = model.trim();
-        } else if (!currentModel) {
-            config.openai.model = defaultModel;
-        }
-
-        // Git Token (based on selected platform)
-        if (platform === PLATFORM_TYPES.GITHUB) {
-            const existingGithub = config.platforms.find(p => p.type === PLATFORM_TYPES.GITHUB);
-            const currentGithubToken = existingGithub?.token;
-            const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
-            const githubTokenDesc = currentGithubToken
-                ? t('config.wizard.githubTokenWithCurrent', { current: formatSensitiveValue(currentGithubToken) })
-                : t('config.wizard.githubToken');
-
-            const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
-            if (githubToken.trim()) {
-                upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
-            }
-        } else if (platform === PLATFORM_TYPES.GITLAB) {
-            const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
-            const currentGitlabToken = existingGitlab?.token;
-            const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
-            const gitlabTokenDesc = currentGitlabToken
-                ? t('config.wizard.gitlabTokenWithCurrent', { current: formatSensitiveValue(currentGitlabToken) })
-                : t('config.wizard.gitlabToken');
-
-            const gitlabToken = await askQuestion(gitlabTokenLabel, gitlabTokenDesc, currentGitlabToken);
-            if (gitlabToken.trim()) {
-                const currentGitlabUrl = existingGitlab?.url;
-                const defaultGitlabUrl = currentGitlabUrl || DEFAULT_VALUES.GITLAB_URL;
-                const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
-                const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
-
-                const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
-                upsertPlatformConfig({
-                    type: PLATFORM_TYPES.GITLAB,
-                    token: gitlabToken.trim(),
-                    url: gitlabUrl.trim() || defaultGitlabUrl
-                });
-            }
-        }
-
-        // Save configuration
-        writeConfig(config);
-        logger.line();
-        logger.separator(SEPARATOR_LENGTH);
-        await message(
-            t('config.wizard.success'),
-            t('config.wizard.saved', { path: getQuartzPath() }),
-            'success'
-        );
-
+        await configureLanguages(config);
+        const platform = await configurePlatform(config);
+        await configureOpenAI(config);
+        await configurePlatformTokens(config, platform);
+        await saveWizardConfig(config);
     } catch (error) {
         logger.error('Setup wizard error:', error);
         throw error;
     }
+}
+
+/**
+ * Configure UI and prompt languages
+ */
+async function configureLanguages(config: QuartzConfig) {
+    const currentLang = config.language.ui;
+    const lang = await selectLanguage(currentLang, t('config.keys.language'));
+    config.language.ui = lang;
+
+    process.env.QUARTZ_LANG = lang;
+    setLanguage(lang as any);
+
+    const currentPromptLang = config.language.prompt || lang;
+    config.language.prompt = await selectLanguage(currentPromptLang, t('config.keys.promptLanguage'));
+}
+
+/**
+ * Configure git platform
+ */
+async function configurePlatform(config: QuartzConfig): Promise<string> {
+    const currentPlatform = config.platforms.length > 0 ? config.platforms[0].type : PLATFORM_TYPES.GITHUB;
+    return await selectPlatform(currentPlatform);
+}
+
+/**
+ * Configure OpenAI settings (API key, base URL, model)
+ */
+async function configureOpenAI(config: QuartzConfig) {
+    // API Key
+    const currentApiKey = config.openai.apiKey;
+    const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
+    const apiKeyDesc = currentApiKey
+        ? t('config.wizard.apiKeyWithCurrent', { current: formatSensitiveValue(currentApiKey) })
+        : t('config.wizard.apiKey');
+
+    const apiKey = await askQuestion(apiKeyLabel, apiKeyDesc, currentApiKey);
+    if (apiKey.trim()) {
+        config.openai.apiKey = apiKey.trim();
+    }
+
+    // Base URL
+    const currentBaseUrl = config.openai.baseUrl;
+    const defaultBaseUrl = currentBaseUrl || DEFAULT_VALUES.OPENAI_BASE_URL;
+    const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
+    const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
+
+    const baseUrl = await askQuestion(baseUrlLabel, baseUrlDesc, defaultBaseUrl);
+    if (baseUrl.trim()) {
+        config.openai.baseUrl = baseUrl.trim();
+    } else if (!currentBaseUrl) {
+        config.openai.baseUrl = defaultBaseUrl;
+    }
+
+    // Model
+    const currentModel = config.openai.model;
+    const defaultModel = currentModel || DEFAULT_VALUES.OPENAI_MODEL;
+    const modelLabel = '🤖 ' + t('config.keys.model');
+    const modelDesc = t('config.wizard.model', { default: defaultModel });
+
+    const model = await askQuestion(modelLabel, modelDesc, defaultModel);
+    if (model.trim()) {
+        config.openai.model = model.trim();
+    } else if (!currentModel) {
+        config.openai.model = defaultModel;
+    }
+}
+
+/**
+ * Configure platform-specific tokens
+ */
+async function configurePlatformTokens(config: QuartzConfig, platform: string) {
+    if (platform === PLATFORM_TYPES.GITHUB) {
+        await configureGitHubToken(config);
+    } else if (platform === PLATFORM_TYPES.GITLAB) {
+        await configureGitLabToken(config);
+    }
+}
+
+/**
+ * Configure GitHub token
+ */
+async function configureGitHubToken(config: QuartzConfig) {
+    const existingGithub = config.platforms.find(p => p.type === PLATFORM_TYPES.GITHUB);
+    const currentGithubToken = existingGithub?.token;
+    const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
+    const githubTokenDesc = currentGithubToken
+        ? t('config.wizard.githubTokenWithCurrent', { current: formatSensitiveValue(currentGithubToken) })
+        : t('config.wizard.githubToken');
+
+    const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
+    if (githubToken.trim()) {
+        upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
+    }
+}
+
+/**
+ * Configure GitLab token and URL
+ */
+async function configureGitLabToken(config: QuartzConfig) {
+    const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
+    const currentGitlabToken = existingGitlab?.token;
+    const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
+    const gitlabTokenDesc = currentGitlabToken
+        ? t('config.wizard.gitlabTokenWithCurrent', { current: formatSensitiveValue(currentGitlabToken) })
+        : t('config.wizard.gitlabToken');
+
+    const gitlabToken = await askQuestion(gitlabTokenLabel, gitlabTokenDesc, currentGitlabToken);
+    if (gitlabToken.trim()) {
+        const currentGitlabUrl = existingGitlab?.url;
+        const defaultGitlabUrl = currentGitlabUrl || DEFAULT_VALUES.GITLAB_URL;
+        const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
+        const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
+
+        const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
+        upsertPlatformConfig({
+            type: PLATFORM_TYPES.GITLAB,
+            token: gitlabToken.trim(),
+            url: gitlabUrl.trim() || defaultGitlabUrl
+        });
+    }
+}
+
+/**
+ * Save wizard configuration and show success message
+ */
+async function saveWizardConfig(config: QuartzConfig) {
+    writeConfig(config);
+    logger.line();
+    logger.separator(SEPARATOR_LENGTH);
+    await message(
+        t('config.wizard.success'),
+        t('config.wizard.saved', { path: getQuartzPath() }),
+        'success'
+    );
 }
 
 /**
@@ -492,7 +534,7 @@ function saveProfile(name: string) {
 }
 
 /**
- * Load profiles from quartz.json
+ * Load profiles from quartz.jsonc
  */
 function loadProfiles(): Record<string, any> {
     const quartzPath = getQuartzPath();
@@ -521,7 +563,7 @@ function loadProfile(name: string) {
             const content = fs.readFileSync(quartzPath, 'utf-8');
             data = JSON.parse(content);
         } catch (error) {
-            logger.error('Failed to load quartz.json:', error);
+            logger.error('Failed to load quartz.jsonc:', error);
             process.exit(1);
         }
     }
@@ -580,7 +622,7 @@ function deleteProfile(name: string) {
             const content = fs.readFileSync(quartzPath, 'utf-8');
             data = JSON.parse(content);
         } catch (error) {
-            logger.error('Failed to load quartz.json:', error);
+            logger.error('Failed to load quartz.jsonc:', error);
             process.exit(1);
         }
     }

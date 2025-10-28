@@ -1,30 +1,17 @@
 //tests/i18n.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
-import { initLanguage, setLanguage, getLanguage, t } from '../cli/i18n';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { initLanguage, setLanguage, getLanguage, t } from '../i18n';
 
 describe('Internationalization', () => {
   beforeEach(() => {
     // Reset language before each test
     setLanguage('en');
     
-    // Mock process.env
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        LANG: '',
-        LANGUAGE: '',
-        QUARTZ_LANG: '',
-        AI_LANG: '',
-      },
-    }));
-    
-    // Mock fs modules
-    mock.module('fs', () => ({
-      existsSync: mock(() => false),
-      readFileSync: mock(() => '{}'),
-    }));
+    // Clear environment variables
+    delete process.env.LANG;
+    delete process.env.LANGUAGE;
+    delete process.env.QUARTZ_LANG;
+    delete process.env.AI_LANG;
   });
 
   it('should initialize with default language', () => {
@@ -36,13 +23,7 @@ describe('Internationalization', () => {
 
   it('should initialize with system language', () => {
     // Mock system language
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        LANG: 'zh_CN.UTF-8',
-      },
-    }));
+    process.env.LANG = 'zh_CN.UTF-8';
     
     const lang = initLanguage();
     
@@ -52,13 +33,7 @@ describe('Internationalization', () => {
 
   it('should initialize with QUARTZ_LANG environment variable', () => {
     // Mock QUARTZ_LANG
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        QUARTZ_LANG: 'ja',
-      },
-    }));
+    process.env.QUARTZ_LANG = 'ja';
     
     const lang = initLanguage();
     
@@ -68,13 +43,7 @@ describe('Internationalization', () => {
 
   it('should initialize with AI_LANG environment variable (legacy)', () => {
     // Mock AI_LANG
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        AI_LANG: 'ko',
-      },
-    }));
+    process.env.AI_LANG = 'ko';
     
     const lang = initLanguage();
     
@@ -84,14 +53,8 @@ describe('Internationalization', () => {
 
   it('should prioritize QUARTZ_LANG over AI_LANG', () => {
     // Mock both environment variables
-    mock.module('process', () => ({
-      ...process,
-      env: {
-        ...process.env,
-        QUARTZ_LANG: 'zh-TW',
-        AI_LANG: 'ja',
-      },
-    }));
+    process.env.QUARTZ_LANG = 'zh-TW';
+    process.env.AI_LANG = 'ja';
     
     const lang = initLanguage();
     

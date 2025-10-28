@@ -1,4 +1,6 @@
 //cli/strategies/platform.ts
+import { $ } from '@/utils/shell';
+
 /**
  * PR/MR creation result interface
  */
@@ -48,7 +50,6 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      */
     async isBranchOnRemote(branch: string): Promise<boolean> {
         try {
-            const { $ } = await import('bun');
             // Execute git ls-remote command to check if remote branch exists
             await $`git ls-remote --heads origin ${branch}`.text();
             return true;
@@ -64,7 +65,6 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      * @throws Error when push fails
      */
     async pushBranchToRemote(branch: string): Promise<void> {
-        const { $ } = await import('bun');
         try {
             // Execute git push command to push branch to remote repository
             await $`git push -u origin ${branch}`.quiet();

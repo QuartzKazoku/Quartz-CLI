@@ -41,11 +41,10 @@ Thumbs.db
 *.swo
 *~
 
-# AI Review Results
-.ai-review-result.json
+
 
 # Quartz Configuration Profiles
-quartz.json
+quartz.jsonc
 
 # Temporary files
 *.tmp

@@ -1,51 +1,17 @@
 //tests/pr.test.ts
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
-import { generatePR } from '../cli/commands/pr';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { generatePR } from '../app/commands/pr';
 
 // Mock console methods
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
-// Helper function to create OpenAI mock with successful response
-const createSuccessfulOpenAIMock = () => {
-  const mockResponse = {
-    choices: [{
-      message: {
-        content: JSON.stringify({
-          title: 'Add new feature',
-          body: 'This PR adds a new feature to improve functionality'
-        })
-      }
-    }]
-  };
-  
-  return {
-    chat: {
-      completions: {
-        create: mock(() => Promise.resolve(mockResponse))
-      }
-    }
-  };
-};
-
-// Helper function to create OpenAI mock with error
-const createErrorOpenAIMock = () => {
-  const mockError = new Error('API Error');
-  
-  return {
-    chat: {
-      completions: {
-        create: mock(() => Promise.reject(mockError))
-      }
-    }
-  };
-};
 
 describe('PR Command', () => {
   beforeEach(() => {
     // Mock console methods
-    console.log = mock(() => {});
-    console.error = mock(() => {});
+    console.log = vi.fn();
+    console.error = vi.fn();
     
     // Mock process.env
     process.env.OPENAI_API_KEY = 'test-api-key';
@@ -54,38 +20,15 @@ describe('PR Command', () => {
     process.env.GITHUB_TOKEN = 'test-github-token';
     
     // Mock process.exit
-    mock.module('process', () => ({
-      ...process,
-      exit: mock(() => {}),
-    }));
-    
-    // Mock fs.existsSync and fs.readFileSync
-    mock.module('fs', () => ({
-      existsSync: mock(() => true),
-      readFileSync: mock(() => 'OPENAI_API_KEY=test-api-key\nOPENAI_BASE_URL=https://api.openai.com/v1\nOPENAI_MODEL=gpt-4-turbo-preview\nGITHUB_TOKEN=test-github-token'),
-      writeFileSync: mock(() => {}),
-      unlinkSync: mock(() => {}),
-    }));
-    
-    // Mock Bun's $ for git commands
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.resolve('test-diff-content')),
-      },
-    }));
-    
-    // Mock OpenAI
-    mock.module('openai', () => ({
-      default: mock(() => createSuccessfulOpenAIMock())
-    }));
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     
     // Mock globalThis fetch for GitHub API
-    globalThis.fetch = mock(() => Promise.resolve({
+    global.fetch = vi.fn(() => Promise.resolve({
       ok: true,
       json: () => Promise.resolve({
         html_url: 'https://github.com/test/repo/pull/1'
       })
-    })) as any;
+    } as Response));
   });
 
   afterEach(() => {

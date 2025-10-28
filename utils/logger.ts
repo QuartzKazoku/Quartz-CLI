@@ -102,7 +102,8 @@ export const logger = {
 
   // Numbered list item
   numberedItem: (index: number, text: string, indent: number = 1) => {
-    console.log(`${' '.repeat(indent * 2)}${chalk.cyan(`${index}.`)} ${text}`);
+    const indexText = `${index}.`;
+    console.log(`${' '.repeat(indent * 2)}${chalk.cyan(indexText)} ${text}`);
   },
 
   // Key-value pair
@@ -128,20 +129,28 @@ export const logger = {
 
   // Example command
   example: (description: string, command: string) => {
-    console.log(`  ${chalk.dim(`# ${description}`)}`);
+    const descriptionText = `# ${description}`;
+    console.log(`  ${chalk.dim(descriptionText)}`);
     console.log(`  ${chalk.green('$')} ${command}`);
     console.log('');
   },
 };
 
 /**
- * Create gradient text
+ * Create gradient text using gradient-string v3 API
  */
+const gradientInstance = gradient(['#00D9FF', '#FF69B4']);
+
 function gradientText(text: string): string {
-  return gradient.pastel.multiline(text);
+  return gradientInstance.multiline(text);
 }
 
 /**
  * Export individual utilities for specific needs
  */
-export { chalk, ora, boxen, figlet, gradient, consola };
+export { default as chalk } from 'chalk';
+export { default as ora } from 'ora';
+export { default as boxen } from 'boxen';
+export { default as figlet } from 'figlet';
+export { default as gradient } from 'gradient-string';
+export { consola } from 'consola';

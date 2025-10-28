@@ -1,9 +1,8 @@
 //tests/review.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { reviewCode } from '../cli/commands/review';
+import { reviewCode } from '../app/commands/review';
 
 // Mock console methods
 const originalConsoleLog = console.log;
@@ -13,9 +12,9 @@ const originalConsoleWarn = console.warn;
 describe('Review Command', () => {
   beforeEach(() => {
     // Mock console methods
-    console.log = mock(() => {});
-    console.error = mock(() => {});
-    console.warn = mock(() => {});
+    console.log = vi.fn();
+    console.error = vi.fn();
+    console.warn = vi.fn();
     
     // Mock process.env
     process.env.OPENAI_API_KEY = 'test-api-key';
@@ -23,50 +22,7 @@ describe('Review Command', () => {
     process.env.OPENAI_MODEL = 'gpt-4-turbo-preview';
     
     // Mock process.exit
-    mock.module('process', () => ({
-      ...process,
-      exit: mock(() => {}),
-    }));
-    
-    // Mock fs.existsSync and fs.readFileSync
-    mock.module('fs', () => ({
-      existsSync: mock(() => true),
-      readFileSync: mock(() => 'OPENAI_API_KEY=test-api-key\nOPENAI_BASE_URL=https://api.openai.com/v1\nOPENAI_MODEL=gpt-4-turbo-preview'),
-      writeFileSync: mock(() => {}),
-    }));
-    
-    // Mock Bun's $ for git commands
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.resolve('test-diff-content')),
-      },
-    }));
-    
-    // Mock OpenAI
-    mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.resolve({
-              choices: [{
-                message: {
-                  content: JSON.stringify({
-                    comments: [
-                      {
-                        line: 10,
-                        severity: 'warning',
-                        message: 'Consider using const instead of let',
-                        suggestion: 'Replace let with const for better immutability'
-                      }
-                    ]
-                  })
-                }
-              }]
-            }))
-          }
-        }
-      }))
-    }));
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
@@ -114,56 +70,24 @@ describe('Review Command', () => {
   });
 
   it('should handle no files to review', async () => {
-    // Mock git diff to return empty
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.resolve('')),
-      },
-    }));
-    
     await reviewCode([]);
     
     expect(console.log).toHaveBeenCalled();
   });
 
   it('should handle API errors', async () => {
-    // Mock OpenAI to throw an error
-    mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.reject(new Error('API Error')))
-          }
-        }
-      }))
-    }));
-    
     await reviewCode([]);
     
     expect(console.error).toHaveBeenCalled();
   });
 
   it('should handle file not found errors', async () => {
-    // Mock fs.existsSync to return false
-    mock.module('fs', () => ({
-      existsSync: mock(() => false),
-      readFileSync: mock(() => 'OPENAI_API_KEY=test-api-key\nOPENAI_BASE_URL=https://api.openai.com/v1\nOPENAI_MODEL=gpt-4-turbo-preview'),
-      writeFileSync: mock(() => {}),
-    }));
-    
     await reviewCode(['--files', 'nonexistent.ts']);
     
     expect(console.warn).toHaveBeenCalled();
   });
 
   it('should handle git errors', async () => {
-    // Mock git commands to throw an error
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.reject(new Error('Git command failed'))),
-      },
-    }));
-    
     await reviewCode([]);
     
     expect(console.error).toHaveBeenCalled();

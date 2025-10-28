@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parse as parseJsonc } from 'jsonc-parser';
 import { PlatformConfig, QuartzConfig } from '@/types/config';
 import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
+import { logger } from '@/utils/logger';
 
 /**
  * Get quartz.jsonc file path
@@ -46,7 +47,8 @@ export function readQuartzConfig(): QuartzConfig {
 
         return defaultConfig;
     } catch (error) {
-        // console.error('Failed to parse quartz.jsonc:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn(`Failed to parse quartz.jsonc: ${errorMessage}. Using default config.`);
         return defaultConfig;
     }
 }
@@ -64,7 +66,8 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
             const content = fs.readFileSync(quartzPath, 'utf-8');
             data = parseJsonc(content);
         } catch (error) {
-            // console.warn('Failed to read existing config, creating new one:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.warn(`Failed to read existing config: ${errorMessage}. Creating new one.`);
             data = {};
         }
     }

@@ -174,7 +174,7 @@ export const ja: Translations = {
 
   errors: {
     noApiKey: '❌ エラー: OPENAI_API_KEY が設定されていません',
-    setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.json ファイルを作成してください',
+    setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.jsonc ファイルを作成してください',
     apiFailed: '❌ API 呼び出し失敗',
     fileNotFound: '❌ ファイルが見つかりません',
     gitError: '❌ Git 操作失敗',

@@ -17,7 +17,7 @@
  * @module constants/ui
  */
 
-import {CONFIG_KEYS} from "./config.ts";
+import {CONFIG_KEYS} from "./config";
 
 /**
  * List of supported languages

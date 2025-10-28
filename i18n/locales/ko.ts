@@ -174,7 +174,7 @@ export const ko: Translations = {
 
   errors: {
     noApiKey: '❌ 오류: OPENAI_API_KEY가 설정되지 않았습니다',
-    setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.json 파일을 생성하세요',
+    setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.jsonc 파일을 생성하세요',
     apiFailed: '❌ API 호출 실패',
     fileNotFound: '❌ 파일을 찾을 수 없습니다',
     gitError: '❌ Git 작업 실패',

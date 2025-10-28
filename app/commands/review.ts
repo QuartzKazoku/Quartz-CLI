@@ -1,6 +1,6 @@
 //cli/commands/review.ts
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '../../i18n';
@@ -255,7 +255,8 @@ function printResult(result: ReviewResult) {
   logger.log(`${scoreEmoji} ${t('review.result')}`);
   logger.separator(60, '=');
   logger.line();
-  logger.info(`${t('review.score')}: ${logger.text.bold(`${score}/100`)} (${scoreDesc})`);
+  const scoreText = `${score}/100`;
+  logger.info(`${t('review.score')}: ${logger.text.bold(scoreText)} (${scoreDesc})`);
   logger.info(`${t('review.summary')}: ${summary}`);
   logger.line();
 

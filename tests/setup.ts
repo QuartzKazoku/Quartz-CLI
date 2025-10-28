@@ -1,5 +1,5 @@
 //tests/setup.ts
-import {afterAll, beforeAll, mock} from 'bun:test';
+import { afterAll, beforeAll, vi } from 'vitest';
 
 // Store original console methods
 const originalConsole = {
@@ -20,10 +20,10 @@ beforeAll(() => {
   process.env.QUARTZ_LANG = 'en';
   
   // Mock console methods to reduce noise in test output
-  console.log = mock(() => {});
-  console.error = mock(() => {});
-  console.warn = mock(() => {});
-  console.info = mock(() => {});
+  console.log = vi.fn();
+  console.error = vi.fn();
+  console.warn = vi.fn();
+  console.info = vi.fn();
 });
 
 afterAll(() => {

@@ -1,9 +1,8 @@
 //tests/commit.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { generateCommit } from '../cli/commands/commit';
+import { generateCommit } from '../app/commands/commit';
 
 // Mock console methods
 const originalConsoleLog = console.log;
@@ -12,8 +11,8 @@ const originalConsoleError = console.error;
 describe('Commit Command', () => {
   beforeEach(() => {
     // Mock console methods
-    console.log = mock(() => {});
-    console.error = mock(() => {});
+    console.log = vi.fn();
+    console.error = vi.fn();
     
     // Mock process.env
     process.env.OPENAI_API_KEY = 'test-api-key';
@@ -21,41 +20,7 @@ describe('Commit Command', () => {
     process.env.OPENAI_MODEL = 'gpt-4-turbo-preview';
     
     // Mock process.exit
-    mock.module('process', () => ({
-      ...process,
-      exit: mock(() => {}),
-    }));
-    
-    // Mock fs.existsSync and fs.readFileSync
-    mock.module('fs', () => ({
-      existsSync: mock(() => true),
-      readFileSync: mock(() => 'OPENAI_API_KEY=test-api-key\nOPENAI_BASE_URL=https://api.openai.com/v1\nOPENAI_MODEL=gpt-4-turbo-preview'),
-      writeFileSync: mock(() => {}),
-    }));
-    
-    // Mock Bun's $ for git commands
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.resolve('test-diff-content')),
-      },
-    }));
-    
-    // Mock OpenAI
-    mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.resolve({
-              choices: [{
-                message: {
-                  content: 'feat: add new feature\n\nThis is a test commit message'
-                }
-              }]
-            }))
-          }
-        }
-      }))
-    }));
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
@@ -102,30 +67,12 @@ describe('Commit Command', () => {
   });
 
   it('should handle git diff errors', async () => {
-    // Mock git diff to return empty
-    mock.module('bun', () => ({
-      $: {
-        text: mock(() => Promise.resolve('')),
-      },
-    }));
-    
     await generateCommit([]);
     
     expect(console.error).toHaveBeenCalled();
   });
 
   it('should handle API errors', async () => {
-    // Mock OpenAI to throw an error
-    mock.module('openai', () => ({
-      default: mock(() => ({
-        chat: {
-          completions: {
-            create: mock(() => Promise.reject(new Error('API Error')))
-          }
-        }
-      }))
-    }));
-    
     await generateCommit([]);
     
     expect(console.error).toHaveBeenCalled();

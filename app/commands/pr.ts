@@ -1,6 +1,6 @@
 //cli/commands/pr.ts
 import OpenAI from 'openai';
-import { $ } from 'bun';
+import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '../../i18n/index.ts';

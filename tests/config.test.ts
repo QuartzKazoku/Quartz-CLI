@@ -1,9 +1,8 @@
 //tests/config.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { configCommand } from '../cli/commands/config';
+import { configCommand } from '../app/commands/config';
 
 // Mock console methods
 const originalConsoleLog = console.log;
@@ -12,43 +11,13 @@ const originalConsoleError = console.error;
 describe('Config Command', () => {
   const testEnvPath = path.join(process.cwd(), '.env.test');
   
-  beforeEach(async () => {
+  beforeEach(() => {
     // Mock console methods
-    console.log = mock(() => {});
-    console.error = mock(() => {});
+    console.log = vi.fn();
+    console.error = vi.fn();
     
-    // Create a test .env file
-    await fs.writeFile(testEnvPath, `
-# Test Configuration
-OPENAI_API_KEY=test-key
-OPENAI_BASE_URL=https://api.test.com/v1
-OPENAI_MODEL=gpt-4-test
-GITHUB_TOKEN=test-github-token
-QUARTZ_LANG=zh-CN
-    `.trim(), 'utf-8');
-    
-    // Mock process.cwd to return test directory
-    mock.module('process', () => ({
-      ...process,
-      cwd: () => process.cwd(),
-      exit: mock(() => {}),
-    }));
-    
-    // Mock fs.existsSync to use test file
-    mock.module('fs', () => ({
-      existsSync: (filePath: string) => filePath.includes('.env.test'),
-      readFileSync: (filePath: string) => {
-        if (filePath.includes('.env.test')) {
-          return `OPENAI_API_KEY=test-key
-OPENAI_BASE_URL=https://api.test.com/v1
-OPENAI_MODEL=gpt-4-test
-GITHUB_TOKEN=test-github-token
-QUARTZ_LANG=zh-CN`;
-        }
-        return '';
-      },
-      writeFileSync: mock(() => {}),
-    }));
+    // Mock process.exit
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {

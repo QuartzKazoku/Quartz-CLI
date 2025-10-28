@@ -11,7 +11,7 @@ export class GitLabStrategy extends BasePlatformStrategy {
      * @param config Platform configuration information, must be GitLab type configuration
      * @throws Error when the passed platform type is not 'gitlab'
      */
-    constructor(private config: PlatformConfig) {
+    constructor(private readonly config: PlatformConfig) {
         super()
         if (config.type !== 'gitlab') {
             throw new Error('Invalid platform type for GitLabStrategy');

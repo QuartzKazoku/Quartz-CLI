@@ -1,8 +1,8 @@
 //cli/strategies/factory.ts
-import { PlatformConfig } from "@/types/config.ts";
-import { PlatformStrategy } from "./platform.ts";
-import { GitHubStrategy } from "./github.ts";
-import { GitLabStrategy } from "./gitlab.ts";
+import { PlatformConfig } from "@/types/config";
+import { PlatformStrategy } from "./platform";
+import { GitHubStrategy } from "./github";
+import { GitLabStrategy } from "./gitlab";
 
 /**
  * Platform strategy factory class for creating different platform strategy instances based on configuration
@@ -34,7 +34,7 @@ export class PlatformStrategyFactory {
         if (remoteUrl.includes('github.com')) {
             return 'github';
         }
-        if (remoteUrl.includes('gitlab.ts')) {
+        if (remoteUrl.includes('gitlab.com')) {
             return 'gitlab';
         }
         return null;

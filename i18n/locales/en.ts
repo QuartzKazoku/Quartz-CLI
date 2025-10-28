@@ -174,7 +174,7 @@ export const en: Translations = {
 
   errors: {
     noApiKey: '❌ Error: OPENAI_API_KEY is not set',
-    setApiKey: '   Please run quartz config init or create quartz.json file',
+    setApiKey: '   Please run quartz config init or create quartz.jsonc file',
     apiFailed: '❌ API call failed',
     fileNotFound: '❌ File not found',
     gitError: '❌ Git operation failed',

@@ -26,7 +26,7 @@ function getSystemLanguage(): Language {
 
 // Load language settings from config file
 function loadLanguageFromConfig(): Language | null {
-  // Priority 1: QUARTZ_LANG environment variable (from quartz.json)
+  // Priority 1: QUARTZ_LANG environment variable (from quartz.jsonc)
   const quartzLang = process.env.QUARTZ_LANG;
   if (quartzLang && locales[quartzLang as Language]) {
     return quartzLang as Language;
@@ -56,7 +56,7 @@ function loadLanguageFromConfig(): Language | null {
 
 // Initialize language
 export function initLanguage(): Language {
-  // Priority: QUARTZ_LANG env var (quartz.json) > AI_LANG env var > .ai-config.json > system language > default language
+  // Priority: QUARTZ_LANG env var (quartz.jsonc) > AI_LANG env var > .ai-config.json > system language > default language
   const configLang = loadLanguageFromConfig();
   currentLanguage = configLang || getSystemLanguage();
   return currentLanguage;
