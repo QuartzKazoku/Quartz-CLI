@@ -1,3 +1,4 @@
+//tests/utils.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { mock } from 'bun:test';
 import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '../cli/utils/prompt';

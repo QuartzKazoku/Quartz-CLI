@@ -1,3 +1,4 @@
+//cli/i18n/locales.ts
 // Multi-language configuration file
 
 export type Language = 'zh-CN' | 'zh-TW' | 'ja' | 'ko' | 'en';

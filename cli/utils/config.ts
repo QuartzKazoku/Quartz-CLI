@@ -1,3 +1,4 @@
+//cli/utils/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import {PlatformConfig, QuartzConfig} from '../types/config';

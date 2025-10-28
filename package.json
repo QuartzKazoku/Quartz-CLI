@@ -9,6 +9,7 @@
     "quartz": "cli/index.ts"
   },
   "scripts": {
+    "add-path-comments": "bun run scripts/add-path-comments.ts",
     "review": "bun run scripts/review.ts",
     "cli": "bun run cli/index.ts",
     "test": "bun test",

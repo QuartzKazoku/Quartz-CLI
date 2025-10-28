@@ -1,4 +1,5 @@
-import { beforeAll, afterAll, beforeEach, afterEach, mock } from 'bun:test';
+//tests/setup.ts
+import {afterAll, beforeAll, mock} from 'bun:test';
 
 // Store original console methods
 const originalConsole = {
