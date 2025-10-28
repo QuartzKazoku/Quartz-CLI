@@ -1,16 +1,48 @@
 {
   "default": {
     "name": "default",
-    "configs": {
-      "OPENAI_API_KEY": "sk-your-openai-api-key-here",
-      "OPENAI_BASE_URL": "https://api.openai.com/v1",
-      "OPENAI_MODEL": "gpt-4-turbo-preview",
-      "GIT_PLATFORM": "github",
-      "GITHUB_TOKEN": "ghp-your-github-token-here",
-      "GITLAB_TOKEN": "glpat-your-gitlab-token-here",
-      "GITLAB_URL": "https://gitlab.com",
-      "QUARTZ_LANG": "en",
-      "PROMPT_LANG": "zh-CN"
+    "config": {
+      "openai": {
+        "apiKey": "sk-your-openai-api-key-here",
+        "baseUrl": "https://api.openai.com/v1",
+        "model": "gpt-4-turbo-preview"
+      },
+      "platforms": [
+        {
+          "type": "github",
+          "token": "ghp-your-github-token-here"
+        },
+        {
+          "type": "gitlab",
+          "url": "https://gitlab.com",
+          "token": "glpat-your-gitlab-token-here"
+        }
+      ],
+      "language": {
+        "ui": "en",
+        "prompt": "zh-CN"
+      }
+    }
+  },
+  "work": {
+    "name": "work",
+    "config": {
+      "openai": {
+        "apiKey": "sk-your-work-openai-api-key",
+        "baseUrl": "https://api.openai.com/v1",
+        "model": "gpt-4-turbo-preview"
+      },
+      "platforms": [
+        {
+          "type": "gitlab",
+          "url": "https://gitlab.company.com",
+          "token": "glpat-your-company-gitlab-token"
+        }
+      ],
+      "language": {
+        "ui": "zh-CN",
+        "prompt": "zh-CN"
+      }
     }
   }
 }
