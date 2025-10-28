@@ -1,0 +1,58 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.0.0/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "error"
+      },
+      "style": {
+        "noNegationElse": "error",
+        "useShorthandArrayType": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "files": {
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      "coverage/**",
+      ".husky/**"
+    ]
+  }
+}

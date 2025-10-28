@@ -16,12 +16,12 @@ import {
     SUPPORTED_LANGUAGES,
     SUPPORTED_PLATFORMS,
     CONFIG_ICONS,
-    TERMINAL,
     SENSITIVE_KEYS,
     TOKEN_DISPLAY_LENGTH,
     SEPARATOR_LENGTH,
     INDENT,
-} from '../../constants'
+} from '../../constants';
+import { select, input, message } from '../../utils/enquirer';
 
 /**
  * Get quartz.json file path
@@ -229,160 +229,73 @@ function printLogo() {
 }
 
 /**
- * Ask question (improved formatting)
+ * Ask question using enquirer (improved formatting)
  */
 async function askQuestion(
-    readline: any,
     label: string,
-    description?: string
+    description?: string,
+    initialValue?: string
 ): Promise<string> {
-    return new Promise(resolve => {
-        console.log('');
-        console.log('\x1b[1m%s\x1b[0m', label);
-        if (description) {
-            console.log('\x1b[2m%s\x1b[0m', description);
-        }
-
-        const prompt = `\x1b[32m❯\x1b[0m `;
-
-        readline.question(prompt, (answer: string) => {
-            resolve(answer);
-        });
-    });
+    const message = description ? `${label}\n\x1b[2m${description}\x1b[0m` : label;
+    
+    try {
+        return await input(message, initialValue);
+    } catch (error) {
+        // User cancelled
+        return initialValue || '';
+    }
 }
 
 /**
- * Interactive platform selector (supports arrow keys)
+ * Interactive platform selector using enquirer
  */
 async function selectPlatform(currentPlatform?: string): Promise<string> {
-    let selectedIndex = SUPPORTED_PLATFORMS.findIndex(p => p.value === currentPlatform);
-    if (selectedIndex === -1) selectedIndex = 0;
+    const selectedIndex = SUPPORTED_PLATFORMS.findIndex(p => p.value === currentPlatform);
+    const initial = selectedIndex === -1 ? 0 : selectedIndex;
 
-    return new Promise((resolve) => {
-        const stdin = process.stdin;
-        const stdout = process.stdout;
+    const choices = SUPPORTED_PLATFORMS.map(p => ({
+        name: p.value,
+        value: p.value,
+        message: p.label,
+    }));
 
-        if (stdin.isTTY) {
-            stdin.setRawMode(true);
-        }
-        stdin.resume();
-        stdin.setEncoding('utf8');
-
-        const render = () => {
-            stdout.write(TERMINAL.CLEAR);
-
-            console.log('');
-            console.log('\x1b[1m%s\x1b[0m', '🔧 ' + t('config.keys.gitPlatform'));
-            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.gitPlatform', { default: currentPlatform || PLATFORM_TYPES.GITHUB }));
-            console.log('');
-
-            for (let index = 0; index < SUPPORTED_PLATFORMS.length; index++) {
-                const platform = SUPPORTED_PLATFORMS[index];
-                if (index === selectedIndex) {
-                    stdout.write(`${' '.repeat(INDENT.LEVEL_1)}\x1b[32m❯ ${platform.label}\x1b[0m\n`);
-                } else {
-                    stdout.write(`${' '.repeat(INDENT.LEVEL_2)}${platform.label}\n`);
-                }
-            }
-
-            console.log('');
-            console.log('\x1b[2m%s\x1b[0m', '↑↓: Navigate  Enter: Select  Esc: Skip');
-        };
-
-        const onData = (key: string) => {
-            if (key === TERMINAL.ARROW_UP) {
-                selectedIndex = (selectedIndex - 1 + SUPPORTED_PLATFORMS.length) % SUPPORTED_PLATFORMS.length;
-                render();
-            } else if (key === TERMINAL.ARROW_DOWN) {
-                selectedIndex = (selectedIndex + 1) % SUPPORTED_PLATFORMS.length;
-                render();
-            } else if (key === TERMINAL.ENTER || key === TERMINAL.NEWLINE) {
-                cleanup();
-                resolve(SUPPORTED_PLATFORMS[selectedIndex].value);
-            } else if (key === TERMINAL.ESC || key === TERMINAL.CTRL_C) {
-                cleanup();
-                resolve(currentPlatform || PLATFORM_TYPES.GITHUB);
-            }
-        };
-
-        const cleanup = () => {
-            stdin.removeListener('data', onData);
-            if (stdin.isTTY) {
-                stdin.setRawMode(false);
-            }
-            stdin.pause();
-        };
-
-        stdin.on('data', onData);
-        render();
-    });
+    try {
+        return await select(
+            t('config.keys.gitPlatform'),
+            choices,
+            initial
+        );
+    } catch (error) {
+        // User cancelled
+        return currentPlatform || PLATFORM_TYPES.GITHUB;
+    }
 }
 
 /**
- * Interactive language selector (supports arrow keys)
+ * Interactive language selector using enquirer
  */
 async function selectLanguage(currentLang?: string, title?: string): Promise<string> {
     let selectedIndex = SUPPORTED_LANGUAGES.findIndex(l => l.value === currentLang);
-    if (selectedIndex === -1) selectedIndex = SUPPORTED_LANGUAGES.findIndex(l => l.value === DEFAULT_VALUES.LANGUAGE_UI);
+    if (selectedIndex === -1) {
+        selectedIndex = SUPPORTED_LANGUAGES.findIndex(l => l.value === DEFAULT_VALUES.LANGUAGE_UI);
+    }
 
-    return new Promise((resolve) => {
-        const stdin = process.stdin;
-        const stdout = process.stdout;
+    const choices = SUPPORTED_LANGUAGES.map(l => ({
+        name: l.value,
+        value: l.value,
+        message: l.label,
+    }));
 
-        if (stdin.isTTY) {
-            stdin.setRawMode(true);
-        }
-        stdin.resume();
-        stdin.setEncoding('utf8');
-
-        const render = () => {
-            stdout.write(TERMINAL.CLEAR);
-
-            console.log('');
-            console.log('\x1b[1m%s\x1b[0m', '🌍 ' + (title || t('config.keys.language')));
-            console.log('\x1b[2m%s\x1b[0m', t('config.wizard.language', { default: currentLang || DEFAULT_VALUES.LANGUAGE_UI }));
-            console.log('');
-
-            for (let index = 0; index < SUPPORTED_LANGUAGES.length; index++) {
-                const lang = SUPPORTED_LANGUAGES[index];
-                if (index === selectedIndex) {
-                    stdout.write(`${' '.repeat(INDENT.LEVEL_1)}\x1b[32m❯ ${lang.label}\x1b[0m\n`);
-                } else {
-                    stdout.write(`${' '.repeat(INDENT.LEVEL_2)}${lang.label}\n`);
-                }
-            }
-
-            console.log('');
-            console.log('\x1b[2m%s\x1b[0m', '↑↓: Navigate  Enter: Select  Esc: Skip');
-        };
-
-        const onData = (key: string) => {
-            if (key === TERMINAL.ARROW_UP) {
-                selectedIndex = (selectedIndex - 1 + SUPPORTED_LANGUAGES.length) % SUPPORTED_LANGUAGES.length;
-                render();
-            } else if (key === TERMINAL.ARROW_DOWN) {
-                selectedIndex = (selectedIndex + 1) % SUPPORTED_LANGUAGES.length;
-                render();
-            } else if (key === TERMINAL.ENTER || key === TERMINAL.NEWLINE) {
-                cleanup();
-                resolve(SUPPORTED_LANGUAGES[selectedIndex].value);
-            } else if (key === TERMINAL.ESC || key === TERMINAL.CTRL_C) {
-                cleanup();
-                resolve(currentLang || DEFAULT_VALUES.LANGUAGE_UI);
-            }
-        };
-
-        const cleanup = () => {
-            stdin.removeListener('data', onData);
-            if (stdin.isTTY) {
-                stdin.setRawMode(false);
-            }
-            stdin.pause();
-        };
-
-        stdin.on('data', onData);
-        render();
-    });
+    try {
+        return await select(
+            title || t('config.keys.language'),
+            choices,
+            selectedIndex
+        );
+    } catch (error) {
+        // User cancelled
+        return currentLang || DEFAULT_VALUES.LANGUAGE_UI;
+    }
 }
 
 /**
@@ -397,14 +310,9 @@ async function setupWizard() {
     console.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
 
     const config = readConfig();
-    const readline = require('node:readline').createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
 
     try {
         // UI language
-        readline.close();
         const currentLang = config.language.ui;
         const lang = await selectLanguage(currentLang, t('config.keys.language'));
         config.language.ui = lang;
@@ -420,11 +328,6 @@ async function setupWizard() {
         const currentPlatform = config.platforms.length > 0 ? config.platforms[0].type : PLATFORM_TYPES.GITHUB;
         const platform = await selectPlatform(currentPlatform);
 
-        const readline2 = require('node:readline').createInterface({
-            input: process.stdin,
-            output: process.stdout,
-        });
-
         // OpenAI API Key
         const currentApiKey = config.openai.apiKey;
         const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
@@ -432,7 +335,7 @@ async function setupWizard() {
             ? t('config.wizard.apiKeyWithCurrent', { current: formatSensitiveValue(currentApiKey) })
             : t('config.wizard.apiKey');
 
-        const apiKey = await askQuestion(readline2, apiKeyLabel, apiKeyDesc);
+        const apiKey = await askQuestion(apiKeyLabel, apiKeyDesc, currentApiKey);
         if (apiKey.trim()) {
             config.openai.apiKey = apiKey.trim();
         }
@@ -443,7 +346,7 @@ async function setupWizard() {
         const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
         const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
 
-        const baseUrl = await askQuestion(readline2, baseUrlLabel, baseUrlDesc);
+        const baseUrl = await askQuestion(baseUrlLabel, baseUrlDesc, defaultBaseUrl);
         if (baseUrl.trim()) {
             config.openai.baseUrl = baseUrl.trim();
         } else if (!currentBaseUrl) {
@@ -456,7 +359,7 @@ async function setupWizard() {
         const modelLabel = '🤖 ' + t('config.keys.model');
         const modelDesc = t('config.wizard.model', { default: defaultModel });
 
-        const model = await askQuestion(readline2, modelLabel, modelDesc);
+        const model = await askQuestion(modelLabel, modelDesc, defaultModel);
         if (model.trim()) {
             config.openai.model = model.trim();
         } else if (!currentModel) {
@@ -472,7 +375,7 @@ async function setupWizard() {
                 ? t('config.wizard.githubTokenWithCurrent', { current: formatSensitiveValue(currentGithubToken) })
                 : t('config.wizard.githubToken');
 
-            const githubToken = await askQuestion(readline2, githubTokenLabel, githubTokenDesc);
+            const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
             if (githubToken.trim()) {
                 upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
             }
@@ -484,14 +387,14 @@ async function setupWizard() {
                 ? t('config.wizard.gitlabTokenWithCurrent', { current: formatSensitiveValue(currentGitlabToken) })
                 : t('config.wizard.gitlabToken');
 
-            const gitlabToken = await askQuestion(readline2, gitlabTokenLabel, gitlabTokenDesc);
+            const gitlabToken = await askQuestion(gitlabTokenLabel, gitlabTokenDesc, currentGitlabToken);
             if (gitlabToken.trim()) {
                 const currentGitlabUrl = existingGitlab?.url;
                 const defaultGitlabUrl = currentGitlabUrl || DEFAULT_VALUES.GITLAB_URL;
                 const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
                 const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
 
-                const gitlabUrl = await askQuestion(readline2, gitlabUrlLabel, gitlabUrlDesc);
+                const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
                 upsertPlatformConfig({
                     type: PLATFORM_TYPES.GITLAB,
                     token: gitlabToken.trim(),
@@ -500,16 +403,15 @@ async function setupWizard() {
             }
         }
 
-        readline2.close();
-
         // Save configuration
         writeConfig(config);
         console.log('');
         console.log('\x1b[2m%s\x1b[0m', '━'.repeat(SEPARATOR_LENGTH));
-        console.log('');
-        console.log('\x1b[32m%s\x1b[0m', '✅ ' + t('config.wizard.success'));
-        console.log('\x1b[2m%s\x1b[0m', '💾 ' + t('config.wizard.saved', { path: getQuartzPath() }));
-        console.log('');
+        await message(
+            t('config.wizard.success'),
+            t('config.wizard.saved', { path: getQuartzPath() }),
+            'success'
+        );
 
     } catch (error) {
         console.error('Setup wizard error:', error);

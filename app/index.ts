@@ -1,8 +1,6 @@
 // cli/index.ts
-import { reviewCode } from '@/commands/review';
-import { generateCommit } from './commands/commit';
-import { generatePR } from './commands/pr';
-import { configCommand } from './commands/config';
+import { reviewCode, generateCommit, generatePR, configCommand }
+  from '@/app/commands';
 import { i18n } from '../i18n';
 
 /**

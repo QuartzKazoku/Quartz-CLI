@@ -356,18 +356,13 @@ export async function reviewCode(args: string[]) {
   // Review each file
   const allComments: ReviewComment[] = [];
   for (const file of files) {
-    console.log(t('review.reviewing', { file }));
-
     const diff = await getFileDiff(file);
     if (!diff) {
-      console.log(`   ⏭️  Skip\n`);
       continue;
     }
 
     const content = readFileContent(file);
     const comments = await reviewCodeWithAI(openai, config.openaiModel, file, diff, content);
-
-    console.log(`   ✅ ${t('review.found')} ${comments.length} ${t('review.issues')}\n`);
     allComments.push(...comments);
   }
 

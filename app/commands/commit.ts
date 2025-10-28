@@ -6,6 +6,7 @@ import path from 'node:path';
 import { t } from '../../i18n';
 import { getCommitPrompt } from '../../utils/prompt';
 import { loadConfig } from '../../utils/config';
+import { selectFromList, formatCommitMessage } from '../../utils/enquirer';
 
 /**
  * Stage all changes using git add .
@@ -111,82 +112,23 @@ async function generateCommitMessages(
 }
 
 /**
- * Display interactive selection menu
+ * Display interactive selection menu using enquirer
  * @param messages - Array of commit messages to choose from
  * @returns Selected message index
  */
 async function selectCommitMessage(messages: string[]): Promise<number> {
-  let selectedIndex = 0;
-
-  // Enable raw mode for reading keypresses
-  if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true);
+  try {
+    return await selectFromList(
+      t('commit.selectPrompt'),
+      messages,
+      formatCommitMessage,
+      0
+    );
+  } catch (error) {
+    // User cancelled (Ctrl+C)
+    console.log('\n' + t('commit.cancelled'));
+    process.exit(0);
   }
-  process.stdin.resume();
-  process.stdin.setEncoding('utf8');
-
-  const displayMenu = () => {
-    // Clear screen
-    console.clear();
-    console.log(t('commit.selectPrompt'));
-    console.log('━'.repeat(80));
-
-    for (let index = 0; index < messages.length; index++) {
-      const msg = messages[index];
-      const isSelected = index === selectedIndex;
-      const prefix = isSelected ? '→ ' : '  ';
-      const color = isSelected ? '\x1b[36m' : '\x1b[37m'; // Cyan for selected, white for others
-      const resetColor = '\x1b[0m';
-
-      console.log(`${color}${prefix}[${index + 1}]${resetColor}`);
-      // Split message into lines for better display
-      const lines = msg.split('\n');
-      for (const line of lines) {
-        console.log(`${color}  ${line}${resetColor}`);
-      }
-      console.log('');
-    }
-
-    console.log('━'.repeat(80));
-  };
-
-  return new Promise((resolve) => {
-    displayMenu();
-
-    const onKeypress = (key: string) => {
-      // Handle key input
-      if (key === '\u001B[A') {
-        // Up arrow
-        selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : messages.length - 1;
-        displayMenu();
-      } else if (key === '\u001B[B') {
-        // Down arrow
-        selectedIndex = selectedIndex < messages.length - 1 ? selectedIndex + 1 : 0;
-      } else if (key === '\r' || key === '\n') {
-        // Enter key
-        cleanup();
-        resolve(selectedIndex);
-      } else if (key === '\u0003') {
-        // Ctrl+C
-        cleanup();
-        console.log(t('commit.cancelled'));
-        process.exit(0);
-      } else {
-        return; // Ignore other keys
-      }
-      displayMenu();
-    };
-
-    const cleanup = () => {
-      process.stdin.removeListener('data', onKeypress);
-      if (process.stdin.isTTY) {
-        process.stdin.setRawMode(false);
-      }
-      process.stdin.pause();
-    };
-
-    process.stdin.on('data', onKeypress);
-  });
 }
 
 /**
