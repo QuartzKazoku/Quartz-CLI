@@ -22,12 +22,18 @@
  * Defines the configuration file name and default profile settings
  * @type {object}
  * @readonly
+ * @property {string} DIR - The configuration directory name
  * @property {string} NAME - The name of the configuration file (JSON with comments)
+ * @property {string} EXAMPLE_NAME - The name of the example configuration file
  * @property {string} DEFAULT_PROFILE - The default profile name to use
  */
 export const CONFIG_FILE = {
+    /** Configuration directory name */
+    DIR: '.quartz',
     /** Configuration file name with JSONC extension (JSON with comments) */
     NAME: 'quartz.jsonc',
+    /** Example configuration file name */
+    EXAMPLE_NAME: 'quartz.example.jsonc',
     /** Default profile name used when no profile is specified */
     DEFAULT_PROFILE: 'default',
 } as const;

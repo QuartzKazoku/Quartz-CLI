@@ -21,8 +21,10 @@ export const en: Translations = {
     subtitle: 'AI-Powered Git Workflow Assistant',
     help: 'Show help information',
     version: 'Show version number',
+    initDesc: 'Initialize Quartz configuration directory',
     configDesc: 'Configuration management (API Key, model, etc.)',
-    initConfig: 'Initialize configuration',
+    initProject: 'Initialize configuration',
+    initConfig: 'Configuration wizard',
   },
 
   review: {
@@ -172,9 +174,28 @@ export const en: Translations = {
     unknownKey: 'Unknown configuration key: {key}',
   },
 
+  init: {
+    starting: '🚀 Initializing Quartz configuration...',
+    dirExists: 'ℹ️  Configuration directory already exists: {dir}',
+    dirCreated: '✅ Configuration directory created: {dir}',
+    configCreated: '✅ Configuration file created: {path}',
+    configExists: 'ℹ️  Configuration file already exists: {path}',
+    exampleCreated: '✅ Example configuration file created: {path}',
+    exampleExists: 'ℹ️  Example configuration file already exists: {path}',
+    success: 'Quartz configuration initialized successfully!',
+    complete: 'Initialization Complete',
+    nextSteps: 'Next steps:',
+    setupConfig: 'Run configuration wizard',
+    viewCommands: 'View all available commands',
+    foundOldConfig: 'ℹ️  Found old configuration file: {path}',
+    migrated: '✅ Configuration migrated: {from} → {to}',
+    oldConfigReminder: '💡 Tip: You can manually delete the old configuration file',
+    gitignoreReminder: '💡 Consider adding configuration file to .gitignore:',
+  },
+
   errors: {
     noApiKey: '❌ Error: OPENAI_API_KEY is not set',
-    setApiKey: '   Please run quartz config init or create quartz.jsonc file',
+    setApiKey: '   Please run quartz init then quartz config init to configure',
     apiFailed: '❌ API call failed',
     fileNotFound: '❌ File not found',
     gitError: '❌ Git operation failed',

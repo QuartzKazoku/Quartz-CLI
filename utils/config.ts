@@ -7,10 +7,42 @@ import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
 import { logger } from '@/utils/logger';
 
 /**
+ * Get .quartz directory path
+ */
+function getQuartzDir(): string {
+    return path.join(process.cwd(), CONFIG_FILE.DIR);
+}
+
+/**
  * Get quartz.jsonc file path
+ * Priority: .quartz/quartz.jsonc > quartz.jsonc (for backward compatibility)
  */
 function getQuartzPath(): string {
-    return path.join(process.cwd(), CONFIG_FILE.NAME);
+    const newPath = path.join(getQuartzDir(), CONFIG_FILE.NAME);
+    const oldPath = path.join(process.cwd(), CONFIG_FILE.NAME);
+    
+    // Check new path first
+    if (fs.existsSync(newPath)) {
+        return newPath;
+    }
+    
+    // Fall back to old path for backward compatibility
+    if (fs.existsSync(oldPath)) {
+        return oldPath;
+    }
+    
+    // Return new path as default for new installations
+    return newPath;
+}
+
+/**
+ * Ensure .quartz directory exists
+ */
+export function ensureQuartzDir(): void {
+    const quartzDir = getQuartzDir();
+    if (!fs.existsSync(quartzDir)) {
+        fs.mkdirSync(quartzDir, { recursive: true });
+    }
 }
 
 /**

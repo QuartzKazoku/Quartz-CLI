@@ -45,6 +45,7 @@ Thumbs.db
 
 # Quartz Configuration Profiles
 quartz.jsonc
+.quartz/quartz.jsonc
 
 # Temporary files
 *.tmp

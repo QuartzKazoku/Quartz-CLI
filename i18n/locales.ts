@@ -32,7 +32,9 @@ export interface Translations {
     subtitle: string;
     help: string;
     version: string;
+    initDesc: string;
     configDesc: string;
+    initProject: string;
     initConfig: string;
   };
 
@@ -186,6 +188,26 @@ export interface Translations {
     gitlabTokenSetFirst: string;
     gitPlatformDeprecated: string;
     unknownKey: string;
+  };
+
+  // Init command
+  init: {
+    starting: string;
+    dirExists: string;
+    dirCreated: string;
+    configCreated: string;
+    configExists: string;
+    exampleCreated: string;
+    exampleExists: string;
+    success: string;
+    complete: string;
+    nextSteps: string;
+    setupConfig: string;
+    viewCommands: string;
+    foundOldConfig: string;
+    migrated: string;
+    oldConfigReminder: string;
+    gitignoreReminder: string;
   };
 
   // Error messages

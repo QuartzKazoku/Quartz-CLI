@@ -21,8 +21,10 @@ export const zhCN: Translations = {
     subtitle: 'AI 驱动的 Git 工作流助手',
     help: '显示帮助信息',
     version: '显示版本号',
+    initDesc: '初始化 Quartz 配置目录',
     configDesc: '配置管理 (API Key, 模型等)',
-    initConfig: '初始化配置',
+    initProject: '初始化配置',
+    initConfig: '配置向导',
   },
 
   review: {
@@ -172,9 +174,28 @@ export const zhCN: Translations = {
     unknownKey: '未知的配置键: {key}',
   },
 
+  init: {
+    starting: '🚀 初始化 Quartz 配置...',
+    dirExists: 'ℹ️  配置目录已存在: {dir}',
+    dirCreated: '✅ 配置目录已创建: {dir}',
+    configCreated: '✅ 配置文件已创建: {path}',
+    configExists: 'ℹ️  配置文件已存在: {path}',
+    exampleCreated: '✅ 示例配置文件已创建: {path}',
+    exampleExists: 'ℹ️  示例配置文件已存在: {path}',
+    success: 'Quartz 配置初始化成功！',
+    complete: '初始化完成',
+    nextSteps: '接下来你可以:',
+    setupConfig: '运行配置向导',
+    viewCommands: '查看所有可用命令',
+    foundOldConfig: 'ℹ️  发现旧配置文件: {path}',
+    migrated: '✅ 已迁移配置文件: {from} → {to}',
+    oldConfigReminder: '💡 提示: 你可以手动删除旧配置文件',
+    gitignoreReminder: '💡 建议将配置文件添加到 .gitignore:',
+  },
+
   errors: {
     noApiKey: '❌ 错误: 未设置 OPENAI_API_KEY',
-    setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.jsonc 文件',
+    setApiKey: '   请运行 quartz init 然后 quartz config init 进行配置',
     apiFailed: '❌ API 调用失败',
     fileNotFound: '❌ 文件不存在',
     gitError: '❌ Git 操作失败',

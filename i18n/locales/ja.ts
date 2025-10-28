@@ -21,8 +21,10 @@ export const ja: Translations = {
     subtitle: 'AI搭載 Git ワークフローアシスタント',
     help: 'ヘルプ情報を表示',
     version: 'バージョン番号を表示',
+    initDesc: 'Quartz 設定ディレクトリを初期化',
     configDesc: '設定管理 (API Key, モデルなど)',
-    initConfig: '設定を初期化',
+    initProject: '設定を初期化',
+    initConfig: '設定ウィザード',
   },
 
   review: {
@@ -172,9 +174,28 @@ export const ja: Translations = {
     needImprovement: '改善が必要',
   },
 
+  init: {
+    starting: '🚀 Quartz 設定を初期化中...',
+    dirExists: 'ℹ️  設定ディレクトリは既に存在します: {dir}',
+    dirCreated: '✅ 設定ディレクトリを作成しました: {dir}',
+    configCreated: '✅ 設定ファイルを作成しました: {path}',
+    configExists: 'ℹ️  設定ファイルは既に存在します: {path}',
+    exampleCreated: '✅ サンプル設定ファイルを作成しました: {path}',
+    exampleExists: 'ℹ️  サンプル設定ファイルは既に存在します: {path}',
+    success: 'Quartz 設定の初期化が完了しました！',
+    complete: '初期化完了',
+    nextSteps: '次のステップ:',
+    setupConfig: '設定ウィザードを実行',
+    viewCommands: '利用可能なコマンドを表示',
+    foundOldConfig: 'ℹ️  旧設定ファイルが見つかりました: {path}',
+    migrated: '✅ 設定ファイルを移行しました: {from} → {to}',
+    oldConfigReminder: '💡 ヒント: 旧設定ファイルは手動で削除できます',
+    gitignoreReminder: '💡 設定ファイルを .gitignore に追加することをお勧めします:',
+  },
+
   errors: {
     noApiKey: '❌ エラー: OPENAI_API_KEY が設定されていません',
-    setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.jsonc ファイルを作成してください',
+    setApiKey: '   quartz init を実行してから quartz config init で設定してください',
     apiFailed: '❌ API 呼び出し失敗',
     fileNotFound: '❌ ファイルが見つかりません',
     gitError: '❌ Git 操作失敗',

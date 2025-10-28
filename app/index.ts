@@ -1,5 +1,5 @@
 // cli/index.ts
-import { reviewCode, generateCommit, generatePR, configCommand }
+import { reviewCode, generateCommit, generatePR, configCommand, initCommand }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
@@ -39,6 +39,7 @@ function getUsageText(): string {
 
   // Commands section
   logger.section(t('cli.commands'));
+  logger.command('init', t('cli.initDesc'));
   logger.command('config', t('cli.configDesc'));
   logger.command('review', t('review.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('commit', t('commit.starting').replace('🚀 ', '').replace('...', '').trim());
@@ -52,6 +53,7 @@ function getUsageText(): string {
 
   // Examples section
   logger.section(t('cli.examples'));
+  logger.example(t('cli.initProject'), 'quartz init');
   logger.example(t('cli.initConfig'), 'quartz config init');
   logger.example(t('review.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz review');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
@@ -97,6 +99,10 @@ const command = args[0];
 // Execute command
 try {
   switch (command) {
+    // Initialize project
+    case 'init':
+      await initCommand(args.slice(1));
+      break;
     // Config management
     case 'config':
       await configCommand(args.slice(1));

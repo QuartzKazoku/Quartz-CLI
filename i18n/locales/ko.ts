@@ -21,8 +21,10 @@ export const ko: Translations = {
     subtitle: 'AI 기반 Git 워크플로우 어시스턴트',
     help: '도움말 표시',
     version: '버전 표시',
+    initDesc: 'Quartz 설정 디렉토리 초기화',
     configDesc: '설정 관리 (API Key, 모델 등)',
-    initConfig: '설정 초기화',
+    initProject: '설정 초기화',
+    initConfig: '설정 마법사',
   },
 
   review: {
@@ -172,9 +174,28 @@ export const ko: Translations = {
     needImprovement: '개선 필요',
   },
 
+  init: {
+    starting: '🚀 Quartz 설정 초기화 중...',
+    dirExists: 'ℹ️  설정 디렉토리가 이미 존재합니다: {dir}',
+    dirCreated: '✅ 설정 디렉토리가 생성되었습니다: {dir}',
+    configCreated: '✅ 설정 파일이 생성되었습니다: {path}',
+    configExists: 'ℹ️  설정 파일이 이미 존재합니다: {path}',
+    exampleCreated: '✅ 예제 설정 파일이 생성되었습니다: {path}',
+    exampleExists: 'ℹ️  예제 설정 파일이 이미 존재합니다: {path}',
+    success: 'Quartz 설정 초기화가 완료되었습니다！',
+    complete: '초기화 완료',
+    nextSteps: '다음 단계:',
+    setupConfig: '설정 마법사 실행',
+    viewCommands: '사용 가능한 명령어 보기',
+    foundOldConfig: 'ℹ️  이전 설정 파일을 찾았습니다: {path}',
+    migrated: '✅ 설정 파일이 마이그레이션되었습니다: {from} → {to}',
+    oldConfigReminder: '💡 힌트: 이전 설정 파일은 수동으로 삭제할 수 있습니다',
+    gitignoreReminder: '💡 설정 파일을 .gitignore에 추가하는 것을 권장합니다:',
+  },
+
   errors: {
     noApiKey: '❌ 오류: OPENAI_API_KEY가 설정되지 않았습니다',
-    setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.jsonc 파일을 생성하세요',
+    setApiKey: '   quartz init을 실행한 다음 quartz config init으로 설정하세요',
     apiFailed: '❌ API 호출 실패',
     fileNotFound: '❌ 파일을 찾을 수 없습니다',
     gitError: '❌ Git 작업 실패',
