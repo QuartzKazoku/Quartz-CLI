@@ -1,6 +1,7 @@
 //cli/strategies/github.ts
 import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
+import { PLATFORM_TYPES, JSON_FORMAT } from "@/constants";
 
 /**
  * GitHub platform strategy implementation class for interacting with GitHub API to create Pull Requests, check branch status, and push branches.
@@ -13,7 +14,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
      */
     constructor(private readonly config: PlatformConfig) {
         super();
-        if (config.type !== 'github') {
+        if (config.type !== PLATFORM_TYPES.GITHUB) {
             throw new Error('Invalid platform type for GitHubStrategy');
         }
     }
@@ -62,7 +63,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
             const error = await response.json() as { message?: string; errors?: unknown };
             let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
             if (error.errors) {
-                errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
+                errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, JSON_FORMAT.INDENT);
             }
             throw new Error(errorMessage);
         }

@@ -4,6 +4,7 @@ import { reviewCode, generateCommit, generatePR, configCommand, initCommand }
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
 import { checkAndMigrate, shouldSkipMigration } from '@/utils/hooks';
+import { CLI } from '@/constants';
 
 /**
  * Print ASCII art logo
@@ -74,7 +75,7 @@ i18n.init();
 const t = i18n.t;
 
 // Get command line arguments
-const args = process.argv.slice(2);
+const args = process.argv.slice(CLI.ARGS_START_INDEX);
 
 // Handle help flag
 if (args.length === 0 || args.includes('-h') || args.includes('--help')) {

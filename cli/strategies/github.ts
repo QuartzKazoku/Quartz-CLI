@@ -1,6 +1,7 @@
 //cli/strategies/github.ts
 import {BasePlatformStrategy, PullRequestResult} from "./platform.ts";
 import {PlatformConfig} from "../types/config.ts";
+import {PLATFORM_TYPES, JSON_FORMAT} from "../constants/index.ts";
 
 /**
  * GitHub平台策略实现类，用于与GitHub API交互以创建Pull Request、检查分支状态及推送分支。
@@ -13,7 +14,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
      */
     constructor(private readonly config: PlatformConfig) {
         super();
-        if (config.type !== 'github') {
+        if (config.type !== PLATFORM_TYPES.GITHUB) {
             throw new Error('Invalid platform type for GitHubStrategy');
         }
     }
@@ -62,7 +63,7 @@ export class GitHubStrategy extends BasePlatformStrategy {
             const error = await response.json();
             let errorMessage = `GitHub API error: ${error.message || response.statusText}`;
             if (error.errors) {
-                errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, 2);
+                errorMessage += '\nDetails: ' + JSON.stringify(error.errors, null, JSON_FORMAT.INDENT);
             }
             throw new Error(errorMessage);
         }

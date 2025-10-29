@@ -10,6 +10,7 @@ import {PlatformStrategy} from '@/app/strategies/platform';
 import {PlatformStrategyFactory} from "@/app/strategies/factory";
 import {logger} from '@/utils/logger';
 import {select} from '@/utils/enquirer';
+import {PLATFORM_TYPES, ENCODING} from '@/constants';
 
 /**
  * Get current branch name
@@ -85,9 +86,9 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
         const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
 
         if (githubSshMatch) {
-            return {owner: githubSshMatch[1], repo: githubSshMatch[2], platform: 'github'};
+            return {owner: githubSshMatch[1], repo: githubSshMatch[2], platform: PLATFORM_TYPES.GITHUB};
         } else if (githubHttpsMatch) {
-            return {owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: 'github'};
+            return {owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: PLATFORM_TYPES.GITHUB};
         }
 
         // Parse GitLab URL
@@ -98,9 +99,9 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
         const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
 
         if (gitlabSshMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab'};
+            return {owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: PLATFORM_TYPES.GITLAB};
         } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab'};
+            return {owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: PLATFORM_TYPES.GITLAB};
         }
 
         return null;
@@ -288,7 +289,7 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
     try {
         // Save body to temporary file
         const tempFile = path.join(process.cwd(), '.ai-pr-body.md');
-        fs.writeFileSync(tempFile, body);
+        fs.writeFileSync(tempFile, body, ENCODING.UTF8);
 
         const escapedTitle = title.replaceAll('"', String.raw`\"`);
         await $`gh pr create --title "${escapedTitle}" --body-file "${tempFile}" --base ${baseBranch}"`;

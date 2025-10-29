@@ -1,7 +1,7 @@
 //cli/commands/init.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import {CONFIG_FILE} from '@/constants';
+import {CONFIG_FILE, ENCODING} from '@/constants';
 import {ensureQuartzDir} from '@/utils/config';
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
@@ -98,8 +98,8 @@ function checkOldConfig(): string | null {
  */
 function migrateOldConfig(oldConfigPath: string): void {
     const newConfigPath = getQuartzConfigPath();
-    const content = fs.readFileSync(oldConfigPath, 'utf-8');
-    fs.writeFileSync(newConfigPath, content, 'utf-8');
+    const content = fs.readFileSync(oldConfigPath, ENCODING.UTF8);
+    fs.writeFileSync(newConfigPath, content, ENCODING.UTF8);
     logger.success(t('init.migrated', {from: oldConfigPath, to: newConfigPath}));
 
     // Ask user if they want to remove old config
@@ -153,7 +153,7 @@ export async function initCommand(args: string[]): Promise<void> {
     } else if (configNotExists) {
         // Create quartz.jsonc if it doesn't exist
         const exampleContent = getExampleConfigContent();
-        fs.writeFileSync(configPath, exampleContent, 'utf-8');
+        fs.writeFileSync(configPath, exampleContent, ENCODING.UTF8);
         logger.success(t('init.configCreated', {path: configPath}));
         
         // Initialize version metadata
@@ -166,7 +166,7 @@ export async function initCommand(args: string[]): Promise<void> {
     // Create quartz.example.jsonc
     if (exampleNotExists) {
         const exampleContent = getExampleConfigContent();
-        fs.writeFileSync(examplePath, exampleContent, 'utf-8');
+        fs.writeFileSync(examplePath, exampleContent, ENCODING.UTF8);
         logger.success(t('init.exampleCreated', {path: examplePath}));
     } else {
         logger.info(t('init.exampleExists', {path: examplePath}));
@@ -182,7 +182,7 @@ export async function initCommand(args: string[]): Promise<void> {
     // Suggest adding .quartz to .gitignore
     const gitignorePath = path.join(process.cwd(), '.gitignore');
     if (fs.existsSync(gitignorePath)) {
-        const gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8');
+        const gitignoreContent = fs.readFileSync(gitignorePath, ENCODING.UTF8);
         if (!gitignoreContent.includes('.quartz')) {
             logger.info(t('init.gitignoreReminder'));
             console.log(logger.text.dim(`  echo ".quartz/quartz.jsonc" >> .gitignore`));

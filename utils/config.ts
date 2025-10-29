@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import { parse as parseJsonc } from 'jsonc-parser';
 import { PlatformConfig, QuartzConfig } from '@/types/config';
-import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
+import { CONFIG_FILE, DEFAULT_VALUES, ENCODING, JSON_FORMAT } from '@/constants';
 import { logger } from '@/utils/logger';
 import { getQuartzPath } from '@/utils/path';
 
@@ -34,7 +34,7 @@ export function readQuartzConfig(): QuartzConfig {
     }
 
     try {
-        const content = fs.readFileSync(quartzPath, 'utf-8');
+        const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
         const data = parseJsonc(content);
 
         if (data[CONFIG_FILE.DEFAULT_PROFILE]?.config) {
@@ -59,7 +59,7 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
     // Read existing data
     if (fs.existsSync(quartzPath)) {
         try {
-            const content = fs.readFileSync(quartzPath, 'utf-8');
+            const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
             data = parseJsonc(content);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -74,7 +74,7 @@ export function writeQuartzConfig(config: QuartzConfig, profileName: string = CO
         config,
     };
 
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
 }
 
 /**

@@ -19,6 +19,8 @@ import {
     TOKEN_DISPLAY_LENGTH,
     SEPARATOR_LENGTH,
     INDENT,
+    ENCODING,
+    JSON_FORMAT,
 } from '@/constants';
 import { select, input, message } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
@@ -545,7 +547,7 @@ function loadProfiles(): Record<string, any> {
     const quartzPath = getQuartzPath();
     if (fs.existsSync(quartzPath)) {
         try {
-            const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
+            const data = JSON.parse(fs.readFileSync(quartzPath, ENCODING.UTF8));
             const { [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = data;
             return profiles;
         } catch (error) {
@@ -565,7 +567,7 @@ function loadProfile(name: string) {
 
     if (fs.existsSync(quartzPath)) {
         try {
-            const content = fs.readFileSync(quartzPath, 'utf-8');
+            const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
             data = JSON.parse(content);
         } catch (error) {
             logger.error('Failed to load quartz.jsonc:', error);
@@ -583,7 +585,7 @@ function loadProfile(name: string) {
     // Update default profile with selected profile
     data[CONFIG_FILE.DEFAULT_PROFILE] = data[name];
 
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
     logger.log(t('config.profileLoaded', { name }));
 }
 
@@ -624,7 +626,7 @@ function deleteProfile(name: string) {
 
     if (fs.existsSync(quartzPath)) {
         try {
-            const content = fs.readFileSync(quartzPath, 'utf-8');
+            const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
             data = JSON.parse(content);
         } catch (error) {
             logger.error('Failed to load quartz.jsonc:', error);
@@ -638,7 +640,7 @@ function deleteProfile(name: string) {
     }
 
     delete data[name];
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
     logger.log(t('config.profileDeleted', { name }));
 }
 

@@ -5,12 +5,13 @@ import {parse as parseJsonc} from 'jsonc-parser';
 import type {Migration, MigrationResult, VersionMetadata} from '@/types/migration';
 import {logger} from '@/utils/logger';
 import {getQuartzPath} from '@/utils/path';
+import {VERSION, ENCODING, JSON_FORMAT} from '@/constants';
 
 /**
  * Current configuration schema version
  * Update this when making breaking changes to config structure
  */
-export const CURRENT_CONFIG_VERSION = '0.1.1';
+export const CURRENT_CONFIG_VERSION = VERSION.CURRENT_CONFIG;
 
 /**
  * Registry of all migrations
@@ -51,10 +52,10 @@ function compareVersions(a: string, b: string): number {
 function getCliVersion(): string {
   try {
     const packageJsonPath = path.join(__dirname, '../../package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson.version || '0.1.0';
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, ENCODING.UTF8));
+    return packageJson.version || VERSION.INITIAL_CLI;
   } catch {
-    return '0.1.0';
+    return VERSION.INITIAL_CLI;
   }
 }
 
@@ -69,7 +70,7 @@ export function readVersionMetadata(): VersionMetadata | null {
   }
   
   try {
-    const content = fs.readFileSync(quartzPath, 'utf-8');
+    const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
     const data = parseJsonc(content);
     
     if (data._metadata) {
@@ -78,8 +79,8 @@ export function readVersionMetadata(): VersionMetadata | null {
     
     // No metadata means it's an old config (version 0.0.0)
     return {
-      configVersion: '0.0.0',
-      cliVersion: '0.0.0',
+      configVersion: VERSION.LEGACY_CONFIG,
+      cliVersion: VERSION.LEGACY_CONFIG,
       updatedAt: new Date().toISOString(),
     };
   } catch {
@@ -98,12 +99,12 @@ export function writeVersionMetadata(metadata: VersionMetadata): void {
   }
   
   try {
-    const content = fs.readFileSync(quartzPath, 'utf-8');
+    const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
     const data = parseJsonc(content);
     
     data._metadata = metadata;
     
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error(`Failed to write version metadata: ${errorMessage}`);
@@ -161,7 +162,7 @@ export async function runMigrations(): Promise<MigrationResult> {
   }
   
   const quartzPath = getQuartzPath();
-  const content = fs.readFileSync(quartzPath, 'utf-8');
+  const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
   let config = parseJsonc(content);
   
   const appliedMigrations: string[] = [];
@@ -191,7 +192,7 @@ export async function runMigrations(): Promise<MigrationResult> {
   
   // Write migrated config
   try {
-    fs.writeFileSync(quartzPath, JSON.stringify(config, null, 2), 'utf-8');
+    fs.writeFileSync(quartzPath, JSON.stringify(config, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     errors.push(`Failed to write migrated config: ${errorMessage}`);

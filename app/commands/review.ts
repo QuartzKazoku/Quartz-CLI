@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import {t} from '@/i18n';
 import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
 import {readQuartzConfig} from '@/utils/config';
-import {DEFAULT_VALUES} from '@/constants';
+import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
 import {logger} from '@/utils/logger';
 
 interface ReviewComment {
@@ -108,7 +108,7 @@ async function getFileDiff(file: string): Promise<string> {
 
     // If still no diff, might be a new file
     if (!diff) {
-      const content = fs.readFileSync(file, 'utf-8');
+      const content = fs.readFileSync(file, ENCODING.UTF8);
       return `+++ b/${file}\n${content}`;
     }
 
@@ -126,7 +126,7 @@ async function getFileDiff(file: string): Promise<string> {
  */
 function readFileContent(file: string): string {
   try {
-    return fs.readFileSync(file, 'utf-8');
+    return fs.readFileSync(file, ENCODING.UTF8);
   } catch (error) {
     logger.warn(t('errors.fileNotFound'), error);
     return '';
@@ -250,9 +250,9 @@ function printResult(result: ReviewResult) {
   }
 
   logger.line();
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.log(`${scoreEmoji} ${t('review.result')}`);
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.line();
   const scoreText = `${score}/100`;
   logger.info(`${t('review.score')}: ${logger.text.bold(scoreText)} (${scoreDesc})`);
@@ -293,7 +293,7 @@ function printResult(result: ReviewResult) {
     }
   }
 
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.line();
 }
 
@@ -386,7 +386,7 @@ export async function reviewCode(args: string[]) {
 
   // Save to file
   if (output) {
-    fs.writeFileSync(output, JSON.stringify(result, null, 2));
+    fs.writeFileSync(output, JSON.stringify(result, null, JSON_FORMAT.INDENT));
     logger.success(t('review.saved', { path: output }));
   }
 

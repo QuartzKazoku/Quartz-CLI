@@ -6,6 +6,7 @@
 
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { ENCODING } from '../constants/encoding';
 
 // Project root directory
 const ROOT_DIR = process.cwd();
@@ -56,7 +57,7 @@ function hasPathComment(content: string, relativePath: string): boolean {
  */
 function addPathComment(filePath: string): boolean {
   try {
-    const content = readFileSync(filePath, 'utf-8');
+    const content = readFileSync(filePath, ENCODING.UTF8);
     const relativePath = relative(ROOT_DIR, filePath).replaceAll('\\', '/');
 
     // If already has path comment, skip
@@ -69,7 +70,7 @@ function addPathComment(filePath: string): boolean {
     const pathComment = `//${relativePath}\n`;
     const newContent = pathComment + content;
 
-    writeFileSync(filePath, newContent, 'utf-8');
+    writeFileSync(filePath, newContent, ENCODING.UTF8);
     console.log(`✅ 已添加: ${relativePath}`);
     return true;
   } catch (error) {
