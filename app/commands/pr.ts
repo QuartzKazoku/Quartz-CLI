@@ -77,10 +77,16 @@ async function selectBranch(currentBranch: string): Promise<string> {
 async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
     try {
         const remoteUrl = (await $`git remote get-url origin`.text()).trim();
+        
+        // Debug: 输出远程 URL
+        logger.info(`🔍 Git Remote URL: ${remoteUrl}`);
 
         // Parse GitHub URL
-        // Support formats: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-        const githubSshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
+        // Support formats:
+        // - git@github.com:owner/repo.git
+        // - git@github.com:/owner/repo.git (非标准格式，但需要支持)
+        // - https://github.com/owner/repo.git
+        const githubSshRegex = /git@github\.com::?\/?([^/]+)\/([^/]+?)(?:\.git)?$/;
         const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
         const githubSshMatch = githubSshRegex.exec(remoteUrl);
         const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
@@ -92,8 +98,11 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
         }
 
         // Parse GitLab URL
-        // Support formats: git@gitlab.com:owner/repo.git or https://gitlab.com/owner/repo.git
-        const gitlabSshRegex = /git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/;
+        // Support formats:
+        // - git@gitlab.com:owner/repo.git
+        // - git@gitlab.com:/owner/repo.git (非标准格式，但需要支持)
+        // - https://gitlab.com/owner/repo.git
+        const gitlabSshRegex = /git@([^:]+)::?\/?([^/]+)\/([^/]+?)(?:\.git)?$/;
         const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
         const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
         const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
@@ -411,20 +420,17 @@ export async function generatePR(args: string[]) {
 
     // Auto-create PR/MR (default behavior)
     const createSpinner = logger.spinner(t('pr.creating'));
-
+    
     if (useGH) {
-        console.log("执行1")
         // Use GitHub CLI
         await createPRWithGH(title, body, baseBranch);
         createSpinner.succeed(t('pr.success'));
     } else if (repoInfo) {
-        console.log("执行2")
         // Get all platform configurations
         const platformConfigs = configManager.getPlatformConfigs();
 
         // Find configuration matching current repository platform
         const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
-        console.log(`token: ${matchingConfig?.token}`)
         if (!matchingConfig) {
             createSpinner.fail(t('pr.noToken'));
             logger.error(t('pr.useGHTip'));
