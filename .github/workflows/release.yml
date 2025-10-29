@@ -2,18 +2,11 @@ name: Release and Publish
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/**'
-      - '!.github/workflows/release.yml'
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
   id-token: write
 
 jobs:
@@ -24,12 +17,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -45,49 +32,46 @@ jobs:
       - name: Build project
         run: bun run build
 
-      - name: Create Release and Changelog
+      - name: Get version from tag
+        id: get_version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          output-file: 'CHANGELOG.md'
-          release-count: '0'
-          skip-on-empty: 'true'
-          skip-version-file: 'false'
-          skip-commit: 'false'
-          git-message: 'chore(release): {version}'
-          tag-prefix: 'v'
-          preset: 'conventionalcommits'
-          config-file-path: '.changelogrc.json'
+        run: |
+          CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" --no-merges || echo "Initial release")
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.changelog.outputs.tag }}
-          name: Release ${{ steps.changelog.outputs.tag }}
-          body: ${{ steps.changelog.outputs.clean_changelog }}
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Release ${{ steps.get_version.outputs.tag }}
+          body: |
+            ## Changes
+            ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js for npm
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish to npm
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Output Release Info
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: |
           echo "✅ Release created successfully!"
-          echo "📦 Version: ${{ steps.changelog.outputs.version }}"
-          echo "🏷️ Tag: ${{ steps.changelog.outputs.tag }}"
-          echo "📝 Changelog: ${{ steps.changelog.outputs.clean_changelog }}"
+          echo "📦 Version: ${{ steps.get_version.outputs.version }}"
+          echo "🏷️ Tag: ${{ steps.get_version.outputs.tag }}"
