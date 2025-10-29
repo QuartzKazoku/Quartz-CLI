@@ -6,7 +6,7 @@ import {getConfigManager} from '@/manager/config';
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
 
-// 获取配置管理器实例
+// Get configuration manager instance
 const configManager = getConfigManager();
 
 /**

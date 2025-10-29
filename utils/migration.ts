@@ -18,6 +18,7 @@ const migrations: Migration[] = [];
 
 /**
  * Register a migration
+ * @param migration - Migration object to register
  */
 export function registerMigration(migration: Migration): void {
     migrations.push(migration);
@@ -27,6 +28,8 @@ export function registerMigration(migration: Migration): void {
 
 /**
  * Compare two semantic versions
+ * @param a - First version string
+ * @param b - Second version string
  * @returns -1 if a < b, 0 if a === b, 1 if a > b
  */
 function compareVersions(a: string, b: string): number {
@@ -46,6 +49,7 @@ function compareVersions(a: string, b: string): number {
 
 /**
  * Check if migration is needed
+ * @returns True if migration is required
  */
 export function needsMigration(): boolean {
     const metadata = getConfigManager().readVersionMetadata();
@@ -59,6 +63,8 @@ export function needsMigration(): boolean {
 
 /**
  * Get migrations that need to be applied
+ * @param fromVersion - Current configuration version
+ * @returns Array of migrations to apply
  */
 function getMigrationsToApply(fromVersion: string): Migration[] {
     return migrations.filter(m => {
@@ -69,6 +75,7 @@ function getMigrationsToApply(fromVersion: string): Migration[] {
 
 /**
  * Execute migrations
+ * @returns Migration result with status and applied migrations
  */
 export async function runMigrations(): Promise<MigrationResult> {
     const configManager = getConfigManager();
@@ -95,7 +102,7 @@ export async function runMigrations(): Promise<MigrationResult> {
         };
     }
 
-    // 使用 ConfigManager 读取配置文件
+    // Use ConfigManager to read configuration file
     let configFile = configManager.readConfigFile();
 
     const appliedMigrations: string[] = [];

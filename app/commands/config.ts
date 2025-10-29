@@ -18,7 +18,7 @@ import {
 import {input, message, select} from '@/utils/enquirer';
 import {logger} from '@/utils/logger';
 
-// 获取配置管理器实例
+// Get configuration manager instance
 const configManager = getConfigManager();
 
 /**
@@ -49,8 +49,10 @@ function getConfigDisplayValue(config: QuartzConfig, key: string): string | unde
     }
 }
 
-    /**
+/**
  * Check if configuration key is sensitive information
+ * @param key - Configuration key to check
+ * @returns True if the key contains sensitive information
  */
 function isSensitiveKey(key: string): boolean {
     return SENSITIVE_KEYS.includes(key as any);
@@ -58,6 +60,8 @@ function isSensitiveKey(key: string): boolean {
 
 /**
  * Format sensitive value display
+ * @param value - Sensitive value to format
+ * @returns Formatted string with partial masking
  */
 function formatSensitiveValue(value: string): string {
     return value.substring(0, TOKEN_DISPLAY_LENGTH) + '***';
@@ -65,6 +69,8 @@ function formatSensitiveValue(value: string): string {
 
 /**
  * Set configuration value
+ * @param key - Configuration key to set
+ * @param value - Value to set
  */
 function setConfig(key: string, value: string) {
     const config = configManager.readConfig();
@@ -124,6 +130,7 @@ function setConfig(key: string, value: string) {
 
 /**
  * Get configuration value
+ * @param key - Configuration key to retrieve
  */
 function getConfig(key: string) {
     const config = configManager.readConfig();
@@ -139,13 +146,15 @@ function getConfig(key: string) {
 
 /**
  * Get icon for configuration key
+ * @param key - Configuration key
+ * @returns Emoji icon for the key
  */
 function getConfigIcon(key: string): string {
     return CONFIG_ICONS[key] || '⚙️';
 }
 
 /**
- * List all configurations
+ * List all configurations and display them in a formatted view
  */
 function listConfig() {
     const config = configManager.readConfig();
@@ -555,7 +564,8 @@ function loadProfiles(): Record<string, any> {
 }
 
 /**
- * Load configuration profile (legacy - 将 profile 复制到 default)
+ * Load configuration profile (legacy - copy profile to default)
+ * @param name - Profile name to load
  */
 function loadProfile(name: string) {
     if (!configManager.profileExists(name)) {
@@ -569,7 +579,7 @@ function loadProfile(name: string) {
         const configFile = configManager.readConfigFile();
         const profileData = configFile[name];
         
-        // 类型检查：确保 profile 是 QuartzProfile
+        // Type check: ensure profile is QuartzProfile
         if (!profileData || profileData === configFile._metadata || !('config' in profileData)) {
             logger.error(t('config.profileNotFound', { name }));
             process.exit(1);
@@ -587,7 +597,8 @@ function loadProfile(name: string) {
 }
 
 /**
- * Switch to a different profile (推荐方式 - 设置 active profile)
+ * Switch to a different profile (recommended approach - set active profile)
+ * @param name - Profile name to switch to
  */
 function switchProfile(name: string) {
     if (!configManager.profileExists(name)) {

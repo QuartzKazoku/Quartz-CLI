@@ -1,5 +1,8 @@
 //cli/i18n/locales.ts
-// Multi-language type definitions and configuration
+/**
+ * Multi-language type definitions and configuration
+ * @module i18n/locales
+ */
 
 /**
  * Supported language type definitions
@@ -237,7 +240,9 @@ export interface Translations {
   };
 }
 
-// Import language translations
+/**
+ * Import language translations from locale files
+ */
 import { zhCN } from './locales/zh-CN';
 import { zhTW } from './locales/zh-TW';
 import { ja } from './locales/ja';
@@ -246,6 +251,7 @@ import { en } from './locales/en';
 
 /**
  * Mapping relationship between languages and translation content
+ * Maps language codes to their respective translation objects
  */
 export const locales: Record<Language, Translations> = {
   'zh-CN': zhCN,
@@ -257,5 +263,6 @@ export const locales: Record<Language, Translations> = {
 
 /**
  * Default language setting
+ * Used when no language is specified or configured
  */
 export const defaultLanguage: Language = 'en';

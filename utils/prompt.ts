@@ -1,24 +1,37 @@
 //cli/utils/prompt.ts
 import { getLanguage } from '@/i18n';
 
-// Get prompt language from UI language
+/**
+ * Get prompt language from UI language
+ * @returns Language code for prompts
+ */
 function getPromptLanguage(): string {
   return getLanguage();
 }
 
-// Get language name
+/**
+ * Get language name from language code
+ * @param lang - Language code (e.g., 'en', 'zh-CN')
+ * @returns Human-readable language name
+ */
 function getLanguageName(lang: string): string {
   const names: Record<string, string> = {
-    'zh-CN': '简体中文',
-    'zh-TW': '繁體中文',
-    'ja': '日本語',
-    'ko': '한국어',
+    'zh-CN': 'Simplified Chinese',
+    'zh-TW': 'Traditional Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
     'en': 'English',
   };
   return names[lang] || 'English';
 }
 
-// Code review prompt
+/**
+ * Generate code review prompt for AI
+ * @param file - File path being reviewed
+ * @param diff - Git diff content
+ * @param content - Full file content
+ * @returns Formatted prompt string for code review
+ */
 export function getReviewPrompt(file: string, diff: string, content: string): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
@@ -65,7 +78,12 @@ Note:
 - All messages must be in ${langName}`;
 }
 
-// Commit message prompt
+/**
+ * Generate commit message prompt for AI
+ * @param diff - Git diff content
+ * @param files - Array of changed file paths
+ * @returns Formatted prompt string for commit message generation
+ */
 export function getCommitPrompt(diff: string, files: string[]): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
@@ -112,7 +130,15 @@ Requirements:
 Please directly return the commit message in ${langName}, do not add other explanatory text.`;
 }
 
-// Pull request description prompt
+/**
+ * Generate pull request description prompt for AI
+ * @param diff - Git diff content
+ * @param commits - Array of commit messages
+ * @param files - Array of changed file paths
+ * @param currentBranch - Current branch name
+ * @param baseBranch - Base branch name
+ * @returns Formatted prompt string for PR description generation
+ */
 export function getPRPrompt(
   diff: string,
   commits: string[],
@@ -161,7 +187,14 @@ Requirements:
 - Return only JSON, do not add other text`;
 }
 
-// Summary prompt
+/**
+ * Generate code review summary prompt for AI
+ * @param errorCount - Number of errors found
+ * @param warningCount - Number of warnings found
+ * @param infoCount - Number of info suggestions found
+ * @param score - Overall code quality score
+ * @returns Formatted prompt string for summary generation
+ */
 export function getSummaryPrompt(errorCount: number, warningCount: number, infoCount: number, score: number): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
