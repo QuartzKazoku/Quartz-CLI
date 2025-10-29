@@ -1,7 +1,7 @@
 //cli/strategies/github.ts
-import {BasePlatformStrategy, PullRequestResult} from "./platform.ts";
-import {PlatformConfig} from "../types/config.ts";
-import {PLATFORM_TYPES, JSON_FORMAT} from "../constants/index.ts";
+import {BasePlatformStrategy, PullRequestResult} from "./platform";
+import {PLATFORM_TYPES, JSON_FORMAT} from "../constants";
+import {PlatformConfig} from "../../types/config";
 
 /**
  * GitHub平台策略实现类，用于与GitHub API交互以创建Pull Request、检查分支状态及推送分支。
