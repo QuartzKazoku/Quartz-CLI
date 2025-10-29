@@ -1,11 +1,8 @@
 /**
  * @fileoverview UI-related constants for Quartz CLI
  * @description Defines UI elements, languages, icons, and terminal control constants
- * @author Quartz CLI Team
- * @version 1.0.0
+ * @author @GeWuYou
  * @since 2025-10-28
- * @license MIT
- * @copyright (c) 2025 Quartz
  *
  * @example
  *   import { SUPPORTED_LANGUAGES, CONFIG_ICONS, TERMINAL } from '@/constants/ui';
@@ -17,7 +14,7 @@
  * @module constants/ui
  */
 
-import {CONFIG_KEYS} from "./config";
+import { CONFIG_KEYS } from "./config";
 
 /**
  * List of supported languages
@@ -27,15 +24,15 @@ import {CONFIG_KEYS} from "./config";
  */
 export const SUPPORTED_LANGUAGES = [
     /** Simplified Chinese - Mainland China */
-    {value: 'zh-CN', label: '简体中文 (Simplified Chinese)'},
+    { value: 'zh-CN', label: '简体中文 (Simplified Chinese)' },
     /** Traditional Chinese - Taiwan, Hong Kong */
-    {value: 'zh-TW', label: '繁體中文 (Traditional Chinese)'},
+    { value: 'zh-TW', label: '繁體中文 (Traditional Chinese)' },
     /** Japanese - Japan */
-    {value: 'ja', label: '日本語 (Japanese)'},
+    { value: 'ja', label: '日本語 (Japanese)' },
     /** Korean - South Korea */
-    {value: 'ko', label: '한국어 (Korean)'},
+    { value: 'ko', label: '한국어 (Korean)' },
     /** English - International */
-    {value: 'en', label: 'English'},
+    { value: 'en', label: 'English' },
 ] as const;
 
 /**

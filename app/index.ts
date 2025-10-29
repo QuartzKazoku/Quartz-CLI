@@ -1,9 +1,9 @@
 //app/index.ts
-// cli/index.ts
 import { reviewCode, generateCommit, generatePR, configCommand, generateChangelog }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
+import { parseCLIOverrides, type CLIOverrides } from '@/utils/config';
 
 /**
  * Print ASCII art logo
@@ -52,6 +52,13 @@ function getUsageText(): string {
   logger.listItem(`${logger.text.warning('-v, --version')} - ${logger.text.dim(t('cli.version'))}`);
   logger.line();
 
+  // Global options section
+  logger.section(t('cli.globalOptions') || 'Global Options');
+  logger.listItem(`${logger.text.warning('--apikey')} - ${logger.text.dim('OpenAI API key (overrides config)')}`);
+  logger.listItem(`${logger.text.warning('--baseurl')} - ${logger.text.dim('OpenAI API base URL (overrides config)')}`);
+  logger.listItem(`${logger.text.warning('--model')} - ${logger.text.dim('OpenAI model name (overrides config)')}`);
+  logger.line();
+
   // Examples section
   logger.section(t('cli.examples'));
   logger.example(t('cli.initConfig'), 'quartz config init');
@@ -61,6 +68,12 @@ function getUsageText(): string {
   logger.example(t('pr.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz pr --auto --base main');
   logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog');
   logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog --preview');
+  logger.line();
+
+  // CI example
+  logger.section('CI Examples');
+  logger.example('Use with environment variables in CI', 'quartz commit --apikey=$OPENAI_API_KEY --model=gpt-4');
+  logger.example('Override base URL', 'quartz review --baseurl=https://api.custom.com/v1 --apikey=sk-xxx');
   logger.line();
   logger.box(
     `📚 ${t('cli.moreInfo')}\n\n${logger.text.primary('https://github.com/QuartzKazoku/Quartz-CLI.git')}`,
@@ -77,14 +90,27 @@ const t = i18n.t;
 // Get command line arguments
 const args = process.argv.slice(2);
 
+// Parse global CLI overrides
+const cliOverrides = parseCLIOverrides(args);
+
+// Filter out global options from args to pass to commands
+const filteredArgs = args.filter(arg =>
+  !arg.startsWith('--apikey') &&
+  !arg.startsWith('--baseurl') &&
+  !arg.startsWith('--model') &&
+  arg !== '--apikey' &&
+  arg !== '--baseurl' &&
+  arg !== '--model'
+);
+
 // Handle help flag
-if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
+if (filteredArgs.length === 0 || filteredArgs.includes('-h') || filteredArgs.includes('--help')) {
   getUsageText();
   process.exit(0);
 }
 
 // Handle version flag
-if (args.includes('-v') || args.includes('--version')) {
+if (filteredArgs.includes('-v') || filteredArgs.includes('--version')) {
   const pkg = await import('../package.json');
   logger.line();
   logger.box(
@@ -96,30 +122,30 @@ if (args.includes('-v') || args.includes('--version')) {
 }
 
 // Get command
-const command = args[0];
+const command = filteredArgs[0];
 
 // Execute command
 try {
   switch (command) {
     // Config management
     case 'config':
-      await configCommand(args.slice(1));
+      await configCommand(filteredArgs.slice(1), cliOverrides);
       break;
     // Review code
     case 'review':
-      await reviewCode(args.slice(1));
+      await reviewCode(filteredArgs.slice(1), cliOverrides);
       break;
     // Generate commit message
     case 'commit':
-      await generateCommit(args.slice(1));
+      await generateCommit(filteredArgs.slice(1), cliOverrides);
       break;
     // Generate PR description
     case 'pr':
-      await generatePR(args.slice(1));
+      await generatePR(filteredArgs.slice(1), cliOverrides);
       break;
     // Generate changelog
     case 'changelog':
-      await generateChangelog(args.slice(1));
+      await generateChangelog(filteredArgs.slice(1), cliOverrides);
       break;
     // Handle unknown command
     default:
