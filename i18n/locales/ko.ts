@@ -12,6 +12,15 @@ export const ko: Translations = {
     confirm: '확인',
   },
 
+  migration: {
+    detected: '⚠️  구성 파일 마이그레이션이 필요합니다',
+    starting: '🔄 구성 파일 마이그레이션 시작...',
+    success: '✅ 구성 파일이 v{from}에서 v{to}로 성공적으로 마이그레이션되었습니다',
+    applied: '📋 적용된 마이그레이션:',
+    errors: '❌ 마이그레이션 중 오류 발생:',
+    failed: '구성 마이그레이션 실패: {error}',
+  },
+
   cli: {
     usage: '사용법',
     commands: '명령어',
@@ -176,10 +185,13 @@ export const ko: Translations = {
 
   init: {
     starting: '🚀 Quartz 설정 초기화 중...',
+    alreadyInitialized: '⚠️  Quartz가 이미 초기화되었습니다',
+    reinitializeHint: '💡 재초기화가 필요한 경우 먼저 .quartz 디렉토리를 삭제하세요',
     dirExists: 'ℹ️  설정 디렉토리가 이미 존재합니다: {dir}',
     dirCreated: '✅ 설정 디렉토리가 생성되었습니다: {dir}',
     configCreated: '✅ 설정 파일이 생성되었습니다: {path}',
     configExists: 'ℹ️  설정 파일이 이미 존재합니다: {path}',
+    versionInitialized: '✅ 버전 메타데이터가 초기화되었습니다',
     exampleCreated: '✅ 예제 설정 파일이 생성되었습니다: {path}',
     exampleExists: 'ℹ️  예제 설정 파일이 이미 존재합니다: {path}',
     success: 'Quartz 설정 초기화가 완료되었습니다！',

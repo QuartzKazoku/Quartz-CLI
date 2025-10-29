@@ -5,6 +5,7 @@ import {CONFIG_FILE} from '@/constants';
 import {ensureQuartzDir} from '@/utils/config';
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
+import {initializeVersionMetadata} from '@/utils/migration';
 
 /**
  * Get .quartz directory path
@@ -106,6 +107,15 @@ function migrateOldConfig(oldConfigPath: string): void {
 }
 
 /**
+ * Check if already initialized
+ */
+function isInitialized(): boolean {
+    const quartzDir = getQuartzDir();
+    const configPath = getQuartzConfigPath();
+    return fs.existsSync(quartzDir) && fs.existsSync(configPath);
+}
+
+/**
  * Initialize Quartz configuration
  */
 export async function initCommand(args: string[]): Promise<void> {
@@ -116,6 +126,14 @@ export async function initCommand(args: string[]): Promise<void> {
     logger.line();
     logger.log(t('init.starting'));
     logger.line();
+
+    // Check if already initialized
+    if (isInitialized()) {
+        logger.warn(t('init.alreadyInitialized'));
+        logger.info(t('init.reinitializeHint'));
+        logger.line();
+        return;
+    }
 
     // Check if .quartz directory already exists
     if (fs.existsSync(quartzDir)) {
@@ -137,6 +155,10 @@ export async function initCommand(args: string[]): Promise<void> {
         const exampleContent = getExampleConfigContent();
         fs.writeFileSync(configPath, exampleContent, 'utf-8');
         logger.success(t('init.configCreated', {path: configPath}));
+        
+        // Initialize version metadata
+        initializeVersionMetadata();
+        logger.info(t('init.versionInitialized'));
     } else {
         logger.info(t('init.configExists', {path: configPath}));
     }

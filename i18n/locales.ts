@@ -22,6 +22,16 @@ export interface Translations {
     confirm: string;
   };
 
+  // Migration
+  migration: {
+    detected: string;
+    starting: string;
+    success: string;
+    applied: string;
+    errors: string;
+    failed: string;
+  };
+
   // CLI main menu
   cli: {
     usage: string;
@@ -193,10 +203,13 @@ export interface Translations {
   // Init command
   init: {
     starting: string;
+    alreadyInitialized: string;
+    reinitializeHint: string;
     dirExists: string;
     dirCreated: string;
     configCreated: string;
     configExists: string;
+    versionInitialized: string;
     exampleCreated: string;
     exampleExists: string;
     success: string;

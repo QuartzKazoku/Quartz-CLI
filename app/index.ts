@@ -3,6 +3,7 @@ import { reviewCode, generateCommit, generatePR, configCommand, initCommand }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
+import { checkAndMigrate, shouldSkipMigration } from '@/utils/hooks';
 
 /**
  * Print ASCII art logo
@@ -95,6 +96,21 @@ if (args.includes('-v') || args.includes('--version')) {
 
 // Get command
 const command = args[0];
+
+// Check and run migrations if needed (skip for certain commands)
+if (!shouldSkipMigration(command)) {
+  try {
+    await checkAndMigrate();
+  } catch (error) {
+    logger.line();
+    logger.box(
+      `${logger.text.error(t('migration.failed'))}\n\n${error instanceof Error ? error.message : String(error)}`,
+      { title: '❌ Migration Error', padding: 1 }
+    );
+    logger.line();
+    process.exit(1);
+  }
+}
 
 // Execute command
 try {

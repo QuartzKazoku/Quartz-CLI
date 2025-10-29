@@ -12,6 +12,15 @@ export const ja: Translations = {
     confirm: '確認',
   },
 
+  migration: {
+    detected: '⚠️  設定ファイルの移行が必要です',
+    starting: '🔄 設定ファイルの移行を開始...',
+    success: '✅ 設定ファイルをv{from}からv{to}に移行しました',
+    applied: '📋 適用された移行:',
+    errors: '❌ 移行中にエラーが発生しました:',
+    failed: '設定の移行に失敗しました: {error}',
+  },
+
   cli: {
     usage: '使用方法',
     commands: 'コマンド',
@@ -176,10 +185,13 @@ export const ja: Translations = {
 
   init: {
     starting: '🚀 Quartz 設定を初期化中...',
+    alreadyInitialized: '⚠️  Quartz は既に初期化されています',
+    reinitializeHint: '💡 再初期化が必要な場合は、まず .quartz ディレクトリを削除してください',
     dirExists: 'ℹ️  設定ディレクトリは既に存在します: {dir}',
     dirCreated: '✅ 設定ディレクトリを作成しました: {dir}',
     configCreated: '✅ 設定ファイルを作成しました: {path}',
     configExists: 'ℹ️  設定ファイルは既に存在します: {path}',
+    versionInitialized: '✅ バージョンメタデータを初期化しました',
     exampleCreated: '✅ サンプル設定ファイルを作成しました: {path}',
     exampleExists: 'ℹ️  サンプル設定ファイルは既に存在します: {path}',
     success: 'Quartz 設定の初期化が完了しました！',

@@ -12,6 +12,15 @@ export const zhCN: Translations = {
     confirm: '确认',
   },
 
+  migration: {
+    detected: '⚠️  检测到配置文件需要迁移',
+    starting: '🔄 开始迁移配置文件...',
+    success: '✅ 配置文件已成功从 v{from} 迁移到 v{to}',
+    applied: '📋 已应用以下迁移:',
+    errors: '❌ 迁移过程中出现错误:',
+    failed: '配置迁移失败: {error}',
+  },
+
   cli: {
     usage: '用法',
     commands: '命令',
@@ -176,10 +185,13 @@ export const zhCN: Translations = {
 
   init: {
     starting: '🚀 初始化 Quartz 配置...',
+    alreadyInitialized: '⚠️  Quartz 已经初始化',
+    reinitializeHint: '💡 如果需要重新初始化，请先删除 .quartz 目录',
     dirExists: 'ℹ️  配置目录已存在: {dir}',
     dirCreated: '✅ 配置目录已创建: {dir}',
     configCreated: '✅ 配置文件已创建: {path}',
     configExists: 'ℹ️  配置文件已存在: {path}',
+    versionInitialized: '✅ 已初始化配置版本信息',
     exampleCreated: '✅ 示例配置文件已创建: {path}',
     exampleExists: 'ℹ️  示例配置文件已存在: {path}',
     success: 'Quartz 配置初始化成功！',

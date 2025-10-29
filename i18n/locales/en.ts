@@ -12,6 +12,15 @@ export const en: Translations = {
     confirm: 'Confirm',
   },
 
+  migration: {
+    detected: '⚠️  Configuration migration needed',
+    starting: '🔄 Starting configuration migration...',
+    success: '✅ Configuration successfully migrated from v{from} to v{to}',
+    applied: '📋 Applied migrations:',
+    errors: '❌ Errors during migration:',
+    failed: 'Configuration migration failed: {error}',
+  },
+
   cli: {
     usage: 'Usage',
     commands: 'Commands',
@@ -176,10 +185,13 @@ export const en: Translations = {
 
   init: {
     starting: '🚀 Initializing Quartz configuration...',
+    alreadyInitialized: '⚠️  Quartz is already initialized',
+    reinitializeHint: '💡 If you need to reinitialize, please delete the .quartz directory first',
     dirExists: 'ℹ️  Configuration directory already exists: {dir}',
     dirCreated: '✅ Configuration directory created: {dir}',
     configCreated: '✅ Configuration file created: {path}',
     configExists: 'ℹ️  Configuration file already exists: {path}',
+    versionInitialized: '✅ Version metadata initialized',
     exampleCreated: '✅ Example configuration file created: {path}',
     exampleExists: 'ℹ️  Example configuration file already exists: {path}',
     success: 'Quartz configuration initialized successfully!',

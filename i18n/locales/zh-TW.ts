@@ -12,6 +12,15 @@ export const zhTW: Translations = {
     confirm: '確認',
   },
 
+  migration: {
+    detected: '⚠️  檢測到配置檔案需要遷移',
+    starting: '🔄 開始遷移配置檔案...',
+    success: '✅ 配置檔案已成功從 v{from} 遷移到 v{to}',
+    applied: '📋 已應用以下遷移:',
+    errors: '❌ 遷移過程中出現錯誤:',
+    failed: '配置遷移失敗: {error}',
+  },
+
   cli: {
     usage: '用法',
     commands: '命令',
@@ -176,10 +185,13 @@ export const zhTW: Translations = {
 
   init: {
     starting: '🚀 初始化 Quartz 配置...',
+    alreadyInitialized: '⚠️  Quartz 已經初始化',
+    reinitializeHint: '💡 如果需要重新初始化，請先刪除 .quartz 目錄',
     dirExists: 'ℹ️  配置目錄已存在: {dir}',
     dirCreated: '✅ 配置目錄已建立: {dir}',
     configCreated: '✅ 配置檔案已建立: {path}',
     configExists: 'ℹ️  配置檔案已存在: {path}',
+    versionInitialized: '✅ 已初始化版本資訊',
     exampleCreated: '✅ 範例配置檔案已建立: {path}',
     exampleExists: 'ℹ️  範例配置檔案已存在: {path}',
     success: 'Quartz 配置初始化成功！',
