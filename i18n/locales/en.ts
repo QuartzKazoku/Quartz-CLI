@@ -99,6 +99,15 @@ export const en: Translations = {
     noBranches: '❌ No available branches',
     noToken: '❌ Error: GITHUB_TOKEN is not set',
     useGHTip: '   Please use --gh option to create PR via GitHub CLI',
+    generatingOptions: '💎 Generating {count} PR description options...\n',
+    generatedOptions: '📝 Generated PR Description Options:',
+    selectPrompt: '📝 Select a PR description (use ↑↓ keys, Enter to confirm, Ctrl+C to cancel):\n',
+    selectedOption: '\n✨ Selected PR description [{index}]:\n',
+    cancelled: '\n⚠️  PR creation cancelled',
+    optionTitle: 'Option {index}',
+    selectedTitle: 'Selected Title',
+    selectedBody: 'Selected Description',
+    platformTokenRequired: '   Please configure token for {platform}',
   },
 
   scoreLevel: {

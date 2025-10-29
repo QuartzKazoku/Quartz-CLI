@@ -99,6 +99,15 @@ export const zhTW: Translations = {
     useGHTip: '   請使用 --gh 選項透過 GitHub CLI 建立 PR',
     pushingBranch: '📤 正在推送分支 {branch} 到遠端倉庫...',
     branchPushed: '✅ 分支已推送到遠端倉庫',
+    generatingOptions: '💎 Quartz 正在生成 {count} 個 PR 描述選項...\n',
+    generatedOptions: '📝 生成的 PR 描述選項:',
+    selectPrompt: '📝 請選擇一個 PR 描述 (使用 ↑↓ 鍵選擇, Enter 確認, Ctrl+C 取消):\n',
+    selectedOption: '\n✨ 已選擇 PR 描述 [{index}]:\n',
+    cancelled: '\n⚠️  取消 PR 建立',
+    optionTitle: '選項 {index}',
+    selectedTitle: '選中的標題',
+    selectedBody: '選中的描述',
+    platformTokenRequired: '   請為 {platform} 配置 token',
   },
 
   scoreLevel: {

@@ -101,6 +101,7 @@ vi.mock('@/utils/logger', () => ({
     box: vi.fn(),
     info: vi.fn(),
     success: vi.fn(),
+    separator: vi.fn(),
     text: {
       primary: (text: string) => text
     }
@@ -109,7 +110,7 @@ vi.mock('@/utils/logger', () => ({
 
 // Mock enquirer
 vi.mock('@/utils/enquirer', () => ({
-  select: vi.fn().mockResolvedValue('main')
+  select: vi.fn().mockResolvedValue(0)
 }));
 
 describe('PR Command', () => {

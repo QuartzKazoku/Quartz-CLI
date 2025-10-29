@@ -91,8 +91,10 @@ export interface Translations {
     commits: string;
     filesChanged: string;
     generating: string;
+    generatingOptions: string;
     generatedTitle: string;
     generatedBody: string;
+    generatedOptions: string;
     tips: string;
     autoTip: string;
     ghTip: string;
@@ -113,6 +115,13 @@ export interface Translations {
     useGHTip: string;
     pushingBranch: string;
     branchPushed: string;
+    selectPrompt: string;
+    selectedOption: string;
+    cancelled: string;
+    optionTitle: string;
+    selectedTitle: string;
+    selectedBody: string;
+    platformTokenRequired: string;
   };
 
   // Score levels

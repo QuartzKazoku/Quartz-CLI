@@ -99,6 +99,15 @@ export const ko: Translations = {
     branchPushed: '✅ 브랜치를 원격 저장소에 푸시했습니다',
     noToken: '❌ 오류: GITHUB_TOKEN이 설정되지 않았습니다',
     useGHTip: '   --gh 옵션으로 GitHub CLI를 사용하세요',
+    generatingOptions: '💎 Quartz가 {count}개의 PR 설명 옵션 생성 중...\n',
+    generatedOptions: '📝 생성된 PR 설명 옵션:',
+    selectPrompt: '📝 PR 설명을 선택하세요 (↑↓ 키로 선택, Enter로 확인, Ctrl+C로 취소):\n',
+    selectedOption: '\n✨ PR 설명 [{index}]를 선택했습니다:\n',
+    cancelled: '\n⚠️  PR 생성이 취소되었습니다',
+    optionTitle: '옵션 {index}',
+    selectedTitle: '선택된 제목',
+    selectedBody: '선택된 설명',
+    platformTokenRequired: '   {platform}의 token을 설정하세요',
   },
 
   config: {

@@ -164,7 +164,70 @@ async function getChangedFiles(baseBranch: string): Promise<string[]> {
 }
 
 /**
- * Generate PR description using AI
+ * Generate multiple PR descriptions using AI
+ * @param openai - OpenAI client instance
+ * @param model - OpenAI model to use
+ * @param diff - Git diff content
+ * @param commits - Array of commit messages
+ * @param files - Array of changed files
+ * @param currentBranch - Current branch name
+ * @param baseBranch - Base branch name
+ * @param count - Number of descriptions to generate
+ * @returns Array of generated PR descriptions
+ */
+async function generatePRDescriptions(
+  openai: OpenAI,
+  model: string,
+  diff: string,
+  commits: string[],
+  files: string[],
+  currentBranch: string,
+  baseBranch: string,
+  count: number = 3
+): Promise<Array<{ title: string; body: string }>> {
+  const prompt = getPRPrompt(diff, commits, files, currentBranch, baseBranch);
+  const descriptions: Array<{ title: string; body: string }> = [];
+
+  try {
+    // Generate multiple descriptions in parallel
+    const promises = Array.from({ length: count }, async () => {
+      const response = await openai.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7, // Slightly higher for variety
+        max_tokens: 1500,
+        response_format: { type: 'json_object' },
+      });
+
+      const result = response.choices[0]?.message?.content;
+      if (!result) {
+        throw new Error(t('errors.apiFailed'));
+      }
+
+      const parsed = JSON.parse(result);
+      return {
+        title: parsed.title || 'Update',
+        body: parsed.body || 'Update code',
+      };
+    });
+
+    const results = await Promise.all(promises);
+    descriptions.push(...results);
+
+    return descriptions;
+  } catch (error) {
+    logger.error(t('pr.failed'), error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Generate single PR description using AI (for backward compatibility)
  * @param openai - OpenAI client instance
  * @param model - OpenAI model to use
  * @param diff - Git diff content
@@ -183,36 +246,8 @@ async function generatePRDescription(
   currentBranch: string,
   baseBranch: string
 ): Promise<{ title: string; body: string }> {
-  const prompt = getPRPrompt(diff, commits, files, currentBranch, baseBranch);
-
-  try {
-    const response = await openai.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.5,
-      max_tokens: 1500,
-      response_format: { type: 'json_object' },
-    });
-
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
-      throw new Error(t('errors.apiFailed'));
-    }
-
-    const parsed = JSON.parse(result);
-    return {
-      title: parsed.title || 'Update',
-      body: parsed.body || 'Update code',
-    };
-  } catch (error) {
-    logger.error(t('pr.failed'), error);
-    process.exit(1);
-  }
+  const descriptions = await generatePRDescriptions(openai, model, diff, commits, files, currentBranch, baseBranch, 1);
+  return descriptions[0];
 }
 
 /**
@@ -278,6 +313,55 @@ async function createPullRequestWithStrategy(
 }
 
 /**
+ * Display interactive selection menu for PR descriptions
+ * @param descriptions - Array of PR descriptions to choose from
+ * @returns Selected description index
+ */
+async function selectPRDescription(descriptions: Array<{ title: string; body: string }>): Promise<number> {
+  try {
+    const choices = descriptions.map((desc, index) => ({
+      name: String(index),
+      value: index,
+      message: `[${index + 1}] ${desc.title}`,
+    }));
+
+    return await select(t('pr.selectPrompt'), choices, 0);
+  } catch (error) {
+    logger.line();
+    logger.warn(t('pr.cancelled'));
+    if (error instanceof Error) {
+      logger.error('Selection error:', error.message);
+    }
+    process.exit(0);
+  }
+}
+
+/**
+ * Format PR description for display
+ * @param description - PR description object
+ * @param index - Index number
+ * @returns Formatted string
+ */
+function formatPRDescription(description: { title: string; body: string }, index: number): string {
+  const lines = description.body.split('\n');
+  const firstLine = lines[0];
+  const rest = lines.slice(1).filter(l => l.trim());
+  
+  let formatted = `[${index + 1}] ${description.title}`;
+  if (firstLine && firstLine.trim()) {
+    formatted += `\n    ${firstLine}`;
+  }
+  if (rest.length > 0) {
+    formatted += `\n    ${rest.slice(0, 2).join('\n    ')}`;
+    if (rest.length > 2) {
+      formatted += '\n    ...';
+    }
+  }
+  
+  return formatted;
+}
+
+/**
  * Create PR using GitHub CLI
  * @param title - PR title
  * @param body - PR body
@@ -307,11 +391,12 @@ async function createPRWithGH(title: string, body: string, baseBranch: string) {
  * @param args - Command line arguments array
  * @returns Parsed arguments object
  */
-function parseArgs(args: string[]): { base: string | null; useGH: boolean; interactive: boolean } {
+function parseArgs(args: string[]): { base: string | null; useGH: boolean; interactive: boolean; auto: boolean } {
   const result = {
     base: null as string | null,
     useGH: args.includes('--gh'),
     interactive: args.includes('--select') || args.includes('-s'),
+    auto: args.includes('--auto'),
   };
 
   const baseIndex = args.findIndex(arg => arg === '--base' || arg === '-b');
@@ -338,7 +423,7 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
     process.exit(1);
   }
 
-  const { base: specifiedBase, useGH, interactive } = parseArgs(args);
+  const { base: specifiedBase, useGH, interactive, auto } = parseArgs(args);
 
   // Get current branch
   const currentBranch = await getCurrentBranch();
@@ -386,33 +471,73 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
     baseURL: openAIConfig.baseUrl,
   });
 
-  // Generate PR description
-  const spinner = logger.spinner(t('pr.generating'));
-  const { title, body } = await generatePRDescription(
-    openai,
-    openAIConfig.model,
-    diff,
-    commits,
-    files,
-    currentBranch,
-    baseBranch
-  );
-  spinner.succeed(t('pr.generating'));
+  // Generate PR descriptions
+  let selectedDescription: { title: string; body: string };
 
-  logger.line();
-  logger.section(t('pr.generatedTitle'));
-  logger.box(title, { padding: 1 });
+  if (auto) {
+    // Auto mode: generate single description
+    const spinner = logger.spinner(t('pr.generating'));
+    selectedDescription = await generatePRDescription(
+      openai,
+      openAIConfig.model,
+      diff,
+      commits,
+      files,
+      currentBranch,
+      baseBranch
+    );
+    spinner.succeed(t('pr.generating'));
 
-  logger.section(t('pr.generatedBody'));
-  logger.box(body, { padding: 1 });
-  logger.line();
+    logger.line();
+    logger.section(t('pr.generatedTitle'));
+    logger.box(selectedDescription.title, { padding: 1 });
+
+    logger.section(t('pr.generatedBody'));
+    logger.box(selectedDescription.body, { padding: 1 });
+    logger.line();
+  } else {
+    // Interactive mode: generate 3 descriptions and let user choose
+    const spinner = logger.spinner(t('pr.generatingOptions', { count: 3 }));
+    const descriptions = await generatePRDescriptions(
+      openai,
+      openAIConfig.model,
+      diff,
+      commits,
+      files,
+      currentBranch,
+      baseBranch,
+      3
+    );
+    spinner.succeed(t('pr.generatingOptions', { count: 3 }));
+
+    logger.line();
+    logger.section(t('pr.generatedOptions'));
+    
+    // Display all options
+    descriptions.forEach((desc, index) => {
+      logger.box(formatPRDescription(desc, index), { padding: 1, title: t('pr.optionTitle', { index: index + 1 }) });
+      logger.line();
+    });
+
+    // Let user select
+    const selectedIndex = await selectPRDescription(descriptions);
+    selectedDescription = descriptions[selectedIndex];
+
+    logger.info(t('pr.selectedOption', { index: selectedIndex + 1 }));
+    logger.separator(80);
+    logger.box(selectedDescription.title, { padding: 1, title: t('pr.selectedTitle') });
+    logger.line();
+    logger.box(selectedDescription.body, { padding: 1, title: t('pr.selectedBody') });
+    logger.separator(80);
+    logger.line();
+  }
 
   // Auto-create PR/MR (default behavior)
   const createSpinner = logger.spinner(t('pr.creating'));
 
   if (useGH) {
     // Use GitHub CLI
-    await createPRWithGH(title, body, baseBranch);
+    await createPRWithGH(selectedDescription.title, selectedDescription.body, baseBranch);
     createSpinner.succeed(t('pr.success'));
   } else if (repoInfo) {
     // Get all platform configurations
@@ -423,7 +548,7 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
 
     if (!matchingConfig) {
       createSpinner.fail(t('pr.noToken'));
-      logger.error(`   请为 ${repoInfo.platform} 配置 token`);
+      logger.error(t('pr.platformTokenRequired', { platform: repoInfo.platform }));
       logger.error(t('pr.useGHTip'));
       process.exit(1);
     }
@@ -434,8 +559,8 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
       strategy,
       repoInfo.owner,
       repoInfo.repo,
-      title,
-      body,
+      selectedDescription.title,
+      selectedDescription.body,
       currentBranch,
       baseBranch
     );
