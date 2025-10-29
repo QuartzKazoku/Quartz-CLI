@@ -172,6 +172,21 @@ export const ko: Translations = {
     needImprovement: '개선 필요',
   },
 
+  changelog: {
+    starting: '🚀 Changelog 생성 중...\n',
+    foundTags: '📌 {count}개의 Git 태그를 발견했습니다',
+    generating: '📝 버전 {version}의 changelog 생성 중 ({from}에서 {to}까지)...',
+    initial: '초기 커밋',
+    fetching: '🔍 커밋 기록을 가져오는 중...',
+    found: '✅ {count}개의 커밋을 찾았습니다',
+    noCommits: '⚠️  커밋을 찾을 수 없습니다',
+    preview: 'Changelog 미리보기',
+    saved: '💾 Changelog가 저장되었습니다: {path}',
+    saveFailed: '❌ Changelog 저장 실패',
+    success: '✅ Changelog가 성공적으로 생성되었습니다!',
+    location: '📍 위치: {path}',
+  },
+
   errors: {
     noApiKey: '❌ 오류: OPENAI_API_KEY가 설정되지 않았습니다',
     setApiKey: '   quartz config init를 실행하거나 프로젝트 루트에 quartz.jsonc 파일을 생성하세요',

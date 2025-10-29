@@ -123,6 +123,22 @@ export interface Translations {
     needImprovement: string;
   };
 
+  // Changelog command
+  changelog: {
+    starting: string;
+    foundTags: string;
+    generating: string;
+    initial: string;
+    fetching: string;
+    found: string;
+    noCommits: string;
+    preview: string;
+    saved: string;
+    saveFailed: string;
+    success: string;
+    location: string;
+  };
+
   // Config command
   config: {
     usage: string;

@@ -1,6 +1,6 @@
 //app/index.ts
 // cli/index.ts
-import { reviewCode, generateCommit, generatePR, configCommand }
+import { reviewCode, generateCommit, generatePR, configCommand, generateChangelog }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
@@ -44,6 +44,7 @@ function getUsageText(): string {
   logger.command('review', t('review.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('commit', t('commit.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('pr', t('pr.starting').replace('🚀 ', '').replace('...', '').trim());
+  logger.command('changelog', t('changelog.starting').replace('🚀 ', '').replace('...', '').trim());
 
   // Options section
   logger.section(t('cli.options'));
@@ -58,6 +59,8 @@ function getUsageText(): string {
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit --edit');
   logger.example(t('pr.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz pr --auto --base main');
+  logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog');
+  logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog --preview');
   logger.line();
   logger.box(
     `📚 ${t('cli.moreInfo')}\n\n${logger.text.primary('https://github.com/QuartzKazoku/Quartz-CLI.git')}`,
@@ -113,6 +116,10 @@ try {
     // Generate PR description
     case 'pr':
       await generatePR(args.slice(1));
+      break;
+    // Generate changelog
+    case 'changelog':
+      await generateChangelog(args.slice(1));
       break;
     // Handle unknown command
     default:
