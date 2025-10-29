@@ -172,6 +172,21 @@ export const zhCN: Translations = {
     unknownKey: '未知的配置键: {key}',
   },
 
+  changelog: {
+    starting: '🚀 生成 Changelog...\n',
+    foundTags: '📌 发现 {count} 个 Git 标签',
+    generating: '📝 正在生成版本 {version} 的 changelog (从 {from} 到 {to})...',
+    initial: '初始提交',
+    fetching: '🔍 正在获取提交记录...',
+    found: '✅ 找到 {count} 个提交',
+    noCommits: '⚠️  没有找到提交记录',
+    preview: 'Changelog 预览',
+    saved: '💾 Changelog 已保存: {path}',
+    saveFailed: '❌ 保存 Changelog 失败',
+    success: '✅ Changelog 生成成功!',
+    location: '📍 位置: {path}',
+  },
+
   errors: {
     noApiKey: '❌ 错误: 未设置 OPENAI_API_KEY',
     setApiKey: '   请运行 quartz config init 或在项目根目录创建 quartz.jsonc 文件',

@@ -172,6 +172,21 @@ export const en: Translations = {
     unknownKey: 'Unknown configuration key: {key}',
   },
 
+  changelog: {
+    starting: '🚀 Generating Changelog...\n',
+    foundTags: '📌 Found {count} Git tags',
+    generating: '📝 Generating changelog for version {version} (from {from} to {to})...',
+    initial: 'Initial commit',
+    fetching: '🔍 Fetching commit history...',
+    found: '✅ Found {count} commits',
+    noCommits: '⚠️  No commits found',
+    preview: 'Changelog Preview',
+    saved: '💾 Changelog saved: {path}',
+    saveFailed: '❌ Failed to save changelog',
+    success: '✅ Changelog generated successfully!',
+    location: '📍 Location: {path}',
+  },
+
   errors: {
     noApiKey: '❌ Error: OPENAI_API_KEY is not set',
     setApiKey: '   Please run quartz config init or create quartz.jsonc file',

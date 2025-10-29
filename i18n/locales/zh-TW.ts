@@ -172,6 +172,21 @@ export const zhTW: Translations = {
   },
 
 
+  changelog: {
+    starting: '🚀 生成 Changelog...\n',
+    foundTags: '📌 發現 {count} 個 Git 標籤',
+    generating: '📝 正在生成版本 {version} 的 changelog (從 {from} 到 {to})...',
+    initial: '初始提交',
+    fetching: '🔍 正在獲取提交記錄...',
+    found: '✅ 找到 {count} 個提交',
+    noCommits: '⚠️  沒有找到提交記錄',
+    preview: 'Changelog 預覽',
+    saved: '💾 Changelog 已儲存: {path}',
+    saveFailed: '❌ 儲存 Changelog 失敗',
+    success: '✅ Changelog 生成成功!',
+    location: '📍 位置: {path}',
+  },
+
   errors: {
     noApiKey: '❌ 錯誤: 未設定 OPENAI_API_KEY',
     setApiKey: '   請執行 quartz config init 或在專案根目錄建立 quartz.jsonc 檔案',

@@ -172,6 +172,21 @@ export const ja: Translations = {
     needImprovement: '改善が必要',
   },
 
+  changelog: {
+    starting: '🚀 Changelog を生成中...\n',
+    foundTags: '📌 {count} 個の Git タグを発見',
+    generating: '📝 バージョン {version} の changelog を生成中 ({from} から {to} まで)...',
+    initial: '初期コミット',
+    fetching: '🔍 コミット履歴を取得中...',
+    found: '✅ {count} 個のコミットを発見',
+    noCommits: '⚠️  コミットが見つかりません',
+    preview: 'Changelog プレビュー',
+    saved: '💾 Changelog を保存しました: {path}',
+    saveFailed: '❌ Changelog の保存に失敗しました',
+    success: '✅ Changelog の生成に成功しました!',
+    location: '📍 場所: {path}',
+  },
+
   errors: {
     noApiKey: '❌ エラー: OPENAI_API_KEY が設定されていません',
     setApiKey: '   quartz config init を実行するか、プロジェクトルートに quartz.jsonc ファイルを作成してください',
