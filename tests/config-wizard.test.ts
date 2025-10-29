@@ -1,6 +1,6 @@
 //tests/config-wizard.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { readQuartzConfig, writeQuartzConfig, upsertPlatformConfig } from '@/utils/config';
+import { getConfigManager } from '@/manager/config';
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
@@ -36,6 +36,7 @@ describe('Config Wizard - API Key Persistence', () => {
   });
 
   it('should preserve apiKey when updating platform tokens', () => {
+    const configManager = getConfigManager();
     
     // Initial config with apiKey
     const initialConfig = {
@@ -52,16 +53,16 @@ describe('Config Wizard - API Key Persistence', () => {
     };
 
     // Write initial config
-    writeQuartzConfig(initialConfig);
+    configManager.writeConfig(initialConfig);
 
     // Simulate adding platform token (like in wizard)
-    upsertPlatformConfig({
+    configManager.upsertPlatformConfig({
       type: 'github',
       token: 'ghp_test_token'
     });
 
     // Read config after platform update
-    const updatedConfig = readQuartzConfig();
+    const updatedConfig = configManager.readConfig();
 
     // Verify apiKey is still present
     expect(updatedConfig.openai.apiKey).toBe('sk-test-api-key-12345');
@@ -71,6 +72,7 @@ describe('Config Wizard - API Key Persistence', () => {
   });
 
   it('should preserve all openai config when updating platforms', () => {
+    const configManager = getConfigManager();
     
     // Initial config with complete openai settings
     const initialConfig = {
@@ -87,23 +89,23 @@ describe('Config Wizard - API Key Persistence', () => {
     };
 
     // Write initial config
-    writeQuartzConfig(initialConfig);
+    configManager.writeConfig(initialConfig);
 
     // Add GitHub platform
-    upsertPlatformConfig({
+    configManager.upsertPlatformConfig({
       type: 'github',
       token: 'ghp_token_1'
     });
 
     // Add GitLab platform
-    upsertPlatformConfig({
+    configManager.upsertPlatformConfig({
       type: 'gitlab',
       token: 'glpat_token_1',
       url: 'https://gitlab.com'
     });
 
     // Read config after multiple platform updates
-    const finalConfig = readQuartzConfig();
+    const finalConfig = configManager.readConfig();
 
     // Verify all openai settings are preserved
     expect(finalConfig.openai.apiKey).toBe('sk-test-api-key-67890');

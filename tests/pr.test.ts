@@ -2,33 +2,35 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generatePR } from '@/app/commands/pr';
 
-// Mock config module
-vi.mock('@/utils/config', () => ({
-  loadConfig: vi.fn(() => ({
-    openai: {
-      apiKey: 'test-api-key',
-      baseUrl: 'https://api.openai.com/v1',
-      model: 'gpt-4',
-    },
-    platforms: [
+// Mock ConfigManager
+vi.mock('@/manager/config', () => ({
+  getConfigManager: vi.fn(() => ({
+    readConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-api-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4',
+      },
+      platforms: [
+        {
+          type: 'github',
+          url: 'https://github.com',
+          token: 'test-github-token',
+        },
+      ],
+      language: {
+        ui: 'en',
+        prompt: 'en',
+      },
+    })),
+    getPlatformConfigs: vi.fn(() => [
       {
         type: 'github',
         url: 'https://github.com',
         token: 'test-github-token',
       },
-    ],
-    language: {
-      ui: 'en',
-      prompt: 'en',
-    },
+    ]),
   })),
-  getPlatformConfigs: vi.fn(() => [
-    {
-      type: 'github',
-      url: 'https://github.com',
-      token: 'test-github-token',
-    },
-  ]),
 }));
 
 // Mock shell module
