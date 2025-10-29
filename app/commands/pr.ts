@@ -413,19 +413,20 @@ export async function generatePR(args: string[]) {
     const createSpinner = logger.spinner(t('pr.creating'));
 
     if (useGH) {
+        console.log("执行1")
         // Use GitHub CLI
         await createPRWithGH(title, body, baseBranch);
         createSpinner.succeed(t('pr.success'));
     } else if (repoInfo) {
+        console.log("执行2")
         // Get all platform configurations
         const platformConfigs = configManager.getPlatformConfigs();
 
         // Find configuration matching current repository platform
         const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
-
+        console.log(`token: ${matchingConfig?.token}`)
         if (!matchingConfig) {
             createSpinner.fail(t('pr.noToken'));
-            logger.error(`   请为 ${repoInfo.platform} 配置 token`);
             logger.error(t('pr.useGHTip'));
             process.exit(1);
         }
