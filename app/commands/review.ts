@@ -4,7 +4,7 @@ import {$} from '@/utils/shell';
 import fs from 'node:fs';
 import {t} from '@/i18n';
 import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
-import {readQuartzConfig} from '@/utils/config';
+import {getConfigManager} from '@/manager/config';
 import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
 import {logger} from '@/utils/logger';
 
@@ -40,8 +40,9 @@ function validateConfig(config: { openaiApiKey: string }): void {
  * @returns Configuration object
  */
 function loadConfig() {
-  // Use new configuration reading method
-  const quartzConfig = readQuartzConfig();
+  // Use ConfigManager to read configuration
+  const configManager = getConfigManager();
+  const quartzConfig = configManager.readConfig();
 
   const config = {
     openaiApiKey: quartzConfig.openai.apiKey || '',

@@ -1,30 +1,25 @@
 //cli/commands/config.ts
-import fs from 'node:fs';
-import { setLanguage, t } from '@/i18n';
-import {
-    readQuartzConfig as readConfig,
-    upsertPlatformConfig,
-    writeQuartzConfig as writeConfig
-} from '@/utils/config';
-import { QuartzConfig } from '@/types/config';
+import {setLanguage, t} from '@/i18n';
+import {getConfigManager} from '@/manager/config';
+import {QuartzConfig} from '@/types/config';
 import {
     CONFIG_FILE,
+    CONFIG_ICONS,
     CONFIG_KEYS,
     DEFAULT_VALUES,
+    INDENT,
     PLATFORM_TYPES,
+    SENSITIVE_KEYS,
+    SEPARATOR_LENGTH,
     SUPPORTED_LANGUAGES,
     SUPPORTED_PLATFORMS,
-    CONFIG_ICONS,
-    SENSITIVE_KEYS,
     TOKEN_DISPLAY_LENGTH,
-    SEPARATOR_LENGTH,
-    INDENT,
-    ENCODING,
-    JSON_FORMAT,
 } from '@/constants';
-import { select, input, message } from '@/utils/enquirer';
-import { logger } from '@/utils/logger';
-import { getQuartzPath } from '@/utils/path';
+import {input, message, select} from '@/utils/enquirer';
+import {logger} from '@/utils/logger';
+
+// 获取配置管理器实例
+const configManager = getConfigManager();
 
 /**
  * Helper function to get display value from new configuration structure
@@ -54,7 +49,7 @@ function getConfigDisplayValue(config: QuartzConfig, key: string): string | unde
     }
 }
 
-/**
+    /**
  * Check if configuration key is sensitive information
  */
 function isSensitiveKey(key: string): boolean {
@@ -72,7 +67,7 @@ function formatSensitiveValue(value: string): string {
  * Set configuration value
  */
 function setConfig(key: string, value: string) {
-    const config = readConfig();
+    const config = configManager.readConfig();
 
     switch (key) {
         case CONFIG_KEYS.OPENAI_API_KEY:
@@ -91,12 +86,12 @@ function setConfig(key: string, value: string) {
             config.language.prompt = value;
             break;
         case CONFIG_KEYS.GITHUB_TOKEN:
-            upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
+            configManager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
             logger.log(t('config.set', { key, value: '***' }));
             return;
         case CONFIG_KEYS.GITLAB_TOKEN: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
-            upsertPlatformConfig({
+            configManager.upsertPlatformConfig({
                 type: PLATFORM_TYPES.GITLAB,
                 token: value,
                 url: existingGitlab?.url || DEFAULT_VALUES.GITLAB_URL
@@ -107,7 +102,7 @@ function setConfig(key: string, value: string) {
         case CONFIG_KEYS.GITLAB_URL: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             if (existingGitlab) {
-                upsertPlatformConfig({ ...existingGitlab, url: value });
+                configManager.upsertPlatformConfig({ ...existingGitlab, url: value });
             } else {
                 logger.error(t('config.gitlabTokenSetFirst'));
                 return;
@@ -123,7 +118,7 @@ function setConfig(key: string, value: string) {
             return;
     }
 
-    writeConfig(config);
+    configManager.writeConfig(config);
     logger.log(t('config.set', { key, value: isSensitiveKey(key) ? '***' : value }));
 }
 
@@ -131,7 +126,7 @@ function setConfig(key: string, value: string) {
  * Get configuration value
  */
 function getConfig(key: string) {
-    const config = readConfig();
+    const config = configManager.readConfig();
     const value = getConfigDisplayValue(config, key);
 
     if (value) {
@@ -153,7 +148,7 @@ function getConfigIcon(key: string): string {
  * List all configurations
  */
 function listConfig() {
-    const config = readConfig();
+    const config = configManager.readConfig();
 
     logger.line();
     printLogo();
@@ -205,7 +200,7 @@ function listConfig() {
     }
 
     logger.separator(SEPARATOR_LENGTH);
-    console.log(logger.text.dim(`💾 ${getQuartzPath()}`));
+    console.log(logger.text.dim(`💾 ${configManager.getConfigPath()}`));
     logger.line();
 }
 
@@ -308,7 +303,7 @@ async function setupWizard() {
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
 
-    const config = readConfig();
+    const config = configManager.readConfig();
 
     try {
         await configureLanguages(config);
@@ -392,7 +387,7 @@ async function configureOpenAI(config: QuartzConfig) {
  */
 async function configurePlatformTokens(config: QuartzConfig, platform: string) {
     // Save current config before updating platform tokens
-    writeConfig(config);
+    configManager.writeConfig(config);
     
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
@@ -414,7 +409,7 @@ async function configureGitHubToken(config: QuartzConfig) {
 
     const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
     if (githubToken.trim()) {
-        upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
+        configManager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
     }
 }
 
@@ -437,7 +432,7 @@ async function configureGitLabToken(config: QuartzConfig) {
         const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
 
         const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
-        upsertPlatformConfig({
+        configManager.upsertPlatformConfig({
             type: PLATFORM_TYPES.GITLAB,
             token: gitlabToken.trim(),
             url: gitlabUrl.trim() || defaultGitlabUrl
@@ -450,7 +445,7 @@ async function configureGitLabToken(config: QuartzConfig) {
  */
 async function saveWizardConfig(config: QuartzConfig) {
     // Read the latest config to ensure we have all updates including platform tokens
-    const latestConfig = readConfig();
+    const latestConfig = configManager.readConfig();
     
     // Merge the wizard config with latest config to preserve platform tokens
     const finalConfig: QuartzConfig = {
@@ -459,12 +454,12 @@ async function saveWizardConfig(config: QuartzConfig) {
         platforms: latestConfig.platforms
     };
     
-    writeConfig(finalConfig);
+    configManager.writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     await message(
         t('config.wizard.success'),
-        t('config.wizard.saved', { path: getQuartzPath() }),
+        t('config.wizard.saved', { path: configManager.getConfigPath() }),
         'success'
     );
 }
@@ -535,8 +530,8 @@ function showHelp() {
  * Save current configuration as profile
  */
 function saveProfile(name: string) {
-    const config = readConfig();
-    writeConfig(config, name);
+    const config = configManager.readConfig();
+    configManager.writeConfig(config, name);
     logger.log(t('config.profileSaved', { name }));
 }
 
@@ -544,49 +539,50 @@ function saveProfile(name: string) {
  * Load profiles from quartz.jsonc
  */
 function loadProfiles(): Record<string, any> {
-    const quartzPath = getQuartzPath();
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(quartzPath, ENCODING.UTF8));
-            const { [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = data;
-            return profiles;
-        } catch (error) {
-            logger.error('Failed to load profiles:', error);
-            return {};
-        }
+    if (!configManager.configExists()) {
+        return {};
     }
-    return {};
+    
+    try {
+        const configFile = configManager.readConfigFile();
+        const { _metadata, [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = configFile;
+        return profiles;
+    } catch (error) {
+        logger.error('Failed to load profiles:', error);
+        return {};
+    }
 }
 
 /**
  * Load configuration profile
  */
 function loadProfile(name: string) {
-    const quartzPath = getQuartzPath();
-    let data: any = {};
-
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
-            data = JSON.parse(content);
-        } catch (error) {
-            logger.error('Failed to load quartz.jsonc:', error);
-            process.exit(1);
-        }
-    }
-
-    if (!data[name]) {
+    if (!configManager.profileExists(name)) {
         logger.error(t('config.profileNotFound', { name }));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
         process.exit(1);
     }
 
-    // Update default profile with selected profile
-    data[CONFIG_FILE.DEFAULT_PROFILE] = data[name];
+    try {
+        const configFile = configManager.readConfigFile();
+        const profileData = configFile[name];
+        
+        // 类型检查：确保 profile 是 QuartzProfile
+        if (!profileData || profileData === configFile._metadata || !('config' in profileData)) {
+            logger.error(t('config.profileNotFound', { name }));
+            process.exit(1);
+        }
+        
+        // Update default profile with selected profile
+        configFile[CONFIG_FILE.DEFAULT_PROFILE] = profileData;
 
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
-    logger.log(t('config.profileLoaded', { name }));
+        configManager.writeConfigFile(configFile);
+        logger.log(t('config.profileLoaded', { name }));
+    } catch (error) {
+        logger.error('Failed to load profile:', error);
+        process.exit(1);
+    }
 }
 
 /**
@@ -621,27 +617,14 @@ function listProfiles() {
  * Delete configuration profile
  */
 function deleteProfile(name: string) {
-    const quartzPath = getQuartzPath();
-    let data: any = {};
-
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const content = fs.readFileSync(quartzPath, ENCODING.UTF8);
-            data = JSON.parse(content);
-        } catch (error) {
-            logger.error('Failed to load quartz.jsonc:', error);
-            process.exit(1);
-        }
-    }
-
-    if (!data[name]) {
-        logger.error(t('config.profileNotFound', { name }));
+    try {
+        configManager.deleteProfile(name);
+        logger.log(t('config.profileDeleted', { name }));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(errorMessage);
         process.exit(1);
     }
-
-    delete data[name];
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, JSON_FORMAT.INDENT), ENCODING.UTF8);
-    logger.log(t('config.profileDeleted', { name }));
 }
 
 /**

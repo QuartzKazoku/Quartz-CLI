@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { getCommitPrompt } from '@/utils/prompt';
-import { loadConfig } from '@/utils/config';
+import { getConfigManager } from '@/manager/config';
 import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
 
@@ -171,7 +171,8 @@ function parseArgs(args: string[]): { edit: boolean } {
 export async function generateCommit(args: string[]) {
   logger.info(t('commit.starting'));
 
-  const config = loadConfig();
+  const configManager = getConfigManager();
+  const config = configManager.readConfig();
   const openAIConfig = config.openai
   if (!openAIConfig.apiKey) {
     logger.error(t('errors.noApiKey'));

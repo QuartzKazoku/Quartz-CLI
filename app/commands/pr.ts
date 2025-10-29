@@ -5,12 +5,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {t} from '@/i18n';
 import {getPRPrompt} from '@/utils/prompt';
-import {getPlatformConfigs, loadConfig} from '@/utils/config';
+import {getConfigManager} from '@/manager/config';
 import {PlatformStrategy} from '@/app/strategies/platform';
 import {PlatformStrategyFactory} from "@/app/strategies/factory";
 import {logger} from '@/utils/logger';
 import {select} from '@/utils/enquirer';
-import {PLATFORM_TYPES, ENCODING} from '@/constants';
+import {ENCODING, PLATFORM_TYPES} from '@/constants';
 
 /**
  * Get current branch name
@@ -331,7 +331,8 @@ function parseArgs(args: string[]): { base: string | null; useGH: boolean; inter
 export async function generatePR(args: string[]) {
     logger.section(t('pr.starting'));
 
-    const config = loadConfig();
+    const configManager = getConfigManager();
+    const config = configManager.readConfig();
     let openAIConfig = config.openai;
     if (!openAIConfig.apiKey) {
         logger.error(t('errors.noApiKey'));
@@ -417,7 +418,7 @@ export async function generatePR(args: string[]) {
         createSpinner.succeed(t('pr.success'));
     } else if (repoInfo) {
         // Get all platform configurations
-        const platformConfigs = getPlatformConfigs();
+        const platformConfigs = configManager.getPlatformConfigs();
 
         // Find configuration matching current repository platform
         const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
