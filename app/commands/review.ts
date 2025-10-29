@@ -1,12 +1,11 @@
 //app/commands/review.ts
-//cli/commands/review.ts
 import OpenAI from 'openai';
 import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { getReviewPrompt, getSummaryPrompt } from '@/utils/prompt';
-import { readQuartzConfig } from '@/utils/config';
+import { readQuartzConfig, type CLIOverrides } from '@/utils/config';
 import { DEFAULT_VALUES } from '@/constants';
 import { logger } from '@/utils/logger';
 
@@ -39,11 +38,12 @@ function validateConfig(config: { openaiApiKey: string }): void {
 
 /**
  * Load configuration from quartz.json
+ * @param cliOverrides - CLI overrides for OpenAI config
  * @returns Configuration object
  */
-function loadConfig() {
+function loadConfig(cliOverrides?: CLIOverrides) {
   // Use new configuration reading method
-  const quartzConfig = readQuartzConfig();
+  const quartzConfig = readQuartzConfig(cliOverrides);
 
   const config = {
     openaiApiKey: quartzConfig.openai.apiKey || '',
@@ -333,11 +333,12 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
 /**
  * Main function to review code
  * @param args - Command line arguments
+ * @param cliOverrides - CLI overrides for OpenAI config
  */
-export async function reviewCode(args: string[]) {
+export async function reviewCode(args: string[], cliOverrides?: CLIOverrides) {
   logger.info(t('review.starting'));
 
-  const config = loadConfig();
+  const config = loadConfig(cliOverrides);
   const { files: specificFiles, output } = parseArgs(args);
 
   // Initialize OpenAI client

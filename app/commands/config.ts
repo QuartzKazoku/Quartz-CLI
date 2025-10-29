@@ -1,12 +1,12 @@
 //app/commands/config.ts
-//cli/commands/config.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import { setLanguage, t } from '@/i18n';
 import {
     readQuartzConfig as readConfig,
     upsertPlatformConfig,
-    writeQuartzConfig as writeConfig
+    writeQuartzConfig as writeConfig,
+    type CLIOverrides
 } from '@/utils/config';
 import { QuartzConfig } from '@/types/config';
 import {
@@ -239,7 +239,7 @@ async function askQuestion(
     initialValue?: string
 ): Promise<string> {
     const message = description ? `${label}\n\x1b[2m${description}\x1b[0m` : label;
-    
+
     try {
         return await input(message, initialValue);
     } catch (error) {
@@ -399,7 +399,7 @@ async function configureOpenAI(config: QuartzConfig) {
 async function configurePlatformTokens(config: QuartzConfig, platform: string) {
     // Save current config before updating platform tokens
     writeConfig(config);
-    
+
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
     } else if (platform === PLATFORM_TYPES.GITLAB) {
@@ -457,14 +457,14 @@ async function configureGitLabToken(config: QuartzConfig) {
 async function saveWizardConfig(config: QuartzConfig) {
     // Read the latest config to ensure we have all updates including platform tokens
     const latestConfig = readConfig();
-    
+
     // Merge the wizard config with latest config to preserve platform tokens
     const finalConfig: QuartzConfig = {
         openai: config.openai,
         language: config.language,
         platforms: latestConfig.platforms
     };
-    
+
     writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
@@ -652,8 +652,11 @@ function deleteProfile(name: string) {
 
 /**
  * Main configuration command handler
+ * @param args - Command line arguments
+ * @param cliOverrides - CLI overrides (not used in config command itself)
  */
-export async function configCommand(args: string[]) {
+export async function configCommand(args: string[], cliOverrides?: CLIOverrides) {
+    // Note: cliOverrides are not used in config command as it manages the config itself
     const subCommand = args[0];
 
     if (!subCommand || subCommand === 'help' || subCommand === '-h' || subCommand === '--help') {

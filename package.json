@@ -1,6 +1,6 @@
 {
   "name": "quartz-cli",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "AI-powered Git workflow automation for humans.Streamline your development workflow with intelligent commit messages, pull requests, and code reviews",
   "type": "module",
   "module": "dist/index.js",
@@ -81,12 +81,20 @@
     "ora": "^9.0.0"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/npm": "^11.0.2",
+    "@semantic-release/release-notes-generator": "^12.1.0",
     "@types/node": "^24.9.1",
     "@vitest/coverage-v8": "^4.0.4",
     "@vitest/ui": "^4.0.4",
     "biome": "^0.3.3",
+    "conventional-changelog-conventionalcommits": "^7.0.2",
     "happy-dom": "^20.0.8",
     "husky": "^9.1.7",
+    "semantic-release": "^23.0.0",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^5.7.2",
