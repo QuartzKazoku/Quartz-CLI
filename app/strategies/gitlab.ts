@@ -75,4 +75,33 @@ export class GitLabStrategy extends BasePlatformStrategy {
             id: mr.iid,
         };
     }
+
+    /**
+     * Close an issue
+     * @param owner Project owner name
+     * @param repo Repository name
+     * @param issueNumber Issue IID (internal ID) to close
+     * @throws Error when API request fails
+     */
+    async closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+        const gitlabUrl = this.config.url || 'https://gitlab.com';
+        const projectPath = encodeURIComponent(`${owner}/${repo}`);
+        const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/issues/${issueNumber}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'PRIVATE-TOKEN': this.config.token,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                state_event: 'close',
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { message?: string; error?: string };
+            throw new Error(`Failed to close issue: ${error.message || error.error || response.statusText}`);
+        }
+    }
 }

@@ -97,4 +97,34 @@ export class GitHubStrategy extends BasePlatformStrategy {
             number: pr.number,
         };
     }
+
+    /**
+     * Close an issue
+     * @param owner Repository owner name
+     * @param repo Repository name
+     * @param issueNumber Issue number to close
+     * @throws Error when API request fails
+     */
+    async closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+        const apiUrl = this.config.url
+            ? `${this.config.url}/api/v3/repos/${owner}/${repo}/issues/${issueNumber}`
+            : `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `token ${this.config.token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                state: 'closed',
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { message?: string };
+            throw new Error(`Failed to close issue: ${error.message || response.statusText}`);
+        }
+    }
 }

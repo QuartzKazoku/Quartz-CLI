@@ -296,6 +296,36 @@ async function executeCommit(message: string) {
 }
 
 /**
+ * Close an issue on the platform
+ * @param issueNumber - Issue number to close
+ */
+async function closeIssueOnPlatform(issueNumber: number): Promise<void> {
+  const repoInfo = await getRepoInfo();
+  if (!repoInfo) {
+    logger.warn('Cannot close issue: repository information not available');
+    return;
+  }
+
+  const configManager = getConfigManager();
+  const platformConfigs = configManager.getPlatformConfigs();
+  const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
+
+  if (!matchingConfig) {
+    logger.warn('Cannot close issue: platform token not configured');
+    return;
+  }
+
+  try {
+    const spinner = logger.spinner(t('commit.closingIssue'));
+    const strategy = PlatformStrategyFactory.create(matchingConfig);
+    await strategy.closeIssue(repoInfo.owner, repoInfo.repo, issueNumber);
+    spinner.succeed(t('commit.issueClosed', { number: issueNumber }));
+  } catch (error) {
+    logger.error('Failed to close issue:', error);
+  }
+}
+
+/**
  * Parse command line arguments
  * @param args - Command line arguments array
  * @returns Parsed arguments object
@@ -431,6 +461,18 @@ export async function generateCommit(args: string[]) {
     try {
       await $`git commit -e -F ${tempFile}`;
       logger.success(t('commit.success'));
+
+      // Ask if user wants to close the issue
+      if (linkedIssue) {
+        try {
+          const shouldCloseIssue = await confirm(t('commit.closeIssue'), false);
+          if (shouldCloseIssue) {
+            await closeIssueOnPlatform(linkedIssue.number);
+          }
+        } catch (error) {
+          // User cancelled, skip closing issue
+        }
+      }
     } catch (error) {
       logger.error('Commit cancelled or failed:', error);
       logger.warn(t('commit.cancelled'));
@@ -453,5 +495,17 @@ export async function generateCommit(args: string[]) {
 
     // Execute commit with selected message
     await executeCommit(selectedMessage);
+
+    // Ask if user wants to close the issue
+    if (linkedIssue) {
+      try {
+        const shouldCloseIssue = await confirm(t('commit.closeIssue'), false);
+        if (shouldCloseIssue) {
+          await closeIssueOnPlatform(linkedIssue.number);
+        }
+      } catch (error) {
+        // User cancelled, skip closing issue
+      }
+    }
   }
 }

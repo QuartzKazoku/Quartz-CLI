@@ -35,6 +35,11 @@ export interface PlatformStrategy {
      * Push branch to remote
      */
     pushBranchToRemote(branch: string): Promise<void>;
+
+    /**
+     * Close an issue
+     */
+    closeIssue(owner: string, repo: string, issueNumber: number): Promise<void>;
 }
 
 /**

@@ -82,6 +82,9 @@ export const en: Translations = {
     noIssues: '⚠️  No Issues found',
     selectIssue: 'Select an Issue to link',
     linkedIssue: '🔗 Linked Issue #{number}: {title}',
+    closeIssue: 'Close this Issue?',
+    closingIssue: '🔒 Closing Issue...',
+    issueClosed: '✅ Issue #{number} closed',
     skipIssue: '⏭️  Skip Issue linking',
   },
 
