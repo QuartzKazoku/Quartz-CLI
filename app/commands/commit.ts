@@ -184,19 +184,24 @@ async function fetchIssues(): Promise<Array<{ number: number; title: string; lab
  * Add issue reference to commit message
  * @param message - Original commit message
  * @param issueNumber - Issue number to reference
+ * @param autoClose - Whether to automatically close the issue when merged
  * @returns Commit message with issue reference
  */
-function addIssueReference(message: string, issueNumber: number): string {
+function addIssueReference(message: string, issueNumber: number, autoClose: boolean = false): string {
   // Add issue reference in footer following conventional commits format
   const lines = message.split('\n');
   const hasFooter = lines.length > 2 && lines[lines.length - 1].trim().length > 0;
   
+  // Use "Closes" if autoClose is true, otherwise use "Refs"
+  const keyword = autoClose ? 'Closes' : 'Refs';
+  const reference = `${keyword}: #${issueNumber}`;
+  
   if (hasFooter) {
     // Append to existing footer
-    return `${message}\nRefs: #${issueNumber}`;
+    return `${message}\n${reference}`;
   } else {
     // Add footer section
-    return `${message}\n\nRefs: #${issueNumber}`;
+    return `${message}\n\n${reference}`;
   }
 }
 
@@ -292,36 +297,6 @@ async function executeCommit(message: string) {
   } catch (error) {
     logger.error(t('commit.failed'), error);
     process.exit(1);
-  }
-}
-
-/**
- * Close an issue on the platform
- * @param issueNumber - Issue number to close
- */
-async function closeIssueOnPlatform(issueNumber: number): Promise<void> {
-  const repoInfo = await getRepoInfo();
-  if (!repoInfo) {
-    logger.warn('Cannot close issue: repository information not available');
-    return;
-  }
-
-  const configManager = getConfigManager();
-  const platformConfigs = configManager.getPlatformConfigs();
-  const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
-
-  if (!matchingConfig) {
-    logger.warn('Cannot close issue: platform token not configured');
-    return;
-  }
-
-  try {
-    const spinner = logger.spinner(t('commit.closingIssue'));
-    const strategy = PlatformStrategyFactory.create(matchingConfig);
-    await strategy.closeIssue(repoInfo.owner, repoInfo.repo, issueNumber);
-    spinner.succeed(t('commit.issueClosed', { number: issueNumber }));
-  } catch (error) {
-    logger.error('Failed to close issue:', error);
   }
 }
 
@@ -452,7 +427,18 @@ export async function generateCommit(args: string[]) {
     
     // Add issue reference if linked
     if (linkedIssue) {
-      messageToEdit = addIssueReference(messageToEdit, linkedIssue.number);
+      // Ask if user wants to auto-close the issue when merged
+      let autoClose = false;
+      try {
+        autoClose = await confirm(t('commit.closeIssue'), false);
+        if (autoClose) {
+          logger.info(t('commit.issueWillClose', { number: linkedIssue.number }));
+        }
+      } catch (error) {
+        // User cancelled, use default (Refs)
+      }
+      
+      messageToEdit = addIssueReference(messageToEdit, linkedIssue.number, autoClose);
     }
     
     const tempFile = path.join(process.cwd(), '.git', 'COMMIT_EDITMSG');
@@ -461,18 +447,6 @@ export async function generateCommit(args: string[]) {
     try {
       await $`git commit -e -F ${tempFile}`;
       logger.success(t('commit.success'));
-
-      // Ask if user wants to close the issue
-      if (linkedIssue) {
-        try {
-          const shouldCloseIssue = await confirm(t('commit.closeIssue'), false);
-          if (shouldCloseIssue) {
-            await closeIssueOnPlatform(linkedIssue.number);
-          }
-        } catch (error) {
-          // User cancelled, skip closing issue
-        }
-      }
     } catch (error) {
       logger.error('Commit cancelled or failed:', error);
       logger.warn(t('commit.cancelled'));
@@ -484,7 +458,18 @@ export async function generateCommit(args: string[]) {
 
     // Add issue reference if linked
     if (linkedIssue) {
-      selectedMessage = addIssueReference(selectedMessage, linkedIssue.number);
+      // Ask if user wants to auto-close the issue when merged
+      let autoClose = false;
+      try {
+        autoClose = await confirm(t('commit.closeIssue'), false);
+        if (autoClose) {
+          logger.info(t('commit.issueWillClose', { number: linkedIssue.number }));
+        }
+      } catch (error) {
+        // User cancelled, use default (Refs)
+      }
+      
+      selectedMessage = addIssueReference(selectedMessage, linkedIssue.number, autoClose);
     }
 
     logger.info(t('commit.selectedMessage', { index: selectedIndex + 1 }));
@@ -495,17 +480,5 @@ export async function generateCommit(args: string[]) {
 
     // Execute commit with selected message
     await executeCommit(selectedMessage);
-
-    // Ask if user wants to close the issue
-    if (linkedIssue) {
-      try {
-        const shouldCloseIssue = await confirm(t('commit.closeIssue'), false);
-        if (shouldCloseIssue) {
-          await closeIssueOnPlatform(linkedIssue.number);
-        }
-      } catch (error) {
-        // User cancelled, skip closing issue
-      }
-    }
   }
 }

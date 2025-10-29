@@ -82,9 +82,8 @@ export const en: Translations = {
     noIssues: '⚠️  No Issues found',
     selectIssue: 'Select an Issue to link',
     linkedIssue: '🔗 Linked Issue #{number}: {title}',
-    closeIssue: 'Close this Issue?',
-    closingIssue: '🔒 Closing Issue...',
-    issueClosed: '✅ Issue #{number} closed',
+    closeIssue: 'Automatically close this Issue when merged?',
+    issueWillClose: '✅ Issue #{number} will be closed after merge',
     skipIssue: '⏭️  Skip Issue linking',
   },
 

@@ -82,9 +82,8 @@ export const zhCN: Translations = {
     noIssues: '⚠️  未找到可用的 Issues',
     selectIssue: '请选择要关联的 Issue',
     linkedIssue: '🔗 已关联 Issue #{number}: {title}',
-    closeIssue: '是否关闭此 Issue?',
-    closingIssue: '🔒 正在关闭 Issue...',
-    issueClosed: '✅ Issue #{number} 已关闭',
+    closeIssue: '是否在合并时自动关闭此 Issue?',
+    issueWillClose: '✅ 合并后将自动关闭 Issue #{number}',
     skipIssue: '⏭️  跳过 Issue 关联',
   },
 
