@@ -5,6 +5,25 @@ import path from 'node:path';
 import { getConfigManager } from '@/manager/config';
 import { CONFIG_FILE } from '@/constants';
 
+// 兼容的递归删除函数
+function removeRecursive(dir: string) {
+  if (!fs.existsSync(dir)) return;
+  
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    
+    if (stat.isDirectory()) {
+      removeRecursive(filePath);
+    } else {
+      fs.unlinkSync(filePath);
+    }
+  }
+  
+  fs.rmdirSync(dir);
+}
+
 describe('ConfigManager', () => {
   const testDir = path.join(process.cwd(), '.quartz-test');
   const testConfigPath = path.join(testDir, CONFIG_FILE.NAME);
@@ -16,7 +35,7 @@ describe('ConfigManager', () => {
     
     // 创建测试目录
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      removeRecursive(testDir);
     }
     fs.mkdirSync(testDir, { recursive: true });
     
@@ -28,7 +47,7 @@ describe('ConfigManager', () => {
   afterEach(() => {
     // 清理测试目录
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      removeRecursive(testDir);
     }
     
     // 恢复工作目录
@@ -86,6 +105,11 @@ describe('ConfigManager', () => {
     it('应该能够添加平台配置', () => {
       const configManager = getConfigManager();
       
+      // 先清空所有平台配置
+      const config = configManager.readConfig();
+      config.platforms = [];
+      configManager.writeConfig(config);
+      
       configManager.upsertPlatformConfig({
         type: 'github',
         token: 'github-token',
@@ -99,6 +123,11 @@ describe('ConfigManager', () => {
 
     it('应该能够更新平台配置', () => {
       const configManager = getConfigManager();
+      
+      // 先清空所有平台配置
+      const config = configManager.readConfig();
+      config.platforms = [];
+      configManager.writeConfig(config);
       
       configManager.upsertPlatformConfig({
         type: 'github',
@@ -118,6 +147,11 @@ describe('ConfigManager', () => {
     it('应该能够获取特定平台配置', () => {
       const configManager = getConfigManager();
       
+      // 先清空所有平台配置
+      const config = configManager.readConfig();
+      config.platforms = [];
+      configManager.writeConfig(config);
+      
       configManager.upsertPlatformConfig({
         type: 'github',
         token: 'github-token',
@@ -133,6 +167,11 @@ describe('ConfigManager', () => {
 
     it('应该能够删除平台配置', () => {
       const configManager = getConfigManager();
+      
+      // 先清空所有平台配置
+      const config = configManager.readConfig();
+      config.platforms = [];
+      configManager.writeConfig(config);
       
       configManager.upsertPlatformConfig({
         type: 'github',
@@ -177,8 +216,13 @@ describe('ConfigManager', () => {
 
     it('应该能够复制 profile', () => {
       const configManager = getConfigManager();
-      const config = configManager.readConfig();
       
+      // 先删除可能存在的 copy profile
+      if (configManager.profileExists('copy')) {
+        configManager.deleteProfile('copy');
+      }
+      
+      const config = configManager.readConfig();
       config.openai.apiKey = 'original-key';
       configManager.writeConfig(config, 'original');
       
@@ -207,6 +251,195 @@ describe('ConfigManager', () => {
       expect(() => {
         configManager.deleteProfile('default');
       }).toThrow();
+    });
+  });
+
+  describe('Active Profile 管理', () => {
+    it('应该返回默认的 active profile', () => {
+      const configManager = getConfigManager();
+      configManager.initializeVersionMetadata();
+      
+      const activeProfile = configManager.getActiveProfile();
+      expect(activeProfile).toBe('default');
+    });
+
+    it('应该能够切换 active profile', () => {
+      const configManager = getConfigManager();
+      
+      // 创建一个新 profile
+      const config = configManager.readConfig();
+      config.openai.apiKey = 'work-api-key';
+      configManager.writeConfig(config, 'work');
+      
+      // 切换到新 profile
+      configManager.setActiveProfile('work');
+      
+      const activeProfile = configManager.getActiveProfile();
+      expect(activeProfile).toBe('work');
+    });
+
+    it('切换 profile 后读取配置应该使用新的 active profile', () => {
+      const configManager = getConfigManager();
+      
+      // 设置 default profile 的配置
+      const defaultConfig = configManager.readConfig();
+      defaultConfig.openai.apiKey = 'default-key';
+      configManager.writeConfig(defaultConfig);
+      
+      // 创建并设置 work profile
+      const workConfig = configManager.readConfig();
+      workConfig.openai.apiKey = 'work-key';
+      configManager.writeConfig(workConfig, 'work');
+      
+      // 切换到 work profile
+      configManager.setActiveProfile('work');
+      configManager.clearCache();
+      
+      // 不指定 profileName，应该读取 active profile
+      const config = configManager.readConfig();
+      expect(config.openai.apiKey).toBe('work-key');
+    });
+
+    it('应该在切换回 default profile 后正确读取配置', () => {
+      const configManager = getConfigManager();
+      
+      // 确保从干净的状态开始
+      configManager.setActiveProfile('default');
+      
+      // 设置 default profile
+      const defaultConfig = configManager.readConfig('default');
+      defaultConfig.openai.apiKey = 'default-key';
+      configManager.writeConfig(defaultConfig, 'default');
+      configManager.clearCache();
+      
+      // 创建独立的 work profile
+      const baseConfig = configManager.readConfig('default');
+      const workConfig = { ...baseConfig, openai: { ...baseConfig.openai, apiKey: 'work-key' } };
+      configManager.writeConfig(workConfig, 'work');
+      configManager.clearCache();
+      
+      // 切换到 work
+      configManager.setActiveProfile('work');
+      configManager.clearCache();
+      expect(configManager.readConfig().openai.apiKey).toBe('work-key');
+      
+      // 切换回 default
+      configManager.setActiveProfile('default');
+      configManager.clearCache();
+      expect(configManager.readConfig().openai.apiKey).toBe('default-key');
+    });
+
+    it('尝试切换到不存在的 profile 应该抛出错误', () => {
+      const configManager = getConfigManager();
+      
+      expect(() => {
+        configManager.setActiveProfile('non-existent');
+      }).toThrow("Profile 'non-existent' does not exist");
+    });
+
+    it('写入配置时不指定 profile 应该使用 active profile', () => {
+      const configManager = getConfigManager();
+      
+      // 创建 work profile 并切换
+      const config = configManager.readConfig();
+      configManager.writeConfig(config, 'work');
+      configManager.setActiveProfile('work');
+      
+      // 修改配置但不指定 profile
+      const updatedConfig = configManager.readConfig();
+      updatedConfig.openai.apiKey = 'new-work-key';
+      configManager.writeConfig(updatedConfig);
+      
+      // 验证更新的是 work profile
+      configManager.clearCache();
+      const workConfig = configManager.readConfig('work');
+      expect(workConfig.openai.apiKey).toBe('new-work-key');
+      
+      // 验证 default profile 未被修改
+      const defaultConfig = configManager.readConfig('default');
+      expect(defaultConfig.openai.apiKey).not.toBe('new-work-key');
+    });
+
+    it('平台配置操作应该使用 active profile', () => {
+      const configManager = getConfigManager();
+      
+      // 清空 default profile 的平台配置
+      const defaultConfig = configManager.readConfig('default');
+      defaultConfig.platforms = [];
+      configManager.writeConfig(defaultConfig, 'default');
+      
+      // 创建 work profile 并清空平台配置
+      const workConfig = configManager.readConfig('default');
+      workConfig.platforms = [];
+      configManager.writeConfig(workConfig, 'work');
+      
+      // 切换到 work profile
+      configManager.setActiveProfile('work');
+      
+      // 添加平台配置（不指定 profile）
+      configManager.upsertPlatformConfig({
+        type: 'github',
+        token: 'work-github-token',
+      });
+      
+      // 验证平台配置添加到了 work profile
+      configManager.clearCache();
+      const workPlatforms = configManager.getPlatformConfigs('work');
+      expect(workPlatforms).toHaveLength(1);
+      expect(workPlatforms[0].token).toBe('work-github-token');
+      
+      // 验证 default profile 没有这个平台配置
+      const defaultPlatforms = configManager.getPlatformConfigs('default');
+      expect(defaultPlatforms).toHaveLength(0);
+    });
+
+    it('metadata 应该正确保存和读取 activeProfile', () => {
+      const configManager = getConfigManager();
+      
+      // 初始化元数据
+      configManager.initializeVersionMetadata();
+      
+      // 创建新 profile 并切换
+      const config = configManager.readConfig();
+      configManager.writeConfig(config, 'work');
+      configManager.setActiveProfile('work');
+      
+      // 清除缓存后读取 metadata
+      configManager.clearCache();
+      const metadata = configManager.readVersionMetadata();
+      
+      expect(metadata).toBeDefined();
+      expect(metadata?.activeProfile).toBe('work');
+    });
+
+    it('多次切换 profile 应该正确更新状态', () => {
+      const configManager = getConfigManager();
+      
+      // 获取默认配置作为基础
+      const baseConfig = configManager.readConfig('default');
+      
+      // 创建多个 profiles
+      ['work', 'personal', 'test'].forEach(name => {
+        const config = { ...baseConfig };
+        config.openai.apiKey = `${name}-key`;
+        configManager.writeConfig(config, name);
+      });
+      
+      // 依次切换并验证
+      configManager.setActiveProfile('work');
+      configManager.clearCache();
+      expect(configManager.getActiveProfile()).toBe('work');
+      expect(configManager.readConfig().openai.apiKey).toBe('work-key');
+      
+      configManager.setActiveProfile('personal');
+      configManager.clearCache();
+      expect(configManager.getActiveProfile()).toBe('personal');
+      expect(configManager.readConfig().openai.apiKey).toBe('personal-key');
+      
+      configManager.setActiveProfile('test');
+      configManager.clearCache();
+      expect(configManager.getActiveProfile()).toBe('test');
+      expect(configManager.readConfig().openai.apiKey).toBe('test-key');
     });
   });
 

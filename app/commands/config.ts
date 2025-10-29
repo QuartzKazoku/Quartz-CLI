@@ -518,7 +518,8 @@ function showHelp() {
     logger.example('', `quartz config set ${CONFIG_KEYS.QUARTZ_LANG} zh-CN`);
     logger.example('', `quartz config set ${CONFIG_KEYS.PROMPT_LANG} en`);
     logger.example(t('config.profilesDesc'), 'quartz config save-profile my-profile');
-    logger.example('', 'quartz config load-profile my-profile');
+    logger.example('', 'quartz config switch-profile my-profile');
+    logger.example('', 'quartz config active-profile');
     logger.example('', 'quartz config list-profiles');
     logger.example(t('config.getDesc'), `quartz config get ${CONFIG_KEYS.OPENAI_API_KEY}`);
     logger.example(t('config.listDesc'), 'quartz config list');
@@ -554,7 +555,7 @@ function loadProfiles(): Record<string, any> {
 }
 
 /**
- * Load configuration profile
+ * Load configuration profile (legacy - 将 profile 复制到 default)
  */
 function loadProfile(name: string) {
     if (!configManager.profileExists(name)) {
@@ -586,11 +587,45 @@ function loadProfile(name: string) {
 }
 
 /**
+ * Switch to a different profile (推荐方式 - 设置 active profile)
+ */
+function switchProfile(name: string) {
+    if (!configManager.profileExists(name)) {
+        logger.error(t('config.profileNotFound', { name }));
+        logger.log('\n' + t('config.availableProfiles'));
+        listProfiles();
+        process.exit(1);
+    }
+
+    try {
+        configManager.setActiveProfile(name);
+        logger.log(t('config.profileSwitched', { name }));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(errorMessage);
+        process.exit(1);
+    }
+}
+
+/**
+ * Show current active profile
+ */
+function showActiveProfile() {
+    const activeProfile = configManager.getActiveProfile();
+    logger.line();
+    console.log(logger.text.bold('📌 ' + t('config.currentProfile')));
+    logger.line();
+    console.log(`${' '.repeat(INDENT.LEVEL_1)}${logger.text.primary(activeProfile)}`);
+    logger.line();
+}
+
+/**
  * List all saved profiles
  */
 function listProfiles() {
     const profiles = loadProfiles();
     const profileNames = Object.keys(profiles);
+    const activeProfile = configManager.getActiveProfile();
 
     if (profileNames.length === 0) {
         logger.log(t('config.noProfiles'));
@@ -602,9 +637,18 @@ function listProfiles() {
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 
+    // Show default profile first
+    console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(CONFIG_FILE.DEFAULT_PROFILE)} ${activeProfile === CONFIG_FILE.DEFAULT_PROFILE ? logger.text.success('(active)') : ''}`);
+    const defaultConfig = configManager.readConfig(CONFIG_FILE.DEFAULT_PROFILE);
+    const defaultPlatformCount = defaultConfig.platforms?.length || 0;
+    console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: defaultPlatformCount }))}`);
+    logger.line();
+
+    // Show other profiles
     for (const name of profileNames) {
         const profile = profiles[name];
-        console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)}`);
+        const isActive = name === activeProfile;
+        console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)} ${isActive ? logger.text.success('(active)') : ''}`);
         if (profile.config) {
             const platformCount = profile.config.platforms?.length || 0;
             console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
@@ -686,6 +730,22 @@ export async function configCommand(args: string[]) {
         case 'list-profiles':
         case 'profiles':
             listProfiles();
+            break;
+
+        case 'switch-profile':
+        case 'switch':
+        case 'use':
+            if (args.length < 2) {
+                logger.error(t('config.errors.switchProfileUsage'));
+                process.exit(1);
+            }
+            switchProfile(args[1]);
+            break;
+
+        case 'active-profile':
+        case 'current':
+        case 'active':
+            showActiveProfile();
             break;
 
         case 'delete-profile':

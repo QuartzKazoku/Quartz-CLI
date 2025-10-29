@@ -183,12 +183,15 @@ export interface Translations {
       saveProfileUsage: string;
       loadProfileUsage: string;
       deleteProfileUsage: string;
+      switchProfileUsage: string;
     };
     profilesDesc: string;
     profileSaved: string;
     profileLoaded: string;
+    profileSwitched: string;
     profileDeleted: string;
     profileNotFound: string;
+    currentProfile: string;
     savedProfiles: string;
     availableProfiles: string;
     noProfiles: string;

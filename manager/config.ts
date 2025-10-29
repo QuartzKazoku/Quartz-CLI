@@ -166,10 +166,15 @@ export class ConfigManager {
 
     /**
      * 读取指定profile的配置
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public readConfig(profileName: string = CONFIG_FILE.DEFAULT_PROFILE): QuartzConfig {
+    public readConfig(profileName?: string): QuartzConfig {
         const configFile = this.readConfigFile();
-        const profile = configFile[profileName] as QuartzProfile | undefined;
+        
+        // 如果没有指定 profileName，使用激活的 profile
+        const targetProfile = profileName || configFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
+        
+        const profile = configFile[targetProfile] as QuartzProfile | undefined;
 
         if (profile?.config) {
             return profile.config;
@@ -181,13 +186,18 @@ export class ConfigManager {
 
     /**
      * 写入指定profile的配置
+     * @param config 配置对象
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public writeConfig(config: QuartzConfig, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public writeConfig(config: QuartzConfig, profileName?: string): void {
         const configFile = this.readConfigFile();
+        
+        // 如果没有指定 profileName，使用激活的 profile
+        const targetProfile = profileName || configFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
 
         // 更新或创建profile
-        configFile[profileName] = {
-            name: profileName,
+        configFile[targetProfile] = {
+            name: targetProfile,
             config,
         };
 
@@ -220,6 +230,7 @@ export class ConfigManager {
             configVersion: CURRENT_CONFIG_VERSION,
             cliVersion: this.getCliVersion(),
             updatedAt: formatDate(DEFAULT_VALUES.LANGUAGE_UI),
+            activeProfile: CONFIG_FILE.DEFAULT_PROFILE,
         };
     }
 
@@ -268,22 +279,49 @@ export class ConfigManager {
         return metadata;
     }
 
+    // ==================== Active Profile 管理 ====================
+
+    /**
+     * 获取当前激活的 profile 名称
+     */
+    public getActiveProfile(): string {
+        const metadata = this.readVersionMetadata();
+        return metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
+    }
+
+    /**
+     * 设置当前激活的 profile
+     */
+    public setActiveProfile(profileName: string): void {
+        if (!this.profileExists(profileName)) {
+            throw new Error(`Profile '${profileName}' does not exist`);
+        }
+
+        const configFile = this.readConfigFile();
+        configFile._metadata ??= this.createDefaultMetadata();
+        configFile._metadata.activeProfile = profileName;
+        this.writeConfigFile(configFile);
+    }
+
     // ==================== 平台配置相关方法 ====================
 
     /**
      * 获取所有平台配置
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public getPlatformConfigs(profileName: string = CONFIG_FILE.DEFAULT_PROFILE): PlatformConfig[] {
+    public getPlatformConfigs(profileName?: string): PlatformConfig[] {
         const config = this.readConfig(profileName);
         return config.platforms;
     }
 
     /**
      * 根据平台类型获取配置
+     * @param type 平台类型
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
     public getPlatformConfig(
         type: 'github' | 'gitlab',
-        profileName: string = CONFIG_FILE.DEFAULT_PROFILE
+        profileName?: string
     ): PlatformConfig | undefined {
         const config = this.readConfig(profileName);
         return config.platforms.find(p => p.type === type);
@@ -291,10 +329,12 @@ export class ConfigManager {
 
     /**
      * 添加或更新平台配置
+     * @param platformConfig 平台配置
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
     public upsertPlatformConfig(
         platformConfig: PlatformConfig,
-        profileName: string = CONFIG_FILE.DEFAULT_PROFILE
+        profileName?: string
     ): void {
         const config = this.readConfig(profileName);
         const existingIndex = config.platforms.findIndex(
@@ -312,11 +352,14 @@ export class ConfigManager {
 
     /**
      * 删除平台配置
+     * @param type 平台类型
+     * @param url 平台 URL（可选）
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
     public removePlatformConfig(
         type: 'github' | 'gitlab',
         url?: string,
-        profileName: string = CONFIG_FILE.DEFAULT_PROFILE
+        profileName?: string
     ): void {
         const config = this.readConfig(profileName);
         config.platforms = config.platforms.filter(p => {
@@ -415,8 +458,10 @@ export class ConfigManager {
 
     /**
      * 设置OpenAI API Key
+     * @param apiKey API密钥
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public setOpenAIApiKey(apiKey: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public setOpenAIApiKey(apiKey: string, profileName?: string): void {
         const config = this.readConfig(profileName);
         config.openai.apiKey = apiKey;
         this.writeConfig(config, profileName);
@@ -424,8 +469,10 @@ export class ConfigManager {
 
     /**
      * 设置OpenAI Base URL
+     * @param baseUrl 基础URL
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public setOpenAIBaseUrl(baseUrl: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public setOpenAIBaseUrl(baseUrl: string, profileName?: string): void {
         const config = this.readConfig(profileName);
         config.openai.baseUrl = baseUrl;
         this.writeConfig(config, profileName);
@@ -433,8 +480,10 @@ export class ConfigManager {
 
     /**
      * 设置OpenAI Model
+     * @param model 模型名称
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public setOpenAIModel(model: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public setOpenAIModel(model: string, profileName?: string): void {
         const config = this.readConfig(profileName);
         config.openai.model = model;
         this.writeConfig(config, profileName);
@@ -442,8 +491,10 @@ export class ConfigManager {
 
     /**
      * 设置UI语言
+     * @param language 语言代码
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public setUILanguage(language: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public setUILanguage(language: string, profileName?: string): void {
         const config = this.readConfig(profileName);
         config.language.ui = language;
         this.writeConfig(config, profileName);
@@ -451,8 +502,10 @@ export class ConfigManager {
 
     /**
      * 设置Prompt语言
+     * @param language 语言代码
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public setPromptLanguage(language: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public setPromptLanguage(language: string, profileName?: string): void {
         const config = this.readConfig(profileName);
         config.language.prompt = language;
         this.writeConfig(config, profileName);
@@ -462,16 +515,19 @@ export class ConfigManager {
 
     /**
      * 导出配置到JSON字符串
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public exportConfig(profileName: string = CONFIG_FILE.DEFAULT_PROFILE): string {
+    public exportConfig(profileName?: string): string {
         const config = this.readConfig(profileName);
         return JSON.stringify(config, null, JSON_FORMAT.INDENT);
     }
 
     /**
      * 从JSON字符串导入配置
+     * @param jsonString JSON字符串
+     * @param profileName 如果未指定，则使用当前激活的 profile
      */
-    public importConfig(jsonString: string, profileName: string = CONFIG_FILE.DEFAULT_PROFILE): void {
+    public importConfig(jsonString: string, profileName?: string): void {
         try {
             const config = JSON.parse(jsonString) as QuartzConfig;
             this.writeConfig(config, profileName);

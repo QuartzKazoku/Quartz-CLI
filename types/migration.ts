@@ -48,4 +48,6 @@ export interface VersionMetadata {
   cliVersion: string;
   /** Last update timestamp */
   updatedAt: string;
+  /** Currently active profile name */
+  activeProfile?: string;
 }
