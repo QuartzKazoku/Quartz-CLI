@@ -563,4 +563,235 @@ describe('ConfigManager', () => {
       expect(config.openai.apiKey).toBe('imported-key');
     });
   });
+
+  describe('容错性处理', () => {
+    it('应该能处理缺失 openai 字段的配置', () => {
+      const configManager = getConfigManager();
+      
+      // 手动创建缺失字段的配置
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: {
+            // 缺少 openai 字段
+            platforms: [],
+            language: { ui: 'en', prompt: 'en' }
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该自动补充 openai 配置
+      expect(config.openai).toBeDefined();
+      expect(config.openai.apiKey).toBeDefined();
+      expect(config.openai.baseUrl).toBeDefined();
+      expect(config.openai.model).toBeDefined();
+    });
+
+    it('应该能处理 platforms 不是数组的情况', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: {
+            openai: { apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4' },
+            platforms: 'not-an-array', // 错误类型
+            language: { ui: 'en', prompt: 'en' }
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该自动修复为空数组
+      expect(Array.isArray(config.platforms)).toBe(true);
+      expect(config.platforms).toHaveLength(0);
+    });
+
+    it('应该能过滤掉无效的平台配置', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: {
+            openai: { apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4' },
+            platforms: [
+              { type: 'github', token: 'valid-token' },  // 有效
+              { type: 'gitlab' },  // 缺少 token
+              'invalid',  // 不是对象
+              { token: 'no-type' },  // 缺少 type
+            ],
+            language: { ui: 'en', prompt: 'en' }
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该只保留有效的平台配置
+      expect(config.platforms).toHaveLength(1);
+      expect(config.platforms[0].type).toBe('github');
+      expect(config.platforms[0].token).toBe('valid-token');
+    });
+
+    it('应该能处理缺失 language 字段的配置', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: {
+            openai: { apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4' },
+            platforms: []
+            // 缺少 language 字段
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该自动补充 language 配置
+      expect(config.language).toBeDefined();
+      expect(config.language.ui).toBeDefined();
+      expect(config.language.prompt).toBeDefined();
+    });
+
+    it('应该能处理完全损坏的配置对象', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: null  // 完全无效的配置
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该返回完整的默认配置
+      expect(config.openai).toBeDefined();
+      expect(config.platforms).toBeDefined();
+      expect(config.language).toBeDefined();
+      expect(Array.isArray(config.platforms)).toBe(true);
+    });
+
+    it('应该能处理部分缺失的 openai 字段', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+        },
+        default: {
+          name: 'default',
+          config: {
+            openai: {
+              apiKey: 'my-key'
+              // 缺少 baseUrl 和 model
+            },
+            platforms: [],
+            language: { ui: 'en', prompt: 'en' }
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      const config = configManager.readConfig();
+      
+      // 应该保留现有值并补充缺失值
+      expect(config.openai.apiKey).toBe('my-key');
+      expect(config.openai.baseUrl).toBeDefined();
+      expect(config.openai.model).toBeDefined();
+    });
+
+    it('应该能处理 activeProfile 指向不存在的 profile', () => {
+      const configManager = getConfigManager();
+      
+      configManager.ensureConfigDir();
+      const configPath = configManager.getConfigPath();
+      const badConfig = {
+        _metadata: {
+          configVersion: '0.0.1',
+          cliVersion: '0.1.0',
+          updatedAt: '2025-01-01',
+          activeProfile: 'nonexistent'  // 不存在的 profile
+        },
+        default: {
+          name: 'default',
+          config: {
+            openai: { apiKey: 'default-key', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4' },
+            platforms: [],
+            language: { ui: 'en', prompt: 'en' }
+          }
+        }
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(badConfig), 'utf8');
+      configManager.clearCache();
+      
+      // 应该返回默认配置而不是崩溃
+      const config = configManager.readConfig();
+      expect(config).toBeDefined();
+      expect(config.openai).toBeDefined();
+    });
+  });
 });

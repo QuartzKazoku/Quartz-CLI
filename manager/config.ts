@@ -177,11 +177,60 @@ export class ConfigManager {
         const profile = configFile[targetProfile] as QuartzProfile | undefined;
 
         if (profile?.config) {
-            return profile.config;
+            // 验证并补充缺失的必需字段
+            return this.validateAndFixConfig(profile.config);
         }
 
         // 如果指定的profile不存在，返回默认配置
         return this.createDefaultConfig();
+    }
+
+    /**
+     * 验证并修复配置对象，确保所有必需字段存在且类型正确
+     * @param config 要验证的配置对象
+     * @returns 修复后的配置对象
+     */
+    private validateAndFixConfig(config: any): QuartzConfig {
+        const defaultConfig = this.createDefaultConfig();
+        
+        // 确保 config 是对象
+        if (!config || typeof config !== 'object') {
+            logger.warn('Invalid config structure, using default config');
+            return defaultConfig;
+        }
+
+        // 修复 openai 配置
+        if (!config.openai || typeof config.openai !== 'object') {
+            config.openai = defaultConfig.openai;
+        } else {
+            config.openai.apiKey = config.openai.apiKey ?? defaultConfig.openai.apiKey;
+            config.openai.baseUrl = config.openai.baseUrl ?? defaultConfig.openai.baseUrl;
+            config.openai.model = config.openai.model ?? defaultConfig.openai.model;
+        }
+        const isNotArray = !Array.isArray(config.platforms);
+        // 修复 platforms 配置
+        if (isNotArray) {
+            logger.warn('Invalid platforms configuration, using empty array');
+            config.platforms = [];
+        } else {
+            // 验证每个平台配置
+            config.platforms = config.platforms.filter((p: any) => {
+                if (!p || typeof p !== 'object') return false;
+                if (!p.type || typeof p.type !== 'string') return false;
+                if (!p.token || typeof p.token !== 'string') return false;
+                return true;
+            });
+        }
+
+        // 修复 language 配置
+        if (!config.language || typeof config.language !== 'object') {
+            config.language = defaultConfig.language;
+        } else {
+            config.language.ui = config.language.ui ?? defaultConfig.language.ui;
+            config.language.prompt = config.language.prompt ?? defaultConfig.language.prompt;
+        }
+
+        return config as QuartzConfig;
     }
 
     /**
