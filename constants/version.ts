@@ -26,7 +26,7 @@
  */
 export const VERSION = {
     /** Current configuration schema version */
-    CURRENT_CONFIG: '0.1.1',
+    CURRENT_CONFIG: '0.0.1',
     /** Legacy/old configuration version for migration */
     LEGACY_CONFIG: '0.0.0',
     /** Initial CLI version fallback */

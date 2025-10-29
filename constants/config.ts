@@ -97,3 +97,91 @@ export const DEFAULT_VALUES = {
     /** Default prompt language (English) */
     LANGUAGE_PROMPT: 'en',
 } as const;
+/**
+ * Default configuration content for quartz.jsonc
+ * Provides a template for users to understand the configuration structure
+ * @type {string}
+ * @readonly
+ */
+export const DEFAULT_CONFIG_CONTENT = `{
+  "default": {
+    "name": "default",
+    "config": {
+      "openai": {
+        "apiKey": "sk-",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "github",
+          "token": ""
+        },
+        {
+          "type": "gitlab",
+          "url": "${DEFAULT_VALUES.GITLAB_URL}",
+          "token": "glpat-your-gitlab-token-here"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_PROMPT}"
+      }
+    }
+  }
+}` as const;
+
+/**
+ * Example configuration content for quartz.example.jsonc
+ * Provides a template for users to understand the configuration structure
+ * @type {string}
+ * @readonly
+ */
+export const EXAMPLE_CONFIG_CONTENT = `{
+  "default": {
+    "name": "default",
+    "config": {
+      "openai": {
+        "apiKey": "sk-",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "github",
+          "token": ""
+        },
+        {
+          "type": "gitlab",
+          "url": "${DEFAULT_VALUES.GITLAB_URL}",
+          "token": "glpat-your-gitlab-token-here"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_PROMPT}"
+      }
+    }
+  },
+  "work": {
+    "name": "work",
+    "config": {
+      "openai": {
+        "apiKey": "sk-your-work-openai-api-key",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "gitlab",
+          "url": "https://gitlab.company.com",
+          "token": "glpat-your-company-gitlab-token"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_UI}"
+      }
+    }
+  }
+}` as const;

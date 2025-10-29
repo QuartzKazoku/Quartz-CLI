@@ -5,7 +5,9 @@ import {parse as parseJsonc} from 'jsonc-parser';
 import type {Migration, MigrationResult, VersionMetadata} from '@/types/migration';
 import {logger} from '@/utils/logger';
 import {getQuartzPath} from '@/utils/path';
-import {VERSION, ENCODING, JSON_FORMAT} from '@/constants';
+import {ENCODING, JSON_FORMAT, VERSION} from '@/constants';
+import {formatDate} from "@/utils/date";
+import {loadConfig} from "@/utils/config";
 
 /**
  * Current configuration schema version
@@ -214,7 +216,7 @@ export function initializeVersionMetadata(): VersionMetadata {
   const metadata: VersionMetadata = {
     configVersion: CURRENT_CONFIG_VERSION,
     cliVersion: getCliVersion(),
-    updatedAt: new Date().toISOString(),
+    updatedAt: formatDate(loadConfig().language.ui),
   };
   
   writeVersionMetadata(metadata);

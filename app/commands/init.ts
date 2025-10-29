@@ -1,7 +1,7 @@
 //cli/commands/init.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import {CONFIG_FILE, ENCODING} from '@/constants';
+import {CONFIG_FILE, DEFAULT_CONFIG_CONTENT, ENCODING, EXAMPLE_CONFIG_CONTENT} from '@/constants';
 import {ensureQuartzDir} from '@/utils/config';
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
@@ -26,60 +26,6 @@ function getQuartzConfigPath(): string {
  */
 function getQuartzExamplePath(): string {
     return path.join(getQuartzDir(), CONFIG_FILE.EXAMPLE_NAME);
-}
-
-/**
- * Get the template content for quartz.example.jsonc
- */
-function getExampleConfigContent(): string {
-    return `{
-  "default": {
-    "name": "default",
-    "config": {
-      "openai": {
-        "apiKey": "sk-",
-        "baseUrl": "https://api.openai.com/v1",
-        "model": "gpt-5"
-      },
-      "platforms": [
-        {
-          "type": "github",
-          "token": ""
-        },
-        {
-          "type": "gitlab",
-          "url": "https://gitlab.com",
-          "token": "glpat-your-gitlab-token-here"
-        }
-      ],
-      "language": {
-        "ui": "zh-CN",
-        "prompt": "en"
-      }
-    }
-  },
-  "work": {
-    "name": "work",
-    "config": {
-      "openai": {
-        "apiKey": "sk-your-work-openai-api-key",
-        "baseUrl": "https://api.openai.com/v1",
-        "model": "gpt-5"
-      },
-      "platforms": [
-        {
-          "type": "gitlab",
-          "url": "https://gitlab.company.com",
-          "token": "glpat-your-company-gitlab-token"
-        }
-      ],
-      "language": {
-        "ui": "zh-CN",
-        "prompt": "zh-CN"
-      }
-    }
-  }
-}`;
 }
 
 /**
@@ -152,8 +98,7 @@ export async function initCommand(args: string[]): Promise<void> {
         migrateOldConfig(oldConfigPath);
     } else if (configNotExists) {
         // Create quartz.jsonc if it doesn't exist
-        const exampleContent = getExampleConfigContent();
-        fs.writeFileSync(configPath, exampleContent, ENCODING.UTF8);
+        fs.writeFileSync(configPath, DEFAULT_CONFIG_CONTENT, ENCODING.UTF8);
         logger.success(t('init.configCreated', {path: configPath}));
         
         // Initialize version metadata
@@ -165,8 +110,7 @@ export async function initCommand(args: string[]): Promise<void> {
     const exampleNotExists = !fs.existsSync(examplePath);
     // Create quartz.example.jsonc
     if (exampleNotExists) {
-        const exampleContent = getExampleConfigContent();
-        fs.writeFileSync(examplePath, exampleContent, ENCODING.UTF8);
+        fs.writeFileSync(examplePath, EXAMPLE_CONFIG_CONTENT, ENCODING.UTF8);
         logger.success(t('init.exampleCreated', {path: examplePath}));
     } else {
         logger.info(t('init.exampleExists', {path: examplePath}));
@@ -174,7 +118,12 @@ export async function initCommand(args: string[]): Promise<void> {
 
     logger.line();
     logger.box(
-        `${logger.text.success('✓')} ${t('init.success')}\n\n${logger.text.dim(t('init.nextSteps'))}\n\n  1. ${logger.text.primary('quartz config init')} - ${t('init.setupConfig')}\n  2. ${logger.text.primary('quartz --help')} - ${t('init.viewCommands')}`,
+        `${logger.text.success('✓')} ${t('init.success')}
+
+${logger.text.dim(t('init.nextSteps'))}
+
+  1. ${logger.text.primary('quartz config init')} - ${t('init.setupConfig')}
+  2. ${logger.text.primary('quartz --help')} - ${t('init.viewCommands')}`,
         {title: '🎉 ' + t('init.complete'), padding: 1}
     );
     logger.line();
