@@ -31,7 +31,7 @@ async function getCurrentBranch(): Promise<string> {
  */
 async function getAllBranches(): Promise<string[]> {
     try {
-        return (await $`git branch --format=%(refname:short)`.text())
+        return (await $`git branch --format='%(refname:short)'`.text())
             .trim()
             .split('\n')
             .filter(Boolean);
