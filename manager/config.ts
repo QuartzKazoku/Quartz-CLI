@@ -103,7 +103,7 @@ export class ConfigManager {
             data._metadata ??= {
                 configVersion: VERSION.LEGACY_CONFIG,
                 cliVersion: VERSION.LEGACY_CONFIG,
-                updatedAt: formatDate(this.readConfig().language.ui),
+                updatedAt: formatDate(DEFAULT_VALUES.LANGUAGE_UI),
             };
 
             // 如果没有default profile，添加默认profile
@@ -144,7 +144,9 @@ export class ConfigManager {
         try {
             // 更新metadata的时间戳
             if (configFile._metadata) {
-                configFile._metadata.updatedAt = formatDate(this.readConfig().language.ui);
+                const currentConfig = configFile[CONFIG_FILE.DEFAULT_PROFILE] as QuartzProfile | undefined;
+                const language = currentConfig?.config?.language?.ui || DEFAULT_VALUES.LANGUAGE_UI;
+                configFile._metadata.updatedAt = formatDate(language);
             }
 
             fs.writeFileSync(
@@ -217,7 +219,7 @@ export class ConfigManager {
         return {
             configVersion: CURRENT_CONFIG_VERSION,
             cliVersion: this.getCliVersion(),
-            updatedAt: formatDate(this.readConfig().language.ui),
+            updatedAt: formatDate(DEFAULT_VALUES.LANGUAGE_UI),
         };
     }
 
