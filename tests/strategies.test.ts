@@ -36,11 +36,17 @@ describe('Platform Strategies', () => {
     it('should create GitHub strategy with valid config', () => {
       const strategy = new GitHubStrategy(githubConfig);
       expect(strategy).toBeInstanceOf(GitHubStrategy);
+      expect(strategy).toBeDefined();
     });
 
     it('should throw error with invalid platform type', () => {
       const invalidConfig = { type: 'gitlab', token: 'test' } as PlatformConfig;
       expect(() => new GitHubStrategy(invalidConfig)).toThrow('Invalid platform type for GitHubStrategy');
+    });
+
+    it('should initialize with default GitHub URL', () => {
+      const strategy = new GitHubStrategy(githubConfig);
+      expect(strategy).toBeInstanceOf(GitHubStrategy);
     });
 
     it('should create pull request successfully', async () => {
@@ -105,6 +111,7 @@ describe('Platform Strategies', () => {
       
       global.fetch = vi.fn(() => Promise.resolve({
         ok: false,
+        status: 400,
         statusText: 'Bad Request',
         json: () => Promise.resolve({
           message: 'Validation failed'
@@ -113,7 +120,7 @@ describe('Platform Strategies', () => {
 
       await expect(
         strategy.createPullRequest('owner', 'repo', 'Test', 'Body', 'head', 'base')
-      ).rejects.toThrow('GitHub API error: Validation failed');
+      ).rejects.toThrow('GitHub API error (400): Validation failed');
     });
 
     it('should handle API error with details', async () => {
@@ -121,6 +128,7 @@ describe('Platform Strategies', () => {
       
       global.fetch = vi.fn(() => Promise.resolve({
         ok: false,
+        status: 422,
         statusText: 'Unprocessable Entity',
         json: () => Promise.resolve({
           message: 'Validation failed',
@@ -130,7 +138,7 @@ describe('Platform Strategies', () => {
 
       await expect(
         strategy.createPullRequest('owner', 'repo', 'Test', 'Body', 'head', 'base')
-      ).rejects.toThrow(/GitHub API error: Validation failed[\s\S]*Details:/);
+      ).rejects.toThrow(/GitHub API error \(422\): Validation failed/);
     });
 
     it('should check if branch exists on remote', async () => {

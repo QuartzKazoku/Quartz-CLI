@@ -165,6 +165,38 @@ function parseArgs(args: string[]): { edit: boolean } {
 }
 
 /**
+ * Validate configuration before execution
+ * @param config - Configuration object to validate
+ */
+function validateConfiguration(config: any): void {
+  // Validate OpenAI configuration
+  if (!config.openai?.apiKey) {
+    logger.error(t('errors.noApiKey'));
+    logger.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
+  if (!config.openai?.model) {
+    logger.error('OpenAI model is not configured');
+    logger.error('Please run: quartz config --set openai.model <model-name>');
+    process.exit(1);
+  }
+  
+  // Validate language configuration
+  if (!config.language?.ui) {
+    logger.error('UI language is not configured');
+    logger.error('Please run: quartz config --set language.ui <language-code>');
+    process.exit(1);
+  }
+  
+  if (!config.language?.prompt) {
+    logger.error('Prompt language is not configured');
+    logger.error('Please run: quartz config --set language.prompt <language-code>');
+    process.exit(1);
+  }
+}
+
+/**
  * Main function to generate commit message
  * @param args - Command line arguments
  */
@@ -173,12 +205,11 @@ export async function generateCommit(args: string[]) {
 
   const configManager = getConfigManager();
   const config = configManager.readConfig();
-  const openAIConfig = config.openai
-  if (!openAIConfig.apiKey) {
-    logger.error(t('errors.noApiKey'));
-    logger.error(t('errors.setApiKey'));
-    process.exit(1);
-  }
+  
+  // Validate configuration before proceeding
+  validateConfiguration(config);
+  
+  const openAIConfig = config.openai;
 
   const { edit } = parseArgs(args);
 

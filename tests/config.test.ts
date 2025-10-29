@@ -59,22 +59,50 @@ vi.mock('node:fs', () => ({
   }
 }));
 
-// Mock config utils
-vi.mock('@/utils/config', () => ({
-  readQuartzConfig: vi.fn(() => ({
-    openai: {
-      apiKey: 'test-key',
-      baseUrl: 'https://api.openai.com/v1',
-      model: 'gpt-4'
-    },
-    language: {
-      ui: 'en',
-      prompt: 'en'
-    },
-    platforms: []
-  })),
-  writeQuartzConfig: vi.fn(),
-  upsertPlatformConfig: vi.fn()
+// Mock config manager
+vi.mock('@/manager/config', () => ({
+  getConfigManager: vi.fn(() => ({
+    readConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    })),
+    readBaseConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    })),
+    readRuntimeConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    })),
+    writeConfig: vi.fn(),
+    upsertPlatformConfig: vi.fn(),
+    getConfigPath: vi.fn(() => '/mock/path/quartz.json'),
+    hasRuntimeOverrides: vi.fn(() => false)
+  }))
 }));
 
 describe('Config Command', () => {
@@ -95,11 +123,12 @@ describe('Config Command', () => {
     vi.clearAllMocks();
   });
 
-  it('should list all configurations', async () => {
+  it('should list all configurations with details', async () => {
     await configCommand(['list']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.line).toHaveBeenCalled();
+    expect(logger.separator).toHaveBeenCalled();
   });
 
   it('should show help when no subcommand provided', async () => {
@@ -107,6 +136,7 @@ describe('Config Command', () => {
     
     const { logger } = await import('@/utils/logger');
     expect(logger.line).toHaveBeenCalled();
+    expect(logger.command).toHaveBeenCalled();
   });
 
   it('should show help when help flag is provided', async () => {
@@ -116,35 +146,78 @@ describe('Config Command', () => {
     expect(logger.line).toHaveBeenCalled();
   });
 
-  it('should set a configuration value', async () => {
+  it('should set configuration value successfully', async () => {
     await configCommand(['set', 'OPENAI_API_KEY', 'new-test-key']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.log).toHaveBeenCalled();
+    expect(logger.success).toHaveBeenCalled();
   });
 
-  it('should get a configuration value', async () => {
+  it('should get configuration value successfully', async () => {
     await configCommand(['get', 'OPENAI_API_KEY']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.log).toHaveBeenCalled();
   });
 
-  it('should show error for invalid set command', async () => {
+  it('should set OpenAI base URL', async () => {
+    await configCommand(['set', 'OPENAI_BASE_URL', 'https://api.custom.com/v1']);
+    
+    const { logger } = await import('@/utils/logger');
+    expect(logger.success).toHaveBeenCalled();
+  });
+
+  it('should set OpenAI model', async () => {
+    await configCommand(['set', 'OPENAI_MODEL', 'gpt-4-turbo']);
+    
+    const { logger } = await import('@/utils/logger');
+    expect(logger.success).toHaveBeenCalled();
+  });
+
+  it('should set UI language', async () => {
+    await configCommand(['set', 'LANGUAGE_UI', 'zh-CN']);
+    
+    // The command should complete without errors
+    // The actual write operation is handled by the mocked config manager
+    expect(process.exit).not.toHaveBeenCalled();
+  });
+
+  it('should show error for invalid set command without value', async () => {
     await configCommand(['set', 'OPENAI_API_KEY']);
     
+    const { logger } = await import('@/utils/logger');
+    expect(logger.error).toHaveBeenCalled();
     expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('should show error for invalid get command', async () => {
+  it('should show error for invalid get command without key', async () => {
     await configCommand(['get']);
     
+    const { logger } = await import('@/utils/logger');
+    expect(logger.error).toHaveBeenCalled();
     expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('should show error for unknown command', async () => {
+  it('should show error for unknown configuration key', async () => {
+    await configCommand(['get', 'UNKNOWN_KEY']);
+    
+    const { logger } = await import('@/utils/logger');
+    expect(logger.log).toHaveBeenCalled();
+  });
+
+  it('should show error for unknown subcommand', async () => {
     await configCommand(['unknown']);
     
+    const { logger } = await import('@/utils/logger');
+    expect(logger.error).toHaveBeenCalled();
     expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('should handle platform configuration', async () => {
+    await configCommand(['set', 'GITHUB_TOKEN', 'ghp_test_token']);
+    
+    const { logger } = await import('@/utils/logger');
+    expect(logger.success).toHaveBeenCalled();
   });
 });

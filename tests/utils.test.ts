@@ -1,16 +1,51 @@
 //tests/utils.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '@/utils/prompt';
 import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
+
+// Mock config manager
+vi.mock('@/manager/config', () => ({
+  getConfigManager: vi.fn(() => ({
+    readConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    }))
+  }))
+}));
 
 describe('Utils Functions', () => {
   describe('Prompt Functions', () => {
     beforeEach(() => {
       // Set default language to English for testing
       setLanguage('en');
+      
+      // Reset mock to return English config
+      const { getConfigManager } = require('@/manager/config');
+      getConfigManager.mockReturnValue({
+        readConfig: vi.fn(() => ({
+          openai: {
+            apiKey: 'test-key',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4'
+          },
+          language: {
+            ui: 'en',
+            prompt: 'en'
+          },
+          platforms: []
+        }))
+      });
     });
 
-    it('should generate review prompt', () => {
+    it('should generate review prompt with all required fields', () => {
       const file = 'test.ts';
       const diff = 'test diff content';
       const content = 'test file content';
@@ -22,9 +57,34 @@ describe('Utils Functions', () => {
       expect(prompt).toContain(diff);
       expect(prompt).toContain(content);
       expect(prompt).toContain('English');
+      expect(prompt.length).toBeGreaterThan(0);
     });
 
-    it('should generate commit prompt', () => {
+    it('should generate review prompt in Chinese', () => {
+      const { getConfigManager } = require('@/manager/config');
+      getConfigManager.mockReturnValue({
+        readConfig: vi.fn(() => ({
+          openai: {
+            apiKey: 'test-key',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4'
+          },
+          language: {
+            ui: 'zh-CN',
+            prompt: 'zh-CN'
+          },
+          platforms: []
+        }))
+      });
+      
+      setLanguage('zh-CN');
+      const prompt = getReviewPrompt('test.ts', 'diff', 'content');
+      
+      expect(prompt).toContain('Simplified Chinese');
+      setLanguage('en');
+    });
+
+    it('should generate commit prompt with conventional commits format', () => {
       const diff = 'test diff content';
       const files = ['file1.ts', 'file2.ts'];
       
@@ -36,11 +96,22 @@ describe('Utils Functions', () => {
       expect(prompt).toContain('file2.ts');
       expect(prompt).toContain('Conventional Commits specification');
       expect(prompt).toContain('English');
+      expect(prompt).toContain('feat:');
+      expect(prompt).toContain('fix:');
     });
 
-    it('should generate PR prompt', () => {
+    it('should generate commit prompt with multiple files', () => {
+      const files = ['src/app.ts', 'src/utils.ts', 'tests/app.test.ts'];
+      const prompt = getCommitPrompt('diff content', files);
+      
+      files.forEach(file => {
+        expect(prompt).toContain(file);
+      });
+    });
+
+    it('should generate PR prompt with complete information', () => {
       const diff = 'test diff content';
-      const commits = ['feat: add feature', 'fix: bug'];
+      const commits = ['feat: add feature', 'fix: bug', 'docs: update readme'];
       const files = ['file1.ts', 'file2.ts'];
       const currentBranch = 'feature-branch';
       const baseBranch = 'main';
@@ -51,6 +122,7 @@ describe('Utils Functions', () => {
       expect(prompt).toContain(diff);
       expect(prompt).toContain('feat: add feature');
       expect(prompt).toContain('fix: bug');
+      expect(prompt).toContain('docs: update readme');
       expect(prompt).toContain('file1.ts');
       expect(prompt).toContain('file2.ts');
       expect(prompt).toContain('feature-branch');
@@ -58,7 +130,14 @@ describe('Utils Functions', () => {
       expect(prompt).toContain('English');
     });
 
-    it('should generate summary prompt', () => {
+    it('should generate PR prompt with empty commits list', () => {
+      const prompt = getPRPrompt('diff', [], ['file.ts'], 'feature', 'main');
+      
+      expect(prompt).toContain('Pull Request description generator');
+      expect(prompt.length).toBeGreaterThan(0);
+    });
+
+    it('should generate summary prompt with statistics', () => {
       const errorCount = 2;
       const warningCount = 3;
       const infoCount = 1;
@@ -72,6 +151,13 @@ describe('Utils Functions', () => {
       expect(prompt).toContain(`${infoCount} suggestions`);
       expect(prompt).toContain(`${score}/100`);
       expect(prompt).toContain('English');
+    });
+
+    it('should generate summary prompt with zero errors', () => {
+      const prompt = getSummaryPrompt(0, 0, 0, 100);
+      
+      expect(prompt).toContain('0 errors');
+      expect(prompt).toContain('100/100');
     });
   });
 

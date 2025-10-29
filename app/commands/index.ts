@@ -28,3 +28,8 @@ export { generatePR } from './pr';
  * Export review command for AI-powered code reviews
  */
 export { reviewCode } from './review';
+
+/**
+ * Export branch command for branch management
+ */
+export { branchCommand } from './branch';

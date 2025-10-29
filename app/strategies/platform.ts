@@ -51,8 +51,10 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
     async isBranchOnRemote(branch: string): Promise<boolean> {
         try {
             // Execute git ls-remote command to check if remote branch exists
-            await $`git ls-remote --heads origin ${branch}`.text();
-            return true;
+            const output = await $`git ls-remote --heads origin ${branch}`.text();
+            // Check if output contains the branch reference
+            // Output format: <sha> refs/heads/<branch-name>
+            return output.trim().length > 0;
         } catch {
             return false;
         }

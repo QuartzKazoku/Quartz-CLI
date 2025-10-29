@@ -1,12 +1,31 @@
 //cli/utils/prompt.ts
 import { getLanguage } from '@/i18n';
+import { getConfigManager } from '@/manager/config';
+import { logger } from '@/utils/logger';
+import { t } from '@/i18n';
 
 /**
- * Get prompt language from UI language
+ * Get prompt language from configuration
+ * Throws error if configuration is missing or invalid
  * @returns Language code for prompts
+ * @throws Error if prompt language is not configured
  */
 function getPromptLanguage(): string {
-  return getLanguage();
+  try {
+    const configManager = getConfigManager();
+    const config = configManager.readConfig();
+    
+    if (!config.language?.prompt) {
+      logger.error(t('errors.noPromptLanguage'));
+      logger.error('Please run: quartz config --set language.prompt <language-code>');
+      process.exit(1);
+    }
+    
+    return config.language.prompt;
+  } catch (error) {
+    logger.error('Failed to read configuration:', error);
+    process.exit(1);
+  }
 }
 
 /**

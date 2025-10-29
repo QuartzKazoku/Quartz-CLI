@@ -140,55 +140,112 @@ describe('PR Command', () => {
     vi.restoreAllMocks();
   });
 
-  it('should generate and create PR automatically', async () => {
+  it('should generate and create PR with base branch', async () => {
     await generatePR(['--base', 'main']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
+    // The success message is called via spinner.succeed, not logger.success directly
+    expect(logger.spinner).toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalled();
   });
 
-  it('should handle base branch flag', async () => {
+  it('should handle custom base branch flag', async () => {
     await generatePR(['--base', 'develop']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
   });
 
-  it('should handle GitHub CLI flag', async () => {
+  it('should handle GitHub CLI flag for PR creation', async () => {
     await generatePR(['--gh']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
   });
 
-  it('should handle short flags', async () => {
+  it('should handle short base branch flag', async () => {
     await generatePR(['-b', 'develop']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
   });
 
-  it('should handle same branch error', async () => {
-    // Test passes - error handling tested via process.exit mock
-    const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+  it('should detect and prevent same branch PR', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementation((() => ({
+      text: async () => 'main'
+    })) as any);
+
+    await generatePR(['--base', 'main']);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('should handle no diff error', async () => {
-    // Test passes - error handling tested via process.exit mock
-    const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+  it('should handle no diff between branches', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementation(((strings: TemplateStringsArray) => {
+      const command = strings[0];
+      return {
+        text: async () => {
+          if (command.includes('diff')) return '';
+          if (command.includes('branch --show-current')) return 'feature';
+          return 'test';
+        }
+      };
+    }) as any);
+
+    await generatePR(['--base', 'main']);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('should handle API errors', async () => {
-    // Test passes - error handling tested via process.exit mock
+  it('should handle OpenAI API errors gracefully', async () => {
+    const OpenAI = (await import('openai')).default;
+    const mockInstance = new OpenAI({ apiKey: 'test' });
+    vi.spyOn(mockInstance.chat.completions, 'create').mockRejectedValueOnce(
+      new Error('API connection failed')
+    );
+
+    try {
+      await generatePR(['--base', 'main']);
+    } catch (error) {
+      // Expected to exit
+    }
+    
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
   });
 
-  it('should handle GitHub API errors', async () => {
-    // Test passes - error handling tested via process.exit mock
+  it('should handle GitHub API creation errors', async () => {
+    global.fetch = vi.fn(() => Promise.resolve({
+      ok: false,
+      statusText: 'Validation Failed',
+      json: () => Promise.resolve({
+        message: 'Validation Failed',
+        errors: [{ message: 'Pull request already exists' }]
+      })
+    } as Response));
+
+    await generatePR(['--base', 'main']);
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('should parse commit messages correctly', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementation(((strings: TemplateStringsArray) => {
+      const command = strings[0];
+      return {
+        text: async () => {
+          if (command.includes('log')) return 'feat: add feature\nfix: bug fix';
+          if (command.includes('branch --show-current')) return 'feature';
+          if (command.includes('diff')) return 'test diff';
+          return 'test';
+        }
+      };
+    }) as any);
+
+    await generatePR(['--base', 'main']);
+    const { logger } = await import('@/utils/logger');
+    expect(logger.section).toHaveBeenCalled();
   });
 });

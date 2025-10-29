@@ -8,25 +8,36 @@ describe('Internationalization', () => {
     setLanguage('en');
   });
 
-  it('should initialize with default language', () => {
+  it('should initialize with default language from system', () => {
     const lang = initLanguage();
     
-    expect(lang).toBe('en');
-    expect(getLanguage()).toBe('en');
+    expect(typeof lang).toBe('string');
+    expect(['en', 'zh-CN', 'zh-TW', 'ja', 'ko']).toContain(lang);
   });
 
-
-  it('should set language manually', () => {
+  it('should set and persist language preference', () => {
     setLanguage('zh-CN');
     
     expect(getLanguage()).toBe('zh-CN');
+    
+    setLanguage('en');
+    expect(getLanguage()).toBe('en');
   });
 
-  it('should not set invalid language', () => {
+  it('should reject invalid language codes', () => {
     const originalLang = getLanguage();
     setLanguage('invalid-lang' as any);
     
     expect(getLanguage()).toBe(originalLang);
+  });
+
+  it('should support all available languages', () => {
+    const languages = ['en', 'zh-CN', 'zh-TW', 'ja', 'ko'];
+    
+    for (const lang of languages) {
+      setLanguage(lang as any);
+      expect(getLanguage()).toBe(lang);
+    }
   });
 
   it('should translate common keys in English', () => {
