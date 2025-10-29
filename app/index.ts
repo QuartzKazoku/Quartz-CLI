@@ -5,6 +5,7 @@ import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
 import { checkAndMigrate, shouldSkipMigration } from '@/utils/hooks';
 import { CLI } from '@/constants';
+import { getConfigManager } from '@/manager/config';
 
 /**
  * Print ASCII art logo
@@ -73,8 +74,18 @@ function getUsageText(): string {
   return '';
 }
 
-// Initialize language
-i18n.init();
+// Initialize language from config
+try {
+  const configManager = getConfigManager();
+  if (configManager.configExists()) {
+    const config = configManager.readConfig();
+    i18n.set(config.language.ui as any);
+  } else {
+    i18n.init();
+  }
+} catch {
+  i18n.init();
+}
 const t = i18n.t;
 
 // Get command line arguments

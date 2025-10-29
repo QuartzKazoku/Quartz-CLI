@@ -27,10 +27,34 @@ interface ReviewResult {
  * Validate configuration and exit if invalid
  * @param config - Configuration object to validate
  */
-function validateConfig(config: { openaiApiKey: string }): void {
+function validateConfig(config: { openaiApiKey: string; openaiModel: string }): void {
   if (!config.openaiApiKey) {
     logger.error(t('errors.noApiKey'));
     logger.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
+  if (!config.openaiModel) {
+    logger.error('OpenAI model is not configured');
+    logger.error('Please run: quartz config --set openai.model <model-name>');
+    process.exit(1);
+  }
+}
+
+/**
+ * Validate language configuration
+ * @param quartzConfig - Quartz configuration object
+ */
+function validateLanguageConfig(quartzConfig: any): void {
+  if (!quartzConfig.language?.ui) {
+    logger.error('UI language is not configured');
+    logger.error('Please run: quartz config --set language.ui <language-code>');
+    process.exit(1);
+  }
+  
+  if (!quartzConfig.language?.prompt) {
+    logger.error('Prompt language is not configured');
+    logger.error('Please run: quartz config --set language.prompt <language-code>');
     process.exit(1);
   }
 }
@@ -43,6 +67,9 @@ function loadConfig() {
   // Use ConfigManager to read configuration
   const configManager = getConfigManager();
   const quartzConfig = configManager.readConfig();
+  
+  // Validate language configuration first
+  validateLanguageConfig(quartzConfig);
 
   const config = {
     openaiApiKey: quartzConfig.openai.apiKey || '',
