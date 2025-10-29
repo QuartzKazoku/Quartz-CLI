@@ -77,10 +77,12 @@ export const zhCN: Translations = {
     commits: '个提交',
     filesChanged: '个文件变更',
     generating: '🤖 正在生成 PR 描述...\n',
+    generatingOptions: '🤖 正在生成 {count} 个 PR 描述选项...\n',
     generatedTitle: '📝 生成的 PR 标题:',
     generatedBody: '\n📝 生成的 PR 描述:',
+    generatedOptions: '📝 生成的 PR 描述选项:',
     tips: '💡 提示:',
-    autoTip: '   - 使用 --auto 或 -a 自动创建 PR',
+    autoTip: '   - 使用 --auto 自动生成单个 PR 描述',
     ghTip: '   - 使用 --gh 选项通过 GitHub CLI 创建',
     selectTip: '   - 使用 --select 或 -s 交互式选择目标分支',
     baseTip: '   - 使用 --base <branch> 指定目标分支',
@@ -99,6 +101,9 @@ export const zhCN: Translations = {
     useGHTip: '   请使用 --gh 选项通过 GitHub CLI 创建 PR',
     pushingBranch: '📤 正在推送分支 {branch} 到远程仓库...',
     branchPushed: '✅ 分支已推送到远程仓库',
+    selectPrompt: '📝 请选择一个 PR 描述 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n',
+    selectedOption: '\n✨ 已选择 PR 描述 [{index}]:\n',
+    cancelled: '\n⚠️  取消 PR 创建',
   },
 
   scoreLevel: {

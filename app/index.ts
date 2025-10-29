@@ -66,6 +66,7 @@ function getUsageText(): string {
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit --edit');
   logger.example(t('pr.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz pr --auto --base main');
+  logger.example('Generate PR with 3 options to choose from', 'quartz pr --base main');
   logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog');
   logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog --preview');
   logger.line();
