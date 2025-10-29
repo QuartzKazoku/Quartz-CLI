@@ -99,6 +99,15 @@ export const ja: Translations = {
     useGHTip: '   --gh オプションで GitHub CLI を使用してください',
     pushingBranch: '📤 ブランチ {branch} をリモートリポジトリにプッシュ中...',
     branchPushed: '✅ ブランチをリモートリポジトリにプッシュしました',
+    generatingOptions: '💎 Quartz が {count} 個の PR 説明オプションを生成中...\n',
+    generatedOptions: '📝 生成された PR 説明オプション:',
+    selectPrompt: '📝 PR 説明を選択してください (↑↓ キーで選択, Enter で確認, Ctrl+C でキャンセル):\n',
+    selectedOption: '\n✨ PR 説明 [{index}] を選択しました:\n',
+    cancelled: '\n⚠️  PR 作成をキャンセルしました',
+    optionTitle: 'オプション {index}',
+    selectedTitle: '選択されたタイトル',
+    selectedBody: '選択された説明',
+    platformTokenRequired: '   {platform} の token を設定してください',
   },
 
   config: {

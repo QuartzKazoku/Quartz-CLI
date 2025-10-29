@@ -104,6 +104,10 @@ export const zhCN: Translations = {
     selectPrompt: '📝 请选择一个 PR 描述 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n',
     selectedOption: '\n✨ 已选择 PR 描述 [{index}]:\n',
     cancelled: '\n⚠️  取消 PR 创建',
+    optionTitle: '选项 {index}',
+    selectedTitle: '选中的标题',
+    selectedBody: '选中的描述',
+    platformTokenRequired: '   请为 {platform} 配置 token',
   },
 
   scoreLevel: {

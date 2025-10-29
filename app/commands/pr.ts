@@ -515,7 +515,7 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
     
     // Display all options
     descriptions.forEach((desc, index) => {
-      logger.box(formatPRDescription(desc, index), { padding: 1, title: `选项 ${index + 1}` });
+      logger.box(formatPRDescription(desc, index), { padding: 1, title: t('pr.optionTitle', { index: index + 1 }) });
       logger.line();
     });
 
@@ -525,9 +525,9 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
 
     logger.info(t('pr.selectedOption', { index: selectedIndex + 1 }));
     logger.separator(80);
-    logger.box(selectedDescription.title, { padding: 1, title: '选中的标题' });
+    logger.box(selectedDescription.title, { padding: 1, title: t('pr.selectedTitle') });
     logger.line();
-    logger.box(selectedDescription.body, { padding: 1, title: '选中的描述' });
+    logger.box(selectedDescription.body, { padding: 1, title: t('pr.selectedBody') });
     logger.separator(80);
     logger.line();
   }
@@ -548,7 +548,7 @@ export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
 
     if (!matchingConfig) {
       createSpinner.fail(t('pr.noToken'));
-      logger.error(`   请为 ${repoInfo.platform} 配置 token`);
+      logger.error(t('pr.platformTokenRequired', { platform: repoInfo.platform }));
       logger.error(t('pr.useGHTip'));
       process.exit(1);
     }
