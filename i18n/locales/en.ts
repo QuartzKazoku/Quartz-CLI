@@ -77,6 +77,12 @@ export const en: Translations = {
     selectPrompt: '📝 Select a commit message (use ↑↓ keys, Enter to confirm, Ctrl+C to cancel):\n',
     generatingOptions: '🤖 Generating {count} commit message options...\n',
     selectedMessage: '\n✨ Selected commit message [{index}]:\n',
+    linkIssue: 'Link to an Issue?',
+    fetchingIssues: '🔍 Fetching Issues...',
+    noIssues: '⚠️  No Issues found',
+    selectIssue: 'Select an Issue to link',
+    linkedIssue: '🔗 Linked Issue #{number}: {title}',
+    skipIssue: '⏭️  Skip Issue linking',
   },
 
   pr: {

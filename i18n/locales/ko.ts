@@ -76,6 +76,12 @@ export const ko: Translations = {
     stageFailed: '❌ 파일 스테이징 실패',
     selectPrompt: '📝 커밋 메시지를 선택하세요 (↑↓ 키로 선택, Enter로 확인, Ctrl+C로 취소):\n',
     generatingOptions: '🤖 {count}개의 커밋 메시지 옵션 생성 중...\n',
+    linkIssue: 'Issue를 연결하시겠습니까?',
+    fetchingIssues: '🔍 Issue 가져오는 중...',
+    noIssues: '⚠️  사용 가능한 Issue를 찾을 수 없습니다',
+    selectIssue: '연결할 Issue 선택',
+    linkedIssue: '🔗 Issue #{number} 연결됨: {title}',
+    skipIssue: '⏭️  Issue 연결 건너뛰기',
     selectedMessage: '\n✨ 커밋 메시지 [{index}]를 선택했습니다:\n',
   },
 

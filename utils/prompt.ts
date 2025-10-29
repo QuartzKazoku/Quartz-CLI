@@ -101,11 +101,16 @@ Note:
  * Generate commit message prompt for AI
  * @param diff - Git diff content
  * @param files - Array of changed file paths
+ * @param issueNumber - Optional issue number to reference
  * @returns Formatted prompt string for commit message generation
  */
-export function getCommitPrompt(diff: string, files: string[]): string {
+export function getCommitPrompt(diff: string, files: string[], issueNumber?: number): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
+
+  const issueContext = issueNumber
+    ? `\n\nNote: This commit is related to issue #${issueNumber}. You may reference this issue in the commit message footer using "Refs: #${issueNumber}" format.`
+    : '';
 
   return `You are a professional Git commit message generator working with Quartz engine. Please generate a commit message following the Conventional Commits specification in ${langName}.
 
@@ -135,7 +140,7 @@ ${files.map(f => `- ${f}`).join('\n')}
 Code Changes (diff):
 \`\`\`diff
 ${diff.slice(0, 8000)}${diff.length > 8000 ? '\n... (diff truncated)' : ''}
-\`\`\`
+\`\`\`${issueContext}
 
 Requirements:
 1. subject must be a concise one-sentence description (within 50 characters)
@@ -145,6 +150,7 @@ Requirements:
 5. If there are breaking changes, explain in footer
 6. Choose the most appropriate type based on actual changes
 7. scope is optional, indicating the scope of impact
+8. If an issue number is provided, you may include it in the footer section
 
 Please directly return the commit message in ${langName}, do not add other explanatory text.`;
 }

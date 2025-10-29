@@ -76,6 +76,12 @@ export const zhTW: Translations = {
     stageFailed: '❌ 暫存檔案失敗',
     selectPrompt: '📝 請選擇一個提交訊息 (使用 ↑↓ 鍵選擇, Enter 確認, Ctrl+C 取消):\n',
     generatingOptions: '🤖 正在生成 {count} 個提交訊息選項...\n',
+    linkIssue: '關聯 Issue?',
+    fetchingIssues: '🔍 正在取得 Issues...',
+    noIssues: '⚠️  未找到可用的 Issues',
+    selectIssue: '請選擇要關聯的 Issue',
+    linkedIssue: '🔗 已關聯 Issue #{number}: {title}',
+    skipIssue: '⏭️  跳過 Issue 關聯',
     selectedMessage: '\n✨ 已選擇提交訊息 [{index}]:\n',
   },
 

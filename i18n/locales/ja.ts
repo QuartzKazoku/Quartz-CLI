@@ -76,6 +76,12 @@ export const ja: Translations = {
     stageFailed: '❌ ファイルのステージに失敗しました',
     selectPrompt: '📝 コミットメッセージを選択してください (↑↓ キーで選択, Enter で確認, Ctrl+C でキャンセル):\n',
     generatingOptions: '🤖 {count} 個のコミットメッセージオプションを生成中...\n',
+    linkIssue: 'Issueをリンクしますか?',
+    fetchingIssues: '🔍 Issueを取得中...',
+    noIssues: '⚠️  利用可能なIssueが見つかりません',
+    selectIssue: 'リンクするIssueを選択',
+    linkedIssue: '🔗 Issue #{number}をリンク: {title}',
+    skipIssue: '⏭️  Issueリンクをスキップ',
     selectedMessage: '\n✨ コミットメッセージ [{index}] を選択しました:\n',
   },
 
