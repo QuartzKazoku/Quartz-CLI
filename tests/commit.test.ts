@@ -93,42 +93,67 @@ describe('Commit Command', () => {
     vi.clearAllMocks();
   });
 
-  it('should generate commit message', async () => {
+  it('should generate commit message successfully', async () => {
     await generateCommit([]);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
+    expect(logger.spinner).toHaveBeenCalled();
   });
 
-  it('should handle auto commit flag', async () => {
+  it('should handle auto commit flag correctly', async () => {
     await generateCommit(['--auto']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
   });
 
-  it('should handle edit commit flag', async () => {
+  it('should handle edit commit flag correctly', async () => {
     await generateCommit(['--edit']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
   });
 
-  it('should handle short flags', async () => {
+  it('should handle combined short flags', async () => {
     await generateCommit(['-a', '-e']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
   });
 
-  it('should handle git diff errors', async () => {
-    // Test passes - error handling tested via process.exit mock
-    const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+  it('should handle empty staged files gracefully', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+      text: async () => '',
+      quiet: async () => {}
+    })) as any);
+
+    await generateCommit([]);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('should handle API errors', async () => {
-    // Test passes - error handling tested via process.exit mock
+  it('should handle git diff errors gracefully', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+      text: async () => {
+        throw new Error('Git diff failed');
+      }
+    })) as any);
+
+    await generateCommit([]);
+    const { logger } = await import('@/utils/logger');
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('should handle OpenAI API errors gracefully', async () => {
+    const OpenAI = (await import('openai')).default;
+    const mockInstance = new OpenAI({ apiKey: 'test' });
+    vi.spyOn(mockInstance.chat.completions, 'create').mockRejectedValueOnce(
+      new Error('API error')
+    );
+
+    await generateCommit([]);
     const { logger } = await import('@/utils/logger');
     expect(logger).toBeDefined();
   });

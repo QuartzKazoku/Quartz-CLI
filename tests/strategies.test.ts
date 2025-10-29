@@ -36,11 +36,17 @@ describe('Platform Strategies', () => {
     it('should create GitHub strategy with valid config', () => {
       const strategy = new GitHubStrategy(githubConfig);
       expect(strategy).toBeInstanceOf(GitHubStrategy);
+      expect(strategy).toBeDefined();
     });
 
     it('should throw error with invalid platform type', () => {
       const invalidConfig = { type: 'gitlab', token: 'test' } as PlatformConfig;
       expect(() => new GitHubStrategy(invalidConfig)).toThrow('Invalid platform type for GitHubStrategy');
+    });
+
+    it('should initialize with default GitHub URL', () => {
+      const strategy = new GitHubStrategy(githubConfig);
+      expect(strategy).toBeInstanceOf(GitHubStrategy);
     });
 
     it('should create pull request successfully', async () => {

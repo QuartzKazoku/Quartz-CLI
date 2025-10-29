@@ -1,33 +1,41 @@
 //tests/date.test.ts
-// test/date.test.ts
+import { describe, it, expect } from 'vitest';
 import { formatDate } from '@/utils/date';
 
-/**
- * Test function to verify formatDate output
- */
-export function testDateFormatting(): void {
-  console.log('=== Date Formatting Test ===');
+describe('Date Formatting', () => {
+  it('should format date with default locale', () => {
+    const formatted = formatDate();
+    expect(formatted).toBeDefined();
+    expect(typeof formatted).toBe('string');
+    expect(formatted.length).toBeGreaterThan(0);
+  });
 
-  // Test with default parameters
-  const defaultFormat = formatDate();
-  console.log('Default (en):', defaultFormat);
+  it('should format date with English locale', () => {
+    const formatted = formatDate('en');
+    expect(formatted).toBeDefined();
+    expect(formatted).toMatch(/\d{2}-\d{2}-\d{4}/);
+  });
 
-  // Test with explicit 'en' locale
-  const enFormat = formatDate('en');
-  console.log('Explicit en:', enFormat);
+  it('should format date with Chinese locale', () => {
+    const formatted = formatDate('zh-CN');
+    expect(formatted).toBeDefined();
+    expect(formatted).toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
 
-  // Test with different locales
-  const zhFormat = formatDate('zh-CN');
-  console.log('zh-CN:', zhFormat);
+  it('should format custom date', () => {
+    const customDate = new Date('2025-10-29T12:13:05Z');
+    const formatted = formatDate('en', customDate);
+    expect(formatted).toBeDefined();
+    expect(formatted).toContain('2025');
+  });
 
-  // Test with custom date
-  const customDate = new Date('2025-10-29T12:13:05Z');
-  const customFormat = formatDate('en', customDate);
-  console.log('Custom date (en):', customFormat);
-
-  // Test current date
-  const now = new Date();
-  console.log('Current date:', now.toISOString());
-  console.log('Formatted:', formatDate('en', now));
-}
-testDateFormatting();
+  it('should handle different locales consistently', () => {
+    const date = new Date('2025-10-29T12:00:00Z');
+    const enFormat = formatDate('en', date);
+    const zhFormat = formatDate('zh-CN', date);
+    
+    expect(enFormat).toBeDefined();
+    expect(zhFormat).toBeDefined();
+    expect(enFormat).not.toBe(zhFormat);
+  });
+});

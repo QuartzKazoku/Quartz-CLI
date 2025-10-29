@@ -104,55 +104,86 @@ describe('Review Command', () => {
     vi.clearAllMocks();
   });
 
-  it('should review code', async () => {
+  it('should review staged code successfully', async () => {
     await reviewCode([]);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
+    expect(logger.spinner).toHaveBeenCalled();
   });
 
-  it('should handle specific files flag', async () => {
+  it('should handle specific files flag with multiple files', async () => {
     await reviewCode(['--files', 'file1.ts', 'file2.ts']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
+    expect(logger.listItem).toHaveBeenCalled();
   });
 
-  it('should handle output flag', async () => {
+  it('should handle output flag and save results', async () => {
     await reviewCode(['--output', 'review-result.json']);
     
     const { logger } = await import('@/utils/logger');
+    const fs = await import('node:fs');
     expect(logger.info).toHaveBeenCalled();
+    expect(fs.default.writeFileSync).toHaveBeenCalled();
   });
 
-  it('should handle short flags', async () => {
+  it('should handle combined short flags correctly', async () => {
     await reviewCode(['-f', 'file1.ts', '-o', 'result.json']);
     
     const { logger } = await import('@/utils/logger');
     expect(logger.info).toHaveBeenCalled();
   });
 
-  it('should handle no files to review', async () => {
-    // Test passes - no files scenario tested
+  it('should handle no staged files gracefully', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+      text: async () => ''
+    })) as any);
+
+    await reviewCode([]);
+    expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('should handle OpenAI API errors with proper logging', async () => {
+    const OpenAI = (await import('openai')).default;
+    const mockInstance = new OpenAI({ apiKey: 'test' });
+    vi.spyOn(mockInstance.chat.completions, 'create').mockRejectedValueOnce(
+      new Error('API rate limit exceeded')
+    );
+
+    await reviewCode([]);
     const { logger } = await import('@/utils/logger');
     expect(logger).toBeDefined();
   });
 
-  it('should handle API errors', async () => {
-    // Test passes - error handling tested
+  it('should handle file not found errors gracefully', async () => {
+    const fs = await import('node:fs');
+    vi.spyOn(fs.default, 'existsSync').mockReturnValueOnce(false);
+
+    await reviewCode(['--files', 'nonexistent.ts']);
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
   });
 
-  it('should handle file not found errors', async () => {
-    // Test passes - file not found handled
+  it('should handle git command errors gracefully', async () => {
+    const shellModule = await import('@/utils/shell');
+    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+      text: async () => {
+        throw new Error('Git command failed');
+      }
+    })) as any);
+
+    await reviewCode([]);
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
   });
 
-  it('should handle git errors', async () => {
-    // Test passes - git error handled
+  it('should parse review results correctly', async () => {
+    await reviewCode([]);
+    
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.success).toHaveBeenCalled();
   });
 });

@@ -50,11 +50,7 @@ quartz.jsonc
 # Temporary files
 *.tmp
 
-# VitePress
-docs/.vitepress/dist
-docs/.vitepress/cache
-.cache/
-.vercel
+
 
 # NPM publish
 *.tgz

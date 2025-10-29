@@ -1,12 +1,27 @@
 //tests/manager.config.test.ts
-//cli/tests/config-manager.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getConfigManager } from '@/manager/config';
 import { CONFIG_FILE } from '@/constants';
 
-// 兼容的递归删除函数
+// Mock path utilities to use test directory
+vi.mock('@/utils/path', () => {
+  const testDir = path.join(process.cwd(), '.quartz-test');
+  const testConfigPath = path.join(testDir, 'quartz.jsonc');
+  
+  return {
+    getQuartzDir: () => testDir,
+    getQuartzPath: () => testConfigPath,
+    ensureQuartzDir: () => {
+      if (!fs.existsSync(testDir)) {
+        fs.mkdirSync(testDir, { recursive: true });
+      }
+    }
+  };
+});
+
+// Compatible recursive delete function
 function removeRecursive(dir: string) {
   if (!fs.existsSync(dir)) return;
   
@@ -27,32 +42,28 @@ function removeRecursive(dir: string) {
 
 describe('ConfigManager', () => {
   const testDir = path.join(process.cwd(), '.quartz-test');
-  const testConfigPath = path.join(testDir, CONFIG_FILE.NAME);
-  let originalCwd: string;
 
   beforeEach(() => {
-    // 保存原始工作目录
-    originalCwd = process.cwd();
-    
-    // 创建测试目录
+    // Create test directory
     if (fs.existsSync(testDir)) {
       removeRecursive(testDir);
     }
     fs.mkdirSync(testDir, { recursive: true });
     
-    // 清除配置管理器缓存
+    // Clear configuration manager cache
     const configManager = getConfigManager();
     configManager.clearCache();
   });
 
   afterEach(() => {
-    // 清理测试目录
+    // Clean up test directory
     if (fs.existsSync(testDir)) {
       removeRecursive(testDir);
     }
     
-    // 恢复工作目录
-    process.chdir(originalCwd);
+    // Clear cache again
+    const configManager = getConfigManager();
+    configManager.clearCache();
   });
 
   describe('基本功能', () => {
