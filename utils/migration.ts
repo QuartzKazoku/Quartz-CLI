@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {parse as parseJsonc} from 'jsonc-parser';
 import type {Migration, MigrationResult, VersionMetadata} from '@/types/migration';
-import {CONFIG_FILE} from '@/constants';
 import {logger} from '@/utils/logger';
+import {getQuartzPath} from '@/utils/path';
 
 /**
  * Current configuration schema version
@@ -43,31 +43,6 @@ function compareVersions(a: string, b: string): number {
   }
   
   return 0;
-}
-
-/**
- * Get .quartz directory path
- */
-function getQuartzDir(): string {
-  return path.join(process.cwd(), CONFIG_FILE.DIR);
-}
-
-/**
- * Get quartz.jsonc file path
- */
-function getQuartzPath(): string {
-  const newPath = path.join(getQuartzDir(), CONFIG_FILE.NAME);
-  const oldPath = path.join(process.cwd(), CONFIG_FILE.NAME);
-  
-  if (fs.existsSync(newPath)) {
-    return newPath;
-  }
-  
-  if (fs.existsSync(oldPath)) {
-    return oldPath;
-  }
-  
-  return newPath;
 }
 
 /**

@@ -1,6 +1,5 @@
 //cli/commands/config.ts
 import fs from 'node:fs';
-import path from 'node:path';
 import { setLanguage, t } from '@/i18n';
 import {
     readQuartzConfig as readConfig,
@@ -23,35 +22,7 @@ import {
 } from '@/constants';
 import { select, input, message } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
-
-/**
- * Get .quartz directory path
- */
-function getQuartzDir(): string {
-    return path.join(process.cwd(), CONFIG_FILE.DIR);
-}
-
-/**
- * Get quartz.jsonc file path
- * Priority: .quartz/quartz.jsonc > quartz.jsonc (for backward compatibility)
- */
-function getQuartzPath(): string {
-    const newPath = path.join(getQuartzDir(), CONFIG_FILE.NAME);
-    const oldPath = path.join(process.cwd(), CONFIG_FILE.NAME);
-    
-    // Check new path first
-    if (fs.existsSync(newPath)) {
-        return newPath;
-    }
-    
-    // Fall back to old path for backward compatibility
-    if (fs.existsSync(oldPath)) {
-        return oldPath;
-    }
-    
-    // Return new path as default for new installations
-    return newPath;
-}
+import { getQuartzPath } from '@/utils/path';
 
 /**
  * Helper function to get display value from new configuration structure

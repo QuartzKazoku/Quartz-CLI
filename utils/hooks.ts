@@ -4,7 +4,7 @@
  */
 
 import { needsMigration, runMigrations } from '@/utils/migration';
-import { registerAllMigrations } from '@/utils/migrations';
+import '@/utils/migrations'; // Import to register all migrations
 import { logger } from '@/utils/logger';
 import { t } from '@/i18n';
 
@@ -13,9 +13,6 @@ import { t } from '@/i18n';
  * This should be called before any command that requires config
  */
 export async function checkAndMigrate(): Promise<void> {
-  // Register all migrations first
-  registerAllMigrations();
-  
   // Check if migration is needed
   if (!needsMigration()) {
     return;
@@ -65,12 +62,12 @@ export async function checkAndMigrate(): Promise<void> {
  * Commands that should skip migration check
  * These are commands that don't require config or are init-related
  */
-const SKIP_MIGRATION_COMMANDS = ['init', 'help', '--help', '-h', '--version', '-v'];
+const SKIP_MIGRATION_COMMANDS = new Set(['init', 'help', '--help', '-h', '--version', '-v']);
 
 /**
  * Check if the command should skip migration
  */
 export function shouldSkipMigration(command?: string): boolean {
-  if (!command) return true;
-  return SKIP_MIGRATION_COMMANDS.includes(command);
+    if (!command) return true;
+    return SKIP_MIGRATION_COMMANDS.has(command);
 }

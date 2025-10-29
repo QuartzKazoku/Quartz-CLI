@@ -1,13 +1,12 @@
 //cli/commands/review.ts
 import OpenAI from 'openai';
-import { $ } from '@/utils/shell';
+import {$} from '@/utils/shell';
 import fs from 'node:fs';
-import path from 'node:path';
-import { t } from '@/i18n';
-import { getReviewPrompt, getSummaryPrompt } from '@/utils/prompt';
-import { readQuartzConfig } from '@/utils/config';
-import { DEFAULT_VALUES } from '@/constants';
-import { logger } from '@/utils/logger';
+import {t} from '@/i18n';
+import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
+import {readQuartzConfig} from '@/utils/config';
+import {DEFAULT_VALUES} from '@/constants';
+import {logger} from '@/utils/logger';
 
 interface ReviewComment {
   file: string;

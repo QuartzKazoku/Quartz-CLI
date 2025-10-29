@@ -1,5 +1,7 @@
 //cli/constants/ui.ts
-import {CONFIG_KEYS} from "./config.ts";
+
+
+import {CONFIG_KEYS} from "./config";
 
 /**
  * 支持的语言列表

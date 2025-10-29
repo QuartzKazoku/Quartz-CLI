@@ -1,49 +1,13 @@
 //cli/utils/config.ts
 import fs from 'node:fs';
-import path from 'node:path';
 import { parse as parseJsonc } from 'jsonc-parser';
 import { PlatformConfig, QuartzConfig } from '@/types/config';
 import { CONFIG_FILE, DEFAULT_VALUES } from '@/constants';
 import { logger } from '@/utils/logger';
+import { getQuartzPath } from '@/utils/path';
 
-/**
- * Get .quartz directory path
- */
-function getQuartzDir(): string {
-    return path.join(process.cwd(), CONFIG_FILE.DIR);
-}
-
-/**
- * Get quartz.jsonc file path
- * Priority: .quartz/quartz.jsonc > quartz.jsonc (for backward compatibility)
- */
-function getQuartzPath(): string {
-    const newPath = path.join(getQuartzDir(), CONFIG_FILE.NAME);
-    const oldPath = path.join(process.cwd(), CONFIG_FILE.NAME);
-    
-    // Check new path first
-    if (fs.existsSync(newPath)) {
-        return newPath;
-    }
-    
-    // Fall back to old path for backward compatibility
-    if (fs.existsSync(oldPath)) {
-        return oldPath;
-    }
-    
-    // Return new path as default for new installations
-    return newPath;
-}
-
-/**
- * Ensure .quartz directory exists
- */
-export function ensureQuartzDir(): void {
-    const quartzDir = getQuartzDir();
-    if (!fs.existsSync(quartzDir)) {
-        fs.mkdirSync(quartzDir, { recursive: true });
-    }
-}
+// Re-export path utilities for backward compatibility
+export { getQuartzDir, getQuartzPath, ensureQuartzDir } from '@/utils/path';
 
 /**
  * 读取配置文件
