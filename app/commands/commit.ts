@@ -7,7 +7,6 @@ import path from 'node:path';
 import { t } from '@/i18n';
 import { getCommitPrompt } from '@/utils/prompt';
 import { getConfigManager } from '@/manager/config';
-import type { CLIOverrides } from '@/utils/config';
 import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
 
@@ -168,7 +167,6 @@ function parseArgs(args: string[]): { edit: boolean } {
 /**
  * Main function to generate commit message
  * @param args - Command line arguments
- * @param cliOverrides - CLI overrides for OpenAI config
  */
 export async function generateCommit(args: string[]) {
   logger.info(t('commit.starting'));

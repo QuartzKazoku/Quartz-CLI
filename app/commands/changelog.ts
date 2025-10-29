@@ -5,7 +5,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { logger } from '@/utils/logger';
-import type { CLIOverrides } from '@/utils/config';
 
 /**
  * Get git tags sorted by version
@@ -288,10 +287,8 @@ function getCurrentVersion(): string {
 /**
  * Main function to generate changelog
  * @param args - Command line arguments
- * @param cliOverrides - CLI overrides (not used in changelog command)
  */
-export async function generateChangelog(args: string[], cliOverrides?: CLIOverrides) {
-  // Note: changelog command doesn't use OpenAI, so cliOverrides are ignored
+export async function generateChangelog(args: string[]) {
   logger.info(t('changelog.starting'));
 
   const options = parseArgs(args);
