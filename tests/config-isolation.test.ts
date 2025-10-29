@@ -1,5 +1,5 @@
 //tests/config-isolation.test.ts
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { CONFIG_FILE } from '@/constants';
 
 describe('Config Isolation in Test Environment', () => {
@@ -14,11 +14,19 @@ describe('Config Isolation in Test Environment', () => {
   });
 
   it('should have test config constant defined', () => {
+    // Verify CONFIG_FILE object is properly defined
+    expect(CONFIG_FILE).toBeDefined();
+    expect(CONFIG_FILE).toHaveProperty('TEST_NAME');
+    expect(CONFIG_FILE.TEST_NAME).toBeDefined();
     expect(CONFIG_FILE.TEST_NAME).toBe('quartz-test.jsonc');
   });
 
   it('should have different test config name from production', () => {
     // Test config should be different from production config
+    expect(CONFIG_FILE).toHaveProperty('NAME');
+    expect(CONFIG_FILE).toHaveProperty('TEST_NAME');
+    expect(CONFIG_FILE.TEST_NAME).toBeDefined();
+    expect(CONFIG_FILE.NAME).toBeDefined();
     expect(CONFIG_FILE.TEST_NAME).not.toBe(CONFIG_FILE.NAME);
     expect(CONFIG_FILE.NAME).toBe('quartz.jsonc');
   });
