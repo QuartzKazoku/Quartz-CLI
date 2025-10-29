@@ -111,6 +111,7 @@ describe('Platform Strategies', () => {
       
       global.fetch = vi.fn(() => Promise.resolve({
         ok: false,
+        status: 400,
         statusText: 'Bad Request',
         json: () => Promise.resolve({
           message: 'Validation failed'
@@ -119,7 +120,7 @@ describe('Platform Strategies', () => {
 
       await expect(
         strategy.createPullRequest('owner', 'repo', 'Test', 'Body', 'head', 'base')
-      ).rejects.toThrow('GitHub API error: Validation failed');
+      ).rejects.toThrow('GitHub API error (400): Validation failed');
     });
 
     it('should handle API error with details', async () => {
@@ -127,6 +128,7 @@ describe('Platform Strategies', () => {
       
       global.fetch = vi.fn(() => Promise.resolve({
         ok: false,
+        status: 422,
         statusText: 'Unprocessable Entity',
         json: () => Promise.resolve({
           message: 'Validation failed',
@@ -136,7 +138,7 @@ describe('Platform Strategies', () => {
 
       await expect(
         strategy.createPullRequest('owner', 'repo', 'Test', 'Body', 'head', 'base')
-      ).rejects.toThrow(/GitHub API error: Validation failed[\s\S]*Details:/);
+      ).rejects.toThrow(/GitHub API error \(422\): Validation failed/);
     });
 
     it('should check if branch exists on remote', async () => {

@@ -145,7 +145,8 @@ describe('PR Command', () => {
     
     const { logger } = await import('@/utils/logger');
     expect(logger.section).toHaveBeenCalled();
-    expect(logger.success).toHaveBeenCalled();
+    // The success message is called via spinner.succeed, not logger.success directly
+    expect(logger.spinner).toHaveBeenCalled();
     expect(global.fetch).toHaveBeenCalled();
   });
 
@@ -182,7 +183,7 @@ describe('PR Command', () => {
 
   it('should handle no diff between branches', async () => {
     const shellModule = await import('@/utils/shell');
-    vi.spyOn(shellModule, '$').mockImplementation((strings: TemplateStringsArray) => {
+    vi.spyOn(shellModule, '$').mockImplementation(((strings: TemplateStringsArray) => {
       const command = strings[0];
       return {
         text: async () => {
@@ -191,7 +192,7 @@ describe('PR Command', () => {
           return 'test';
         }
       };
-    } as any);
+    }) as any);
 
     await generatePR(['--base', 'main']);
     expect(process.exit).toHaveBeenCalledWith(1);
@@ -204,7 +205,12 @@ describe('PR Command', () => {
       new Error('API connection failed')
     );
 
-    await generatePR(['--base', 'main']);
+    try {
+      await generatePR(['--base', 'main']);
+    } catch (error) {
+      // Expected to exit
+    }
+    
     const { logger } = await import('@/utils/logger');
     expect(logger.error).toHaveBeenCalled();
   });

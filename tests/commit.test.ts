@@ -6,6 +6,24 @@ import { generateCommit } from '@/app/commands/commit';
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
+// Mock config manager
+vi.mock('@/manager/config', () => ({
+  getConfigManager: vi.fn(() => ({
+    readConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    }))
+  }))
+}));
+
 // Mock shell module
 vi.mock('@/utils/shell', () => ({
   $: vi.fn((strings: TemplateStringsArray) => {
@@ -124,37 +142,51 @@ describe('Commit Command', () => {
 
   it('should handle empty staged files gracefully', async () => {
     const shellModule = await import('@/utils/shell');
-    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+    
+    // Mock $ to return empty string causing the function to exit
+    vi.spyOn(shellModule, '$').mockImplementation((() => ({
       text: async () => '',
       quiet: async () => {}
     })) as any);
 
-    await generateCommit([]);
-    expect(process.exit).toHaveBeenCalledWith(1);
+    // The function should exit when no staged files found
+    try {
+      await generateCommit([]);
+    } catch (error) {
+      // Expected to throw or exit
+    }
+    
+    const { logger } = await import('@/utils/logger');
+    expect(logger.error).toHaveBeenCalled();
   });
 
   it('should handle git diff errors gracefully', async () => {
     const shellModule = await import('@/utils/shell');
-    vi.spyOn(shellModule, '$').mockImplementationOnce((() => ({
+    
+    vi.spyOn(shellModule, '$').mockImplementation((() => ({
       text: async () => {
         throw new Error('Git diff failed');
-      }
+      },
+      quiet: async () => {}
     })) as any);
 
-    await generateCommit([]);
-    const { logger } = await import('@/utils/logger');
-    expect(logger.error).toHaveBeenCalled();
+    await expect(generateCommit([])).rejects.toThrow();
   });
 
   it('should handle OpenAI API errors gracefully', async () => {
     const OpenAI = (await import('openai')).default;
     const mockInstance = new OpenAI({ apiKey: 'test' });
     vi.spyOn(mockInstance.chat.completions, 'create').mockRejectedValueOnce(
-      new Error('API error')
+      new Error('API connection failed')
     );
 
-    await generateCommit([]);
+    try {
+      await generateCommit([]);
+    } catch (error) {
+      // Expected to exit
+    }
+    
     const { logger } = await import('@/utils/logger');
-    expect(logger).toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
   });
 });

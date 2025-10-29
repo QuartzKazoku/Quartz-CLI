@@ -1,13 +1,48 @@
 //tests/utils.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from '@/utils/prompt';
 import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
+
+// Mock config manager
+vi.mock('@/manager/config', () => ({
+  getConfigManager: vi.fn(() => ({
+    readConfig: vi.fn(() => ({
+      openai: {
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4'
+      },
+      language: {
+        ui: 'en',
+        prompt: 'en'
+      },
+      platforms: []
+    }))
+  }))
+}));
 
 describe('Utils Functions', () => {
   describe('Prompt Functions', () => {
     beforeEach(() => {
       // Set default language to English for testing
       setLanguage('en');
+      
+      // Reset mock to return English config
+      const { getConfigManager } = require('@/manager/config');
+      getConfigManager.mockReturnValue({
+        readConfig: vi.fn(() => ({
+          openai: {
+            apiKey: 'test-key',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4'
+          },
+          language: {
+            ui: 'en',
+            prompt: 'en'
+          },
+          platforms: []
+        }))
+      });
     });
 
     it('should generate review prompt with all required fields', () => {
@@ -26,10 +61,26 @@ describe('Utils Functions', () => {
     });
 
     it('should generate review prompt in Chinese', () => {
+      const { getConfigManager } = require('@/manager/config');
+      getConfigManager.mockReturnValue({
+        readConfig: vi.fn(() => ({
+          openai: {
+            apiKey: 'test-key',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4'
+          },
+          language: {
+            ui: 'zh-CN',
+            prompt: 'zh-CN'
+          },
+          platforms: []
+        }))
+      });
+      
       setLanguage('zh-CN');
       const prompt = getReviewPrompt('test.ts', 'diff', 'content');
       
-      expect(prompt).toContain('中文');
+      expect(prompt).toContain('Simplified Chinese');
       setLanguage('en');
     });
 

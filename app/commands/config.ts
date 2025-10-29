@@ -20,7 +20,8 @@ import {logger} from '@/utils/logger';
 import {getActiveRuntimeVars, generateEnvExample, logConfigurationSource} from '@/utils/runtime-config';
 
 // Get configuration manager instance
-const configManager = getConfigManager();
+// Note: This is re-evaluated on each access for testability
+const getConfigManagerInstance = () => getConfigManager();
 
 /**
  * Helper function to get display value from new configuration structure
@@ -74,7 +75,8 @@ function formatSensitiveValue(value: string): string {
  * @param value - Value to set
  */
 function setConfig(key: string, value: string) {
-    const config = configManager.readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
 
     switch (key) {
         case CONFIG_KEYS.OPENAI_API_KEY:
@@ -93,23 +95,25 @@ function setConfig(key: string, value: string) {
             config.language.prompt = value;
             break;
         case CONFIG_KEYS.GITHUB_TOKEN:
-            configManager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
+            manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
             logger.log(t('config.set', { key, value: '***' }));
+            logger.success(t('config.updated'));
             return;
         case CONFIG_KEYS.GITLAB_TOKEN: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
-            configManager.upsertPlatformConfig({
+            manager.upsertPlatformConfig({
                 type: PLATFORM_TYPES.GITLAB,
                 token: value,
                 url: existingGitlab?.url || DEFAULT_VALUES.GITLAB_URL
             });
             logger.log(t('config.set', { key, value: '***' }));
+            logger.success(t('config.updated'));
             return;
         }
         case CONFIG_KEYS.GITLAB_URL: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             if (existingGitlab) {
-                configManager.upsertPlatformConfig({ ...existingGitlab, url: value });
+                manager.upsertPlatformConfig({ ...existingGitlab, url: value });
             } else {
                 logger.error(t('config.gitlabTokenSetFirst'));
                 return;
@@ -125,8 +129,9 @@ function setConfig(key: string, value: string) {
             return;
     }
 
-    configManager.writeConfig(config);
+    manager.writeConfig(config);
     logger.log(t('config.set', { key, value: isSensitiveKey(key) ? '***' : value }));
+    logger.success(t('config.updated'));
 }
 
 /**
@@ -134,7 +139,8 @@ function setConfig(key: string, value: string) {
  * @param key - Configuration key to retrieve
  */
 function getConfig(key: string) {
-    const config = configManager.readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
     const value = getConfigDisplayValue(config, key);
 
     if (value) {
@@ -158,9 +164,10 @@ function getConfigIcon(key: string): string {
  * List all configurations and display them in a formatted view
  */
 function listConfig() {
-    const baseConfig = configManager.readBaseConfig();
-    const config = configManager.readRuntimeConfig();
-    const hasRuntimeOverrides = configManager.hasRuntimeOverrides();
+    const manager = getConfigManagerInstance();
+    const baseConfig = manager.readBaseConfig();
+    const config = manager.readRuntimeConfig();
+    const hasRuntimeOverrides = manager.hasRuntimeOverrides();
 
     logger.line();
     printLogo();
@@ -219,7 +226,7 @@ function listConfig() {
     }
 
     logger.separator(SEPARATOR_LENGTH);
-    console.log(logger.text.dim(`💾 ${configManager.getConfigPath()}`));
+    console.log(logger.text.dim(`💾 ${manager.getConfigPath()}`));
     
     // Show configuration source analysis if runtime overrides are active
     if (hasRuntimeOverrides) {
@@ -328,7 +335,8 @@ async function setupWizard() {
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
 
-    const config = configManager.readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
 
     try {
         await configureLanguages(config);
@@ -412,7 +420,8 @@ async function configureOpenAI(config: QuartzConfig) {
  */
 async function configurePlatformTokens(config: QuartzConfig, platform: string) {
     // Save current config before updating platform tokens
-    configManager.writeConfig(config);
+    const manager = getConfigManagerInstance();
+    manager.writeConfig(config);
     
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
@@ -434,7 +443,8 @@ async function configureGitHubToken(config: QuartzConfig) {
 
     const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
     if (githubToken.trim()) {
-        configManager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
+        const manager = getConfigManagerInstance();
+        manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
     }
 }
 
@@ -457,7 +467,8 @@ async function configureGitLabToken(config: QuartzConfig) {
         const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
 
         const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
-        configManager.upsertPlatformConfig({
+        const manager = getConfigManagerInstance();
+        manager.upsertPlatformConfig({
             type: PLATFORM_TYPES.GITLAB,
             token: gitlabToken.trim(),
             url: gitlabUrl.trim() || defaultGitlabUrl
@@ -469,8 +480,9 @@ async function configureGitLabToken(config: QuartzConfig) {
  * Save wizard configuration and show success message
  */
 async function saveWizardConfig(config: QuartzConfig) {
+    const manager = getConfigManagerInstance();
     // Read the latest config to ensure we have all updates including platform tokens
-    const latestConfig = configManager.readConfig();
+    const latestConfig = manager.readConfig();
     
     // Merge the wizard config with latest config to preserve platform tokens
     const finalConfig: QuartzConfig = {
@@ -479,12 +491,12 @@ async function saveWizardConfig(config: QuartzConfig) {
         platforms: latestConfig.platforms
     };
     
-    configManager.writeConfig(finalConfig);
+    manager.writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     await message(
         t('config.wizard.success'),
-        t('config.wizard.saved', { path: configManager.getConfigPath() }),
+        t('config.wizard.saved', { path: manager.getConfigPath() }),
         'success'
     );
 }
@@ -557,8 +569,9 @@ function showHelp() {
  * Save current configuration as profile
  */
 function saveProfile(name: string) {
-    const config = configManager.readConfig();
-    configManager.writeConfig(config, name);
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
+    manager.writeConfig(config, name);
     logger.log(t('config.profileSaved', { name }));
 }
 
@@ -566,12 +579,13 @@ function saveProfile(name: string) {
  * Load profiles from quartz.jsonc
  */
 function loadProfiles(): Record<string, any> {
-    if (!configManager.configExists()) {
+    const manager = getConfigManagerInstance();
+    if (!manager.configExists()) {
         return {};
     }
     
     try {
-        const configFile = configManager.readConfigFile();
+        const configFile = manager.readConfigFile();
         const { _metadata, [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = configFile;
         return profiles;
     } catch (error) {
@@ -585,7 +599,8 @@ function loadProfiles(): Record<string, any> {
  * @param name - Profile name to load
  */
 function loadProfile(name: string) {
-    if (!configManager.profileExists(name)) {
+    const manager = getConfigManagerInstance();
+    if (!manager.profileExists(name)) {
         logger.error(t('config.profileNotFound', { name }));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
@@ -593,7 +608,7 @@ function loadProfile(name: string) {
     }
 
     try {
-        const configFile = configManager.readConfigFile();
+        const configFile = manager.readConfigFile();
         const profileData = configFile[name];
         
         // Type check: ensure profile is QuartzProfile
@@ -605,7 +620,7 @@ function loadProfile(name: string) {
         // Update default profile with selected profile
         configFile[CONFIG_FILE.DEFAULT_PROFILE] = profileData;
 
-        configManager.writeConfigFile(configFile);
+        manager.writeConfigFile(configFile);
         logger.log(t('config.profileLoaded', { name }));
     } catch (error) {
         logger.error('Failed to load profile:', error);
@@ -618,7 +633,8 @@ function loadProfile(name: string) {
  * @param name - Profile name to switch to
  */
 function switchProfile(name: string) {
-    if (!configManager.profileExists(name)) {
+    const manager = getConfigManagerInstance();
+    if (!manager.profileExists(name)) {
         logger.error(t('config.profileNotFound', { name }));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
@@ -626,7 +642,7 @@ function switchProfile(name: string) {
     }
 
     try {
-        configManager.setActiveProfile(name);
+        manager.setActiveProfile(name);
         logger.log(t('config.profileSwitched', { name }));
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -639,7 +655,8 @@ function switchProfile(name: string) {
  * Show current active profile
  */
 function showActiveProfile() {
-    const activeProfile = configManager.getActiveProfile();
+    const manager = getConfigManagerInstance();
+    const activeProfile = manager.getActiveProfile();
     logger.line();
     console.log(logger.text.bold('📌 ' + t('config.currentProfile')));
     logger.line();
@@ -651,9 +668,10 @@ function showActiveProfile() {
  * List all saved profiles
  */
 function listProfiles() {
+    const manager = getConfigManagerInstance();
     const profiles = loadProfiles();
     const profileNames = Object.keys(profiles);
-    const activeProfile = configManager.getActiveProfile();
+    const activeProfile = manager.getActiveProfile();
 
     logger.line();
     console.log(logger.text.bold('📋 ' + t('config.savedProfiles')));
@@ -662,7 +680,7 @@ function listProfiles() {
 
     // Show default profile first
     console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(CONFIG_FILE.DEFAULT_PROFILE)} ${activeProfile === CONFIG_FILE.DEFAULT_PROFILE ? logger.text.success('(active)') : ''}`);
-    const defaultConfig = configManager.readConfig(CONFIG_FILE.DEFAULT_PROFILE);
+    const defaultConfig = manager.readConfig(CONFIG_FILE.DEFAULT_PROFILE);
     const defaultPlatformCount = defaultConfig.platforms?.length || 0;
     console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: defaultPlatformCount }))}`);
     logger.line();
@@ -686,8 +704,9 @@ function listProfiles() {
  * Delete configuration profile
  */
 function deleteProfile(name: string) {
+    const manager = getConfigManagerInstance();
     try {
-        configManager.deleteProfile(name);
+        manager.deleteProfile(name);
         logger.log(t('config.profileDeleted', { name }));
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -700,7 +719,8 @@ function deleteProfile(name: string) {
  * Show runtime configuration information
  */
 function showRuntimeConfig() {
-    const hasOverrides = configManager.hasRuntimeOverrides();
+    const manager = getConfigManagerInstance();
+    const hasOverrides = manager.hasRuntimeOverrides();
     
     logger.line();
     console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle', { default: 'Runtime Configuration' })));
