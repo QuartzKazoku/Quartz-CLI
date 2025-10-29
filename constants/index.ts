@@ -1,11 +1,8 @@
 /**
  * @fileoverview Constants module entry point for Quartz CLI
  * @description Centralizes and exports all constants from submodules for unified access
- * @author Quartz CLI Team
- * @version 1.0.0
+ * @author @GeWuYou
  * @since 2025-10-28
- * @license MIT
- * @copyright (c) 2025 Quartz
  *
  * @example
  *   // Import all constants at once

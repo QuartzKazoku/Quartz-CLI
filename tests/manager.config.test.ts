@@ -1,3 +1,4 @@
+//tests/manager.config.test.ts
 //cli/tests/config-manager.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';

@@ -1,40 +1,40 @@
-//cli/strategies/platform.ts
+//app/strategies/platform.ts
 import { $ } from '@/utils/shell';
 
 /**
  * PR/MR creation result interface
  */
 export interface PullRequestResult {
-  url: string;
-  number?: number;
-  id?: number;
+    url: string;
+    number?: number;
+    id?: number;
 }
 
 /**
  * Platform strategy interface
  */
 export interface PlatformStrategy {
-  /**
-   * Create PR/MR
-   */
-  createPullRequest(
-    owner: string,
-    repo: string,
-    title: string,
-    body: string,
-    head: string,
-    base: string
-  ): Promise<PullRequestResult>;
+    /**
+     * Create PR/MR
+     */
+    createPullRequest(
+        owner: string,
+        repo: string,
+        title: string,
+        body: string,
+        head: string,
+        base: string
+    ): Promise<PullRequestResult>;
 
-  /**
-   * Check if branch exists on remote
-   */
-  isBranchOnRemote(branch: string): Promise<boolean>;
+    /**
+     * Check if branch exists on remote
+     */
+    isBranchOnRemote(branch: string): Promise<boolean>;
 
-  /**
-   * Push branch to remote
-   */
-  pushBranchToRemote(branch: string): Promise<void>;
+    /**
+     * Push branch to remote
+     */
+    pushBranchToRemote(branch: string): Promise<void>;
 }
 
 /**

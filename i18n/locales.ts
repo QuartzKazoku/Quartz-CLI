@@ -106,8 +106,10 @@ export interface Translations {
     commits: string;
     filesChanged: string;
     generating: string;
+    generatingOptions: string;
     generatedTitle: string;
     generatedBody: string;
+    generatedOptions: string;
     tips: string;
     autoTip: string;
     ghTip: string;
@@ -128,6 +130,13 @@ export interface Translations {
     useGHTip: string;
     pushingBranch: string;
     branchPushed: string;
+    selectPrompt: string;
+    selectedOption: string;
+    cancelled: string;
+    optionTitle: string;
+    selectedTitle: string;
+    selectedBody: string;
+    platformTokenRequired: string;
   };
 
   // Score levels
@@ -136,6 +145,22 @@ export interface Translations {
     good: string;
     pass: string;
     needImprovement: string;
+  };
+
+  // Changelog command
+  changelog: {
+    starting: string;
+    foundTags: string;
+    generating: string;
+    initial: string;
+    fetching: string;
+    found: string;
+    noCommits: string;
+    preview: string;
+    saved: string;
+    saveFailed: string;
+    success: string;
+    location: string;
   };
 
   // Config command

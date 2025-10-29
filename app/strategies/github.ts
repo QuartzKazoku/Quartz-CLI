@@ -1,4 +1,4 @@
-//cli/strategies/github.ts
+//app/strategies/github.ts
 import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
 import { PLATFORM_TYPES, JSON_FORMAT } from "@/constants";

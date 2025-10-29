@@ -9,8 +9,14 @@ const originalConsole = {
   info: console.info,
 };
 
+// Store original NODE_ENV
+const originalNodeEnv = process.env.NODE_ENV;
+
 // Global test setup
 beforeAll(() => {
+  // Set NODE_ENV to test to use quartz.example.jsonc
+  process.env.NODE_ENV = 'test';
+  
   // Mock console methods to reduce noise in test output
   console.log = vi.fn();
   console.error = vi.fn();
@@ -19,6 +25,9 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+  // Restore original NODE_ENV
+  process.env.NODE_ENV = originalNodeEnv;
+  
   // Restore original console methods
   console.log = originalConsole.log;
   console.error = originalConsole.error;

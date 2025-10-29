@@ -3,19 +3,19 @@
     "name": "default",
     "config": {
       "openai": {
-        "apiKey": "sk-",
-        "baseUrl": "https://api.openai.com/v1",
-        "model": "gpt-5"
+        "apiKey": "sk-test-api-key-67890",
+        "baseUrl": "https://custom.api.com/v1",
+        "model": "gpt-4-turbo"
       },
       "platforms": [
         {
           "type": "github",
-          "token": ""
+          "token": "ghp_token_1"
         },
         {
           "type": "gitlab",
-          "url": "https://gitlab.com",
-          "token": "glpat-your-gitlab-token-here"
+          "token": "glpat_token_1",
+          "url": "https://gitlab.com"
         }
       ],
       "language": {

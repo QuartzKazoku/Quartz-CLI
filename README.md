@@ -14,21 +14,6 @@
 
   Streamline your development workflow with intelligent commit messages, pull requests, and code reviews
 
-
-## 📦 发布流程
-
-本项目采用自动化发布流程。当代码合并到 `main` 分支时，会自动：
-
-- ✅ 运行测试
-- 🔨 构建项目
-- 📝 生成 CHANGELOG
-- 🏷️ 创建版本标签
-- 🚀 发布到 NPM
-- 📋 创建 GitHub Release
-
-详细的发布流程说明请参阅 [发布文档](.github/RELEASE.md)。
-
 </div>
-
 
   Maintained with ❤️ by [Creed Chung](https://github.com/creedchung)
