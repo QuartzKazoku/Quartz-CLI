@@ -1,5 +1,4 @@
 //app/commands/commit.ts
-//cli/commands/commit.ts
 import OpenAI from 'openai';
 import { $ } from '@/utils/shell';
 import { execa } from 'execa';
@@ -7,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { getCommitPrompt } from '@/utils/prompt';
-import { loadConfig } from '@/utils/config';
+import { loadConfig, type CLIOverrides } from '@/utils/config';
 import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
 
@@ -168,11 +167,12 @@ function parseArgs(args: string[]): { edit: boolean } {
 /**
  * Main function to generate commit message
  * @param args - Command line arguments
+ * @param cliOverrides - CLI overrides for OpenAI config
  */
-export async function generateCommit(args: string[]) {
+export async function generateCommit(args: string[], cliOverrides?: CLIOverrides) {
   logger.info(t('commit.starting'));
 
-  const config = loadConfig();
+  const config = loadConfig(cliOverrides);
   const openAIConfig = config.openai
   if (!openAIConfig.apiKey) {
     logger.error(t('errors.noApiKey'));

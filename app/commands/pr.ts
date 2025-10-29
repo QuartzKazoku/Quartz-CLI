@@ -1,12 +1,11 @@
 //app/commands/pr.ts
-//cli/commands/pr.ts
 import OpenAI from 'openai';
 import { $ } from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n/index';
 import { getPRPrompt } from '@/utils/prompt';
-import { getPlatformConfigs, loadConfig } from '@/utils/config';
+import { getPlatformConfigs, loadConfig, type CLIOverrides } from '@/utils/config';
 import { PlatformStrategy } from '@/app/strategies/platform';
 import { PlatformStrategyFactory } from "@/app/strategies/factory";
 import { logger } from '@/utils/logger';
@@ -326,11 +325,12 @@ function parseArgs(args: string[]): { base: string | null; useGH: boolean; inter
 /**
  * Main function to generate PR description
  * @param args - Command line arguments
+ * @param cliOverrides - CLI overrides for OpenAI config
  */
-export async function generatePR(args: string[]) {
+export async function generatePR(args: string[], cliOverrides?: CLIOverrides) {
   logger.section(t('pr.starting'));
 
-  const config = loadConfig();
+  const config = loadConfig(cliOverrides);
   let openAIConfig = config.openai;
   if (!openAIConfig.apiKey) {
     logger.error(t('errors.noApiKey'));
@@ -416,7 +416,7 @@ export async function generatePR(args: string[]) {
     createSpinner.succeed(t('pr.success'));
   } else if (repoInfo) {
     // Get all platform configurations
-    const platformConfigs = getPlatformConfigs();
+    const platformConfigs = getPlatformConfigs(cliOverrides);
 
     // Find configuration matching current repository platform
     const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);

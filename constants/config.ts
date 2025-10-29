@@ -1,11 +1,8 @@
 /**
  * @fileoverview Configuration-related constants for Quartz CLI
  * @description Defines configuration file names, keys, and default values
- * @author Quartz CLI Team
- * @version 1.0.0
+ * @author @GeWuYou
  * @since 2025-10-28
- * @license MIT
- * @copyright (c) 2025 Quartz
  *
  * @example
  *   import { CONFIG_FILE, CONFIG_KEYS, DEFAULT_VALUES } from '@/constants/config';

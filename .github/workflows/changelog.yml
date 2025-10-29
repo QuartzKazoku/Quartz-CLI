@@ -1,0 +1,120 @@
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (optional, will use package.json if not provided)'
+        required: false
+        type: string
+      from_tag:
+        description: 'Start from tag (optional)'
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build package
+        run: bun run build
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Generate Changelog
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4' }}
+        run: |
+          # Build the command with CLI arguments
+          CMD="node dist/index.js changelog"
+          
+          # Add API key from secret
+          if [ -n "$OPENAI_API_KEY" ]; then
+            CMD="$CMD --apikey=$OPENAI_API_KEY"
+          fi
+          
+          # Add base URL from variable
+          if [ -n "$OPENAI_BASE_URL" ]; then
+            CMD="$CMD --baseurl=$OPENAI_BASE_URL"
+          fi
+          
+          # Add model from variable
+          if [ -n "$OPENAI_MODEL" ]; then
+            CMD="$CMD --model=$OPENAI_MODEL"
+          fi
+          
+          # Add version if provided
+          if [ -n "${{ inputs.version }}" ]; then
+            CMD="$CMD --version ${{ inputs.version }}"
+          fi
+          
+          # Add from tag if provided
+          if [ -n "${{ inputs.from_tag }}" ]; then
+            CMD="$CMD --from ${{ inputs.from_tag }}"
+          fi
+          
+          # Execute the command
+          echo "Executing: $CMD"
+          $CMD
+
+      - name: Commit and push changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to CHANGELOG.md"
+          else
+            git add CHANGELOG.md
+            git commit -m "docs: update CHANGELOG.md [skip ci]"
+            git push
+          fi
+
+      - name: Create Release Notes
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+            
+            // Extract the latest version section
+            const match = changelog.match(/## \[.*?\]\(.*?\)([\s\S]*?)(?=## \[|$)/);
+            const releaseNotes = match ? match[1].trim() : 'See CHANGELOG.md for details';
+            
+            github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref.replace('refs/tags/', ''),
+              name: context.ref.replace('refs/tags/', ''),
+              body: releaseNotes,
+              draft: false,
+              prerelease: false
+            });

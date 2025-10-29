@@ -1,11 +1,11 @@
 //app/commands/changelog.ts
-//cli/commands/changelog.ts
 import { $ } from '@/utils/shell';
 import { execa } from 'execa';
 import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { logger } from '@/utils/logger';
+import type { CLIOverrides } from '@/utils/config';
 
 /**
  * Get git tags sorted by version
@@ -57,7 +57,7 @@ async function getCommitDetails(from: string, to: string = 'HEAD'): Promise<Arra
       '--pretty=format:%H|||%s|||%an|||%ad',
       '--date=short'
     ]);
-    
+
     return stdout.trim().split('\n').filter(Boolean).map(line => {
       const [hash, message, author, date] = line.split('|||');
       return { hash, message, author, date };
@@ -82,7 +82,7 @@ function parseConventionalCommit(message: string): {
   // Match pattern: type(scope): subject or type: subject
   const conventionalPattern = /^(\w+)(?:\(([^)]+)\))?:\s*(.+)$/;
   const match = message.match(conventionalPattern);
-  
+
   if (match) {
     const [, type, scope, subject] = match;
     const breaking = message.includes('BREAKING CHANGE') || message.includes('!:');
@@ -93,7 +93,7 @@ function parseConventionalCommit(message: string): {
       breaking,
     };
   }
-  
+
   // If not conventional commit format, treat as 'chore'
   return {
     type: 'chore',
@@ -119,11 +119,11 @@ function groupCommitsByType(commits: Array<{ hash: string; message: string; auth
   for (const commit of commits) {
     const parsed = parseConventionalCommit(commit.message);
     const type = parsed.type;
-    
+
     if (!groups[type]) {
       groups[type] = [];
     }
-    
+
     groups[type].push({
       ...commit,
       parsed,
@@ -249,7 +249,7 @@ function parseArgs(args: string[]): {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     if ((arg === '--version' || arg === '-v') && args[i + 1]) {
       result.version = args[i + 1];
       i++;
@@ -288,8 +288,10 @@ function getCurrentVersion(): string {
 /**
  * Main function to generate changelog
  * @param args - Command line arguments
+ * @param cliOverrides - CLI overrides (not used in changelog command)
  */
-export async function generateChangelog(args: string[]) {
+export async function generateChangelog(args: string[], cliOverrides?: CLIOverrides) {
+  // Note: changelog command doesn't use OpenAI, so cliOverrides are ignored
   logger.info(t('changelog.starting'));
 
   const options = parseArgs(args);
@@ -337,16 +339,16 @@ export async function generateChangelog(args: string[]) {
 
   // Read existing changelog
   const existingChangelog = readExistingChangelog(outputPath);
-  
+
   // Prepare final content
   let finalContent = '';
   if (existingChangelog) {
     // Insert new changelog at the beginning, after the header
     const lines = existingChangelog.split('\n');
-    const headerEndIndex = lines.findIndex((line, index) => 
+    const headerEndIndex = lines.findIndex((line, index) =>
       index > 0 && line.startsWith('##')
     );
-    
+
     if (headerEndIndex !== -1) {
       finalContent = lines.slice(0, headerEndIndex).join('\n') + '\n\n' + newChangelog + '\n' + lines.slice(headerEndIndex).join('\n');
     } else {
