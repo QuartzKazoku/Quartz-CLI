@@ -17,6 +17,7 @@ import {
 } from '@/constants';
 import {input, message, select} from '@/utils/enquirer';
 import {logger} from '@/utils/logger';
+import {getActiveRuntimeVars, generateEnvExample, logConfigurationSource} from '@/utils/runtime-config';
 
 // Get configuration manager instance
 const configManager = getConfigManager();
@@ -157,7 +158,9 @@ function getConfigIcon(key: string): string {
  * List all configurations and display them in a formatted view
  */
 function listConfig() {
-    const config = configManager.readConfig();
+    const baseConfig = configManager.readBaseConfig();
+    const config = configManager.readRuntimeConfig();
+    const hasRuntimeOverrides = configManager.hasRuntimeOverrides();
 
     logger.line();
     printLogo();
@@ -165,6 +168,13 @@ function listConfig() {
     console.log(logger.text.bold(t('config.current')));
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
+
+    // Show runtime override notice if applicable
+    if (hasRuntimeOverrides) {
+        const activeVars = getActiveRuntimeVars();
+        console.log(logger.text.success('🔧 ' + t('config.runtimeOverridesActive', { count: Object.keys(activeVars).length })));
+        logger.line();
+    }
 
     // Configuration items list
     const configItems = [
@@ -210,6 +220,12 @@ function listConfig() {
 
     logger.separator(SEPARATOR_LENGTH);
     console.log(logger.text.dim(`💾 ${configManager.getConfigPath()}`));
+    
+    // Show configuration source analysis if runtime overrides are active
+    if (hasRuntimeOverrides) {
+        logConfigurationSource(baseConfig, config);
+    }
+    
     logger.line();
 }
 
@@ -491,6 +507,7 @@ function showHelp() {
     logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
     logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
     logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
+    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc', { default: 'Show runtime environment variable overrides' })));
 
     console.log(logger.text.bold('🔑 ' + t('config.availableKeys')));
     logger.line();
@@ -680,6 +697,46 @@ function deleteProfile(name: string) {
 }
 
 /**
+ * Show runtime configuration information
+ */
+function showRuntimeConfig() {
+    const hasOverrides = configManager.hasRuntimeOverrides();
+    
+    logger.line();
+    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle', { default: 'Runtime Configuration' })));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
+
+    const hasNotOverrides = !hasOverrides;
+    if (hasNotOverrides) {
+        console.log(logger.text.dim(t('config.noRuntimeOverrides', { default: 'No runtime environment variable overrides detected.' })));
+        logger.line();
+        console.log(logger.text.dim(t('config.setEnvVarsHint', { default: 'Set environment variables with QUARTZ_ prefix to override configuration.' })));
+    } else {
+        const activeVars = getActiveRuntimeVars();
+        console.log(logger.text.success(t('config.activeOverrides', {
+            default: 'Active environment variable overrides:',
+            count: Object.keys(activeVars).length
+        })));
+        logger.line();
+        
+        for (const [key, value] of Object.entries(activeVars)) {
+            const isSensitive = SENSITIVE_KEYS.includes(key as any);
+            const displayValue = isSensitive ? formatSensitiveValue(value) : value;
+            console.log(`  ${logger.text.primary(key)}: ${displayValue}`);
+        }
+    }
+    
+    logger.line();
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
+    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle', { default: 'Environment Variable Examples:' })));
+    logger.line();
+    console.log(logger.text.dim(generateEnvExample()));
+    logger.line();
+}
+
+/**
  * Main configuration command handler
  */
 export async function configCommand(args: string[]) {
@@ -764,6 +821,12 @@ export async function configCommand(args: string[]) {
                 process.exit(1);
             }
             deleteProfile(args[1]);
+            break;
+
+        case 'runtime':
+        case 'env':
+        case 'environment':
+            showRuntimeConfig();
             break;
 
         default:

@@ -8,6 +8,7 @@ import {logger} from '@/utils/logger';
 import {ensureQuartzDir, getQuartzDir, getQuartzPath} from '@/utils/path';
 import {CURRENT_CONFIG_VERSION} from "@/utils/migration";
 import {formatDate} from "@/utils/date";
+import {getRuntimeConfig, hasRuntimeConfig} from '@/utils/runtime-config';
 
 /**
  * Unified configuration manager
@@ -173,9 +174,10 @@ export class ConfigManager {
     /**
      * Read configuration for specified profile
      * @param profileName - Profile name to read. If not specified, uses currently active profile
+     * @param applyRuntimeOverrides - If true, applies runtime environment variable overrides (default: true)
      * @returns Configuration object for the profile
      */
-    public readConfig(profileName?: string): QuartzConfig {
+    public readConfig(profileName?: string, applyRuntimeOverrides = true): QuartzConfig {
         const configFile = this.readConfigFile();
         
         // If profileName not specified, use active profile
@@ -183,13 +185,21 @@ export class ConfigManager {
         
         const profile = configFile[targetProfile] as QuartzProfile | undefined;
 
+        let config: QuartzConfig;
         if (profile?.config) {
             // Validate and supplement missing required fields
-            return this.validateAndFixConfig(profile.config);
+            config = this.validateAndFixConfig(profile.config);
+        } else {
+            // If specified profile doesn't exist, return default configuration
+            config = this.createDefaultConfig();
         }
 
-        // If specified profile doesn't exist, return default configuration
-        return this.createDefaultConfig();
+        // Apply runtime overrides if enabled
+        if (applyRuntimeOverrides) {
+            return getRuntimeConfig(config);
+        }
+
+        return config;
     }
 
     /**
@@ -224,8 +234,8 @@ export class ConfigManager {
             config.platforms = config.platforms.filter((p: any) => {
                 if (!p || typeof p !== 'object') return false;
                 if (!p.type || typeof p.type !== 'string') return false;
-                if (!p.token || typeof p.token !== 'string') return false;
-                return true;
+                return !(!p.token || typeof p.token !== 'string');
+
             });
         }
 
@@ -594,10 +604,11 @@ export class ConfigManager {
     /**
      * Export configuration to JSON string
      * @param profileName - Profile name to export. If not specified, uses currently active profile
+     * @param includeRuntimeOverrides - If true, includes runtime environment variable overrides in export
      * @returns JSON string representation of configuration
      */
-    public exportConfig(profileName?: string): string {
-        const config = this.readConfig(profileName);
+    public exportConfig(profileName?: string, includeRuntimeOverrides = false): string {
+        const config = this.readConfig(profileName, includeRuntimeOverrides);
         return JSON.stringify(config, null, JSON_FORMAT.INDENT);
     }
 
@@ -615,6 +626,35 @@ export class ConfigManager {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to import config: ${errorMessage}`);
         }
+    }
+    // ==================== Runtime Configuration Methods ====================
+
+    /**
+     * Check if runtime configuration overrides are active
+     * @returns True if any environment variable overrides are detected
+     */
+    public hasRuntimeOverrides(): boolean {
+        return hasRuntimeConfig();
+    }
+
+    /**
+     * Read configuration with explicit control over runtime overrides
+     * Useful when you need the base config without any overrides
+     * @param profileName - Profile name to read
+     * @returns Configuration without runtime overrides
+     */
+    public readBaseConfig(profileName?: string): QuartzConfig {
+        return this.readConfig(profileName, false);
+    }
+
+    /**
+     * Read configuration with runtime overrides applied
+     * This is the default behavior and recommended for most use cases
+     * @param profileName - Profile name to read
+     * @returns Configuration with runtime overrides applied
+     */
+    public readRuntimeConfig(profileName?: string): QuartzConfig {
+        return this.readConfig(profileName, true);
     }
 }
 
