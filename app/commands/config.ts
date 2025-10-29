@@ -627,11 +627,6 @@ function listProfiles() {
     const profileNames = Object.keys(profiles);
     const activeProfile = configManager.getActiveProfile();
 
-    if (profileNames.length === 0) {
-        logger.log(t('config.noProfiles'));
-        return;
-    }
-
     logger.line();
     console.log(logger.text.bold('📋 ' + t('config.savedProfiles')));
     logger.separator(SEPARATOR_LENGTH);
@@ -645,15 +640,17 @@ function listProfiles() {
     logger.line();
 
     // Show other profiles
-    for (const name of profileNames) {
-        const profile = profiles[name];
-        const isActive = name === activeProfile;
-        console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)} ${isActive ? logger.text.success('(active)') : ''}`);
-        if (profile.config) {
-            const platformCount = profile.config.platforms?.length || 0;
-            console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
+    if (profileNames.length > 0) {
+        for (const name of profileNames) {
+            const profile = profiles[name];
+            const isActive = name === activeProfile;
+            console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)} ${isActive ? logger.text.success('(active)') : ''}`);
+            if (profile.config) {
+                const platformCount = profile.config.platforms?.length || 0;
+                console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
+            }
+            logger.line();
         }
-        logger.line();
     }
 }
 
