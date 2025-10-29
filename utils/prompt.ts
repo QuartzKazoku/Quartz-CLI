@@ -109,7 +109,7 @@ export function getCommitPrompt(diff: string, files: string[], issueNumber?: num
   const langName = getLanguageName(lang);
 
   const issueContext = issueNumber
-    ? `\n\nNote: This commit is related to issue #${issueNumber}. You may reference this issue in the commit message footer using "Refs: #${issueNumber}" format.`
+    ? `\n\nNote: This commit is related to issue #${issueNumber}. DO NOT include any issue reference (like "Refs: #${issueNumber}" or "Closes: #${issueNumber}") in your generated message - the system will add it automatically based on user preference.`
     : '';
 
   return `You are a professional Git commit message generator working with Quartz engine. Please generate a commit message following the Conventional Commits specification in ${langName}.
