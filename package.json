@@ -1,6 +1,6 @@
 {
   "name": "quartz-cli",
-  "version": "0.1.0",
+  "version": null,
   "description": "AI-powered Git workflow automation for humans.Streamline your development workflow with intelligent commit messages, pull requests, and code reviews",
   "type": "module",
   "module": "dist/index.js",
