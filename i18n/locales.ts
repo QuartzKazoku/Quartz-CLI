@@ -263,6 +263,46 @@ export interface Translations {
     gitError: string;
     networkError: string;
   };
+
+  // Branch command
+  branch: {
+    starting: string;
+    list: string;
+    created: string;
+    createdNoCheckout: string;
+    deleted: string;
+    createFailed: string;
+    deleteFailed: string;
+    cannotDeleteCurrent: string;
+    useForceDelete: string;
+    selectAction: string;
+    actionCreate: string;
+    actionDelete: string;
+    actionList: string;
+    createMode: string;
+    deleteMode: string;
+    createFromIssue: string;
+    fetchingIssues: string;
+    noIssues: string;
+    manualCreate: string;
+    enterBranchName: string;
+    selectIssue: string;
+    suggestedName: string;
+    useSuggestedName: string;
+    selectBranchToDelete: string;
+    selectBranchesToDelete: string;
+    confirmDelete: string;
+    confirmDeleteMultiple: string;
+    forceDelete: string;
+    deleteCancelled: string;
+    deleteComplete: string;
+    noDeletableBranches: string;
+    noRepoInfo: string;
+    noToken: string;
+    fetchIssuesFailed: string;
+    unknownCommand: string;
+    usage: string;
+  };
 }
 
 /**
