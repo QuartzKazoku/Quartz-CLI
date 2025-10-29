@@ -24,6 +24,11 @@ export default defineConfig({
     // Test environment
     environment: 'node',
     
+    // Environment variables
+    env: {
+      NODE_ENV: 'test'
+    },
+    
     // Coverage configuration
     coverage: {
       provider: 'v8',
