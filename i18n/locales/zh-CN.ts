@@ -254,6 +254,10 @@ export const zhCN: Translations = {
     fetchIssuesFailed: '⚠️  获取 Issues 失败',
     unknownCommand: '❌ 未知命令: {command}',
     usage: '💡 用法: quartz branch [create|delete|list] [分支名] [选项]',
+    switchToExisting: '是否切换到已存在的分支?',
+    switchedTo: '✅ 已切换到分支: {name}',
+    switchFailed: '❌ 切换分支失败',
+    operationCancelled: '⚠️  操作已取消',
   },
 };
 

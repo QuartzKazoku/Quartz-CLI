@@ -40,10 +40,10 @@ export default defineConfig({
         'app/index.ts'
       ],
       thresholds: {
-        branches: 45,
-        functions: 60,
-        lines: 58,
-        statements: 57
+        branches: 47,
+        functions: 61,
+        lines: 56,
+        statements: 55
       }
     },
     

@@ -32,6 +32,8 @@ export const CONFIG_FILE = {
     DIR: '.quartz',
     /** Configuration file name with JSONC extension (JSON with comments) */
     NAME: 'quartz.jsonc',
+    /** Test configuration file name */
+    TEST_NAME: 'quartz-test.jsonc',
     /** Example configuration file name */
     EXAMPLE_NAME: 'quartz.example.jsonc',
     /** Default profile name used when no profile is specified */

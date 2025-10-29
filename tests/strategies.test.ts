@@ -2,7 +2,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GitHubStrategy } from '@/app/strategies/github';
 import { GitLabStrategy } from '@/app/strategies/gitlab';
-import { PlatformStrategyFactory } from '@/app/strategies/factory';
 import { PlatformConfig } from '@/types/config';
 
 // Mock shell module
@@ -306,12 +305,22 @@ describe('Platform Strategies', () => {
   });
 
   describe('PlatformStrategyFactory', () => {
+    let PlatformStrategyFactory: any;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      // Dynamically import to get fresh module
+      const factoryModule = await import('@/app/strategies/factory');
+      PlatformStrategyFactory = factoryModule.PlatformStrategyFactory;
+    });
+
     it('should create GitHub strategy', () => {
       const config: PlatformConfig = {
         type: 'github',
         token: 'test_token'
       };
       const strategy = PlatformStrategyFactory.create(config);
+      expect(strategy).toBeDefined();
       expect(strategy).toBeInstanceOf(GitHubStrategy);
     });
 
@@ -321,6 +330,7 @@ describe('Platform Strategies', () => {
         token: 'test_token'
       };
       const strategy = PlatformStrategyFactory.create(config);
+      expect(strategy).toBeDefined();
       expect(strategy).toBeInstanceOf(GitLabStrategy);
     });
 
@@ -329,22 +339,36 @@ describe('Platform Strategies', () => {
         type: 'bitbucket',
         token: 'test_token'
       } as any;
-      expect(() => PlatformStrategyFactory.create(config)).toThrow('Unsupported platform type: bitbucket');
+      expect(() => {
+        PlatformStrategyFactory.create(config);
+      }).toThrow('Unsupported platform type: bitbucket');
     });
 
     it('should detect GitHub from URL', () => {
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('git@github.com:owner/repo.git')).toBe('github');
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('https://github.com/owner/repo.git')).toBe('github');
+      expect(PlatformStrategyFactory.detectPlatformFromUrl).toBeDefined();
+      const result1 = PlatformStrategyFactory.detectPlatformFromUrl('git@github.com:owner/repo.git');
+      expect(result1).toBe('github');
+      
+      const result2 = PlatformStrategyFactory.detectPlatformFromUrl('https://github.com/owner/repo.git');
+      expect(result2).toBe('github');
     });
 
     it('should detect GitLab from URL', () => {
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('git@gitlab.com:owner/repo.git')).toBe('gitlab');
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('https://gitlab.com/owner/repo.git')).toBe('gitlab');
+      expect(PlatformStrategyFactory.detectPlatformFromUrl).toBeDefined();
+      const result1 = PlatformStrategyFactory.detectPlatformFromUrl('git@gitlab.com:owner/repo.git');
+      expect(result1).toBe('gitlab');
+      
+      const result2 = PlatformStrategyFactory.detectPlatformFromUrl('https://gitlab.com/owner/repo.git');
+      expect(result2).toBe('gitlab');
     });
 
     it('should return null for unknown platform', () => {
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('git@bitbucket.org:owner/repo.git')).toBeNull();
-      expect(PlatformStrategyFactory.detectPlatformFromUrl('https://custom-git.com/owner/repo.git')).toBeNull();
+      expect(PlatformStrategyFactory.detectPlatformFromUrl).toBeDefined();
+      const result1 = PlatformStrategyFactory.detectPlatformFromUrl('git@bitbucket.org:owner/repo.git');
+      expect(result1).toBeNull();
+      
+      const result2 = PlatformStrategyFactory.detectPlatformFromUrl('https://custom-git.com/owner/repo.git');
+      expect(result2).toBeNull();
     });
   });
 });

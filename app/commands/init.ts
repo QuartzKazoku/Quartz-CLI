@@ -6,13 +6,11 @@ import {getConfigManager} from '@/manager/config';
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
 
-// Get configuration manager instance
-const configManager = getConfigManager();
-
 /**
  * Check if already initialized
  */
 function isInitialized(): boolean {
+    const configManager = getConfigManager();
     const quartzDir = configManager.getConfigDir();
     const configPath = configManager.getConfigPath();
     return fs.existsSync(quartzDir) && fs.existsSync(configPath);
@@ -22,6 +20,7 @@ function isInitialized(): boolean {
  * Initialize Quartz configuration
  */
 export async function initCommand(args: string[]): Promise<void> {
+    const configManager = getConfigManager();
     const quartzDir = configManager.getConfigDir();
     const configPath = configManager.getConfigPath();
 

@@ -2,7 +2,7 @@
 import { $ } from '@/utils/shell';
 import { t } from '@/i18n';
 import { logger } from '@/utils/logger';
-import { select, input, confirm, multiselect } from '@/utils/enquirer';
+import { select, input, confirm, multiselect, autocompleteBranch, autocompleteIssue } from '@/utils/enquirer';
 import { getConfigManager } from '@/manager/config';
 import { PlatformStrategyFactory } from '@/app/strategies/factory';
 
@@ -194,11 +194,50 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
 }
 
 /**
+ * Check if a branch exists
+ * @param branchName - Name of the branch to check
+ * @returns True if branch exists
+ */
+async function branchExists(branchName: string): Promise<boolean> {
+  try {
+    const branches = await getAllBranches();
+    return branches.includes(branchName);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Create a new branch
  * @param branchName - Name of the branch to create
  * @param checkout - Whether to checkout the branch after creation
  */
 async function createBranch(branchName: string, checkout: boolean = true): Promise<void> {
+  // Check if branch already exists
+  if (await branchExists(branchName)) {
+    logger.warn(`Branch "${branchName}" already exists`);
+    
+    if (checkout) {
+      const shouldSwitch = await confirm(t('branch.switchToExisting'), true);
+      if (shouldSwitch) {
+        try {
+          await $`git checkout ${branchName}`.text();
+          logger.success(t('branch.switchedTo', { name: branchName }));
+          return;
+        } catch (error) {
+          logger.error(t('branch.switchFailed'), error);
+          process.exit(1);
+        }
+      } else {
+        logger.info(t('branch.operationCancelled'));
+        process.exit(0);
+      }
+    } else {
+      logger.info(t('branch.operationCancelled'));
+      process.exit(0);
+    }
+  }
+
   try {
     if (checkout) {
       await $`git checkout -b ${branchName}`.text();
@@ -212,10 +251,7 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
     const errorMessage = error?.message || String(error);
     
     // Parse git error messages for better user feedback
-    if (errorMessage.includes('already exists') || errorMessage.includes('cannot lock ref')) {
-      logger.error(`Branch "${branchName}" already exists`);
-      logger.info('Switch to existing branch: git checkout ' + branchName);
-    } else if (errorMessage.includes('not a valid branch name')) {
+    if (errorMessage.includes('not a valid branch name')) {
       logger.error(`"${branchName}" is not a valid branch name`);
       logger.info('Branch names cannot contain spaces or special characters like :, ~, ^, ?, *, [');
     } else {
@@ -298,24 +334,8 @@ async function interactiveCreate(): Promise<void> {
       return;
     }
 
-    // Select issue
-    const choices = issues.map(issue => ({
-      name: `${issue.number}`,
-      value: issue,
-      message: `#${issue.number} - ${issue.title}${issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : ''}`,
-    }));
-
-    const selectedIssueNumberOrObject = await select(t('branch.selectIssue'), choices, 0);
-    
-    // Handle case where select returns name (string) instead of value (object)
-    const selectedIssue = typeof selectedIssueNumberOrObject === 'string'
-      ? issues.find(issue => `${issue.number}` === selectedIssueNumberOrObject)
-      : selectedIssueNumberOrObject;
-    
-    if (!selectedIssue) {
-      logger.error('Failed to find selected issue');
-      process.exit(1);
-    }
+    // Select issue using autocomplete for better UX
+    const selectedIssue = await autocompleteIssue(t('branch.selectIssue'), issues);
     
     const suggestedName = generateBranchName(selectedIssue);
 
@@ -351,13 +371,26 @@ async function interactiveDelete(): Promise<void> {
     return;
   }
 
-  const choices = deletableBranches.map(branch => ({
-    name: branch,
-    value: branch,
-    message: branch,
-  }));
-
-  const branchesToDelete = await multiselect(t('branch.selectBranchesToDelete'), choices);
+  // Use autocomplete for single branch selection, or multiselect for multiple
+  const useMultiSelect = await confirm(t('branch.deleteMultipleBranches', { default: 'Delete multiple branches?' }), false);
+  
+  let branchesToDelete: string[];
+  
+  if (useMultiSelect) {
+    const choices = deletableBranches.map(branch => ({
+      name: branch,
+      value: branch,
+      message: branch,
+    }));
+    branchesToDelete = await multiselect(t('branch.selectBranchesToDelete'), choices);
+  } else {
+    const branch = await autocompleteBranch(
+      t('branch.selectBranchToDelete', { default: 'Select branch to delete:' }),
+      deletableBranches,
+      currentBranch
+    );
+    branchesToDelete = [branch];
+  }
 
   if (branchesToDelete.length === 0) {
     logger.info(t('branch.deleteCancelled'));

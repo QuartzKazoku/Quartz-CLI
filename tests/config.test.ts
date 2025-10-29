@@ -100,7 +100,7 @@ vi.mock('@/manager/config', () => ({
     })),
     writeConfig: vi.fn(),
     upsertPlatformConfig: vi.fn(),
-    getConfigPath: vi.fn(() => '/mock/path/quartz.json'),
+    getConfigPath: vi.fn(() => '/mock/path/quartz-test.jsonc'),
     hasRuntimeOverrides: vi.fn(() => false)
   }))
 }));

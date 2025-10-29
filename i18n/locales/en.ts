@@ -278,5 +278,9 @@ export const en: Translations = {
     fetchIssuesFailed: '⚠️  Failed to fetch Issues',
     unknownCommand: '❌ Unknown command: {command}',
     usage: '💡 Usage: quartz branch [create|delete|list] [branch-name] [options]',
+    switchToExisting: 'Switch to existing branch?',
+    switchedTo: '✅ Switched to branch: {name}',
+    switchFailed: '❌ Failed to switch branch',
+    operationCancelled: '⚠️  Operation cancelled',
   },
 };
