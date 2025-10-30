@@ -1,4 +1,4 @@
-//cli/types/config.ts
+//types/config.ts
 import type { VersionMetadata } from './migration';
 
 /**

@@ -1,4 +1,4 @@
-//cli/utils/hooks.ts
+//utils/hooks.ts
 /**
  * Pre-command hooks for automatic migrations and checks
  */

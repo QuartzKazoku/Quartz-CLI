@@ -1,4 +1,4 @@
-//cli/utils/path.ts
+//utils/path.ts
 /**
  * Common path utility functions for Quartz configuration
  */

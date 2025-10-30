@@ -41,38 +41,67 @@ function getAllTsFiles(dir: string, fileList: string[] = []): string[] {
 }
 
 /**
- * Check if file already has path comment
+ * Get the path comment from first line if exists
  */
-function hasPathComment(content: string, relativePath: string): boolean {
+function getExistingPathComment(content: string): string | null {
   const lines = content.split('\n');
-  if (lines.length === 0) return false;
+  if (lines.length === 0) return null;
 
   const firstLine = lines[0].trim();
-  // Check if first line is already a path comment
-  return firstLine.startsWith('//') && firstLine.includes(relativePath);
+  // Check if first line is a path comment
+  if (firstLine.startsWith('//') && !firstLine.startsWith('/**') && !firstLine.startsWith('///')) {
+    // Extract path from comment (remove leading '//')
+    const path = firstLine.substring(2).trim();
+    // Basic validation: path should look like a file path
+    if (path.includes('/') || path.includes('\\')) {
+      return path;
+    }
+  }
+  return null;
 }
 
 /**
- * Add path comment to file
+ * Check if file already has correct path comment
+ */
+function hasCorrectPathComment(content: string, relativePath: string): boolean {
+  const existingPath = getExistingPathComment(content);
+  return existingPath === relativePath;
+}
+
+/**
+ * Add or update path comment to file
  */
 function addPathComment(filePath: string): boolean {
   try {
     const content = readFileSync(filePath, ENCODING.UTF8);
     const relativePath = relative(ROOT_DIR, filePath).replaceAll('\\', '/');
 
-    // If already has path comment, skip
-    if (hasPathComment(content, relativePath)) {
+    // Check if already has correct path comment
+    if (hasCorrectPathComment(content, relativePath)) {
       console.log(`⏭️  跳过(已存在): ${relativePath}`);
       return false;
     }
 
-    // Add path comment at the beginning of the file
-    const pathComment = `//${relativePath}\n`;
-    const newContent = pathComment + content;
-
-    writeFileSync(filePath, newContent, ENCODING.UTF8);
-    console.log(`✅ 已添加: ${relativePath}`);
-    return true;
+    // Check if has outdated path comment
+    const existingPath = getExistingPathComment(content);
+    let newContent: string;
+    
+    if (existingPath) {
+      // Update existing path comment
+      const lines = content.split('\n');
+      lines[0] = `//${relativePath}`;
+      newContent = lines.join('\n');
+      writeFileSync(filePath, newContent, ENCODING.UTF8);
+      console.log(`🔄 已更新: ${existingPath} -> ${relativePath}`);
+      return true;
+    } else {
+      // Add new path comment at the beginning of the file
+      const pathComment = `//${relativePath}\n`;
+      newContent = pathComment + content;
+      writeFileSync(filePath, newContent, ENCODING.UTF8);
+      console.log(`✅ 已添加: ${relativePath}`);
+      return true;
+    }
   } catch (error) {
     console.error(`❌ 处理失败: ${filePath}`, error);
     return false;
@@ -83,11 +112,12 @@ function addPathComment(filePath: string): boolean {
  * Main function
  */
 function main() {
-  console.log('🚀 开始为 TypeScript 文件添加路径注释...\n');
+  console.log('🚀 开始为 TypeScript 文件添加/更新路径注释...\n');
 
   let totalFiles = 0;
   let addedFiles = 0;
   let skippedFiles = 0;
+  let updatedFiles = 0;
 
   // Process each target directory
   for (const targetDir of TARGET_DIRS) {
@@ -116,7 +146,7 @@ function main() {
   console.log('\n' + '='.repeat(50));
   console.log('📊 处理完成!');
   console.log(`   总文件数: ${totalFiles}`);
-  console.log(`   已添加: ${addedFiles}`);
+  console.log(`   已添加/更新: ${addedFiles}`);
   console.log(`   已跳过: ${skippedFiles}`);
   console.log('='.repeat(50));
 }

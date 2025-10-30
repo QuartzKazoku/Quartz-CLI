@@ -1,8 +1,7 @@
-//cli/utils/prompt.ts
-import { getLanguage } from '@/i18n';
-import { getConfigManager } from '@/manager/config';
-import { logger } from '@/utils/logger';
-import { t } from '@/i18n';
+//utils/prompt.ts
+import {t} from '@/i18n';
+import {getConfigManager} from '@/manager/config';
+import {logger} from '@/utils/logger';
 
 /**
  * Get prompt language from configuration

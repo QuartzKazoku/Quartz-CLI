@@ -1,4 +1,4 @@
-//cli/utils/migrations/template.example.ts
+//utils/migrations/template.example.ts
 import type {Migration} from '@/types/migration';
 
 /**

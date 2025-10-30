@@ -1,4 +1,4 @@
-//cli/i18n/locales.ts
+//i18n/locales.ts
 /**
  * Multi-language type definitions and configuration
  * @module i18n/locales

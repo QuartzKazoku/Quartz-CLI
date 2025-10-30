@@ -1,4 +1,4 @@
-//cli/manager/config.ts
+//manager/config.ts
 import fs from 'node:fs';
 import {parse as parseJsonc} from 'jsonc-parser';
 import type {PlatformConfig, QuartzConfig, QuartzConfigFile, QuartzProfile} from '@/types/config';

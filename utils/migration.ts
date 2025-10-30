@@ -1,4 +1,4 @@
-//cli/utils/migration.ts
+//utils/migration.ts
 import type {Migration, MigrationResult} from '@/types/migration';
 import {logger} from '@/utils/logger';
 import {getConfigManager} from '@/manager/config';
