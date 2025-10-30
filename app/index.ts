@@ -1,5 +1,5 @@
 // cli/index.ts
-import { reviewCode, generateCommit, generatePR, configCommand, initCommand, branchCommand }
+import { reviewCode, generateCommit, generatePR, configCommand, initCommand, branchCommand, generateChangelog }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
@@ -45,6 +45,7 @@ function getUsageText(): string {
   logger.command('init', t('cli.initDesc'));
   logger.command('config', t('cli.configDesc'));
   logger.command('branch', '分支管理 (创建、删除、列出)');
+  logger.command('changelog', '生成项目变更日志');
   logger.command('review', t('review.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('commit', t('commit.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('pr', t('pr.starting').replace('🚀 ', '').replace('...', '').trim());
@@ -61,6 +62,8 @@ function getUsageText(): string {
   logger.example(t('cli.initConfig'), 'quartz config init');
   logger.example('交互式分支管理', 'quartz branch');
   logger.example('从 Issue 创建分支', 'quartz branch create');
+  logger.example('生成变更日志', 'quartz changelog');
+  logger.example('预览变更日志', 'quartz changelog --preview');
   logger.example(t('review.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz review');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit --edit');
@@ -141,6 +144,10 @@ try {
     // Branch management
     case 'branch':
       await branchCommand(args.slice(1));
+      break;
+    // Generate changelog
+    case 'changelog':
+      await generateChangelog(args.slice(1));
       break;
     // Review code
     case 'review':
