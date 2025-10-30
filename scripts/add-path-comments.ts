@@ -6,12 +6,13 @@
 
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { ENCODING } from '../constants/encoding';
 
 // Project root directory
 const ROOT_DIR = process.cwd();
 
 // Directories to process
-const TARGET_DIRS = ['app', 'tests', 'scripts'];
+const TARGET_DIRS = ['cli', 'tests', 'scripts'];
 
 // Directories to exclude
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'docs']);
@@ -56,12 +57,12 @@ function hasPathComment(content: string, relativePath: string): boolean {
  */
 function addPathComment(filePath: string): boolean {
   try {
-    const content = readFileSync(filePath, 'utf-8');
+    const content = readFileSync(filePath, ENCODING.UTF8);
     const relativePath = relative(ROOT_DIR, filePath).replaceAll('\\', '/');
 
     // If already has path comment, skip
     if (hasPathComment(content, relativePath)) {
-      console.log(`⏭️  Skipped (already exists): ${relativePath}`);
+      console.log(`⏭️  跳过(已存在): ${relativePath}`);
       return false;
     }
 
@@ -69,11 +70,11 @@ function addPathComment(filePath: string): boolean {
     const pathComment = `//${relativePath}\n`;
     const newContent = pathComment + content;
 
-    writeFileSync(filePath, newContent, 'utf-8');
-    console.log(`✅ Added: ${relativePath}`);
+    writeFileSync(filePath, newContent, ENCODING.UTF8);
+    console.log(`✅ 已添加: ${relativePath}`);
     return true;
   } catch (error) {
-    console.error(`❌ Failed to process: ${filePath}`, error);
+    console.error(`❌ 处理失败: ${filePath}`, error);
     return false;
   }
 }
@@ -82,7 +83,7 @@ function addPathComment(filePath: string): boolean {
  * Main function
  */
 function main() {
-  console.log('🚀 Adding path comments to TypeScript files...\n');
+  console.log('🚀 开始为 TypeScript 文件添加路径注释...\n');
 
   let totalFiles = 0;
   let addedFiles = 0;
@@ -91,11 +92,11 @@ function main() {
   // Process each target directory
   for (const targetDir of TARGET_DIRS) {
     const dirPath = join(ROOT_DIR, targetDir);
-
+    
     try {
       const files = getAllTsFiles(dirPath);
-
-      console.log(`\n📁 Processing directory: ${targetDir} (${files.length} files)`);
+      
+      console.log(`\n📁 处理目录: ${targetDir} (共 ${files.length} 个文件)`);
       console.log('─'.repeat(50));
 
       for (const file of files) {
@@ -107,16 +108,16 @@ function main() {
         }
       }
     } catch (error) {
-      console.error(`❌ Cannot access directory: ${targetDir}`, error);
+      console.error(`❌ 无法访问目录: ${targetDir}`,error);
     }
   }
 
   // Output statistics
   console.log('\n' + '='.repeat(50));
-  console.log('📊 Processing completed!');
-  console.log(`   Total files: ${totalFiles}`);
-  console.log(`   Added: ${addedFiles}`);
-  console.log(`   Skipped: ${skippedFiles}`);
+  console.log('📊 处理完成!');
+  console.log(`   总文件数: ${totalFiles}`);
+  console.log(`   已添加: ${addedFiles}`);
+  console.log(`   已跳过: ${skippedFiles}`);
   console.log('='.repeat(50));
 }
 

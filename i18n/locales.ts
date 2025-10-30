@@ -1,5 +1,8 @@
 //cli/i18n/locales.ts
-// Multi-language type definitions and configuration
+/**
+ * Multi-language type definitions and configuration
+ * @module i18n/locales
+ */
 
 /**
  * Supported language type definitions
@@ -22,6 +25,16 @@ export interface Translations {
     confirm: string;
   };
 
+  // Migration
+  migration: {
+    detected: string;
+    starting: string;
+    success: string;
+    applied: string;
+    errors: string;
+    failed: string;
+  };
+
   // CLI main menu
   cli: {
     usage: string;
@@ -32,7 +45,9 @@ export interface Translations {
     subtitle: string;
     help: string;
     version: string;
+    initDesc: string;
     configDesc: string;
+    initProject: string;
     initConfig: string;
   };
 
@@ -91,8 +106,10 @@ export interface Translations {
     commits: string;
     filesChanged: string;
     generating: string;
+    generatingOptions: string;
     generatedTitle: string;
     generatedBody: string;
+    generatedOptions: string;
     tips: string;
     autoTip: string;
     ghTip: string;
@@ -113,6 +130,13 @@ export interface Translations {
     useGHTip: string;
     pushingBranch: string;
     branchPushed: string;
+    selectPrompt: string;
+    selectedOption: string;
+    cancelled: string;
+    optionTitle: string;
+    selectedTitle: string;
+    selectedBody: string;
+    platformTokenRequired: string;
   };
 
   // Score levels
@@ -187,12 +211,15 @@ export interface Translations {
       saveProfileUsage: string;
       loadProfileUsage: string;
       deleteProfileUsage: string;
+      switchProfileUsage: string;
     };
     profilesDesc: string;
     profileSaved: string;
     profileLoaded: string;
+    profileSwitched: string;
     profileDeleted: string;
     profileNotFound: string;
+    currentProfile: string;
     savedProfiles: string;
     availableProfiles: string;
     noProfiles: string;
@@ -204,6 +231,29 @@ export interface Translations {
     unknownKey: string;
   };
 
+  // Init command
+  init: {
+    starting: string;
+    alreadyInitialized: string;
+    reinitializeHint: string;
+    dirExists: string;
+    dirCreated: string;
+    configCreated: string;
+    configExists: string;
+    versionInitialized: string;
+    exampleCreated: string;
+    exampleExists: string;
+    success: string;
+    complete: string;
+    nextSteps: string;
+    setupConfig: string;
+    viewCommands: string;
+    foundOldConfig: string;
+    migrated: string;
+    oldConfigReminder: string;
+    gitignoreReminder: string;
+  };
+
   // Error messages
   errors: {
     noApiKey: string;
@@ -213,9 +263,55 @@ export interface Translations {
     gitError: string;
     networkError: string;
   };
+
+  // Branch command
+  branch: {
+    starting: string;
+    list: string;
+    created: string;
+    createdNoCheckout: string;
+    deleted: string;
+    createFailed: string;
+    deleteFailed: string;
+    cannotDeleteCurrent: string;
+    useForceDelete: string;
+    selectAction: string;
+    actionCreate: string;
+    actionDelete: string;
+    actionList: string;
+    createMode: string;
+    deleteMode: string;
+    createFromIssue: string;
+    fetchingIssues: string;
+    noIssues: string;
+    manualCreate: string;
+    enterBranchName: string;
+    selectIssue: string;
+    suggestedName: string;
+    useSuggestedName: string;
+    selectBranchToDelete: string;
+    selectBranchesToDelete: string;
+    confirmDelete: string;
+    confirmDeleteMultiple: string;
+    forceDelete: string;
+    deleteCancelled: string;
+    deleteComplete: string;
+    noDeletableBranches: string;
+    noRepoInfo: string;
+    noToken: string;
+    fetchIssuesFailed: string;
+    unknownCommand: string;
+    usage: string;
+    switchToExisting: string;
+    switchedTo: string;
+    switchFailed: string;
+    operationCancelled: string;
+  };
 }
 
-// Import language translations
+/**
+ * Import language translations from locale files
+ */
 import { zhCN } from './locales/zh-CN';
 import { zhTW } from './locales/zh-TW';
 import { ja } from './locales/ja';
@@ -224,6 +320,7 @@ import { en } from './locales/en';
 
 /**
  * Mapping relationship between languages and translation content
+ * Maps language codes to their respective translation objects
  */
 export const locales: Record<Language, Translations> = {
   'zh-CN': zhCN,
@@ -235,5 +332,6 @@ export const locales: Record<Language, Translations> = {
 
 /**
  * Default language setting
+ * Used when no language is specified or configured
  */
 export const defaultLanguage: Language = 'en';

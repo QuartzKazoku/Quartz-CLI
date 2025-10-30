@@ -45,15 +45,12 @@ Thumbs.db
 
 # Quartz Configuration Profiles
 quartz.jsonc
+.quartz/quartz.jsonc
 
 # Temporary files
 *.tmp
 
-# VitePress
-docs/.vitepress/dist
-docs/.vitepress/cache
-.cache/
-.vercel
+
 
 # NPM publish
 *.tgz
@@ -61,3 +58,7 @@ package-lock.json
 
 # Changelog
 CHANGELOG.md
+# quartz
+.quartz/
+# But keep test config
+!.quartz/quartz-test.jsonc

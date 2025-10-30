@@ -21,6 +21,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["scripts/**/*", "*.ts", "app/**/*", "constants", "types", "i18n", "utils", "tests/**/*"],
+  "include": ["scripts/**/*", "*.ts", "app/**/*", "constants", "types", "i18n", "utils", "manager", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

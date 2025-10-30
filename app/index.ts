@@ -1,9 +1,11 @@
-//app/index.ts
-import { reviewCode, generateCommit, generatePR, configCommand, generateChangelog }
+// cli/index.ts
+import { reviewCode, generateCommit, generatePR, configCommand, initCommand, branchCommand, generateChangelog }
   from '@/app/commands';
 import { i18n } from '@/i18n';
 import { logger } from '@/utils/logger';
-import { parseCLIOverrides, type CLIOverrides } from '@/utils/config';
+import { checkAndMigrate, shouldSkipMigration } from '@/utils/hooks';
+import { CLI } from '@/constants';
+import { getConfigManager } from '@/manager/config';
 
 /**
  * Print ASCII art logo
@@ -40,11 +42,13 @@ function getUsageText(): string {
 
   // Commands section
   logger.section(t('cli.commands'));
+  logger.command('init', t('cli.initDesc'));
   logger.command('config', t('cli.configDesc'));
+  logger.command('branch', '分支管理 (创建、删除、列出)');
+  logger.command('changelog', '生成项目变更日志');
   logger.command('review', t('review.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('commit', t('commit.starting').replace('🚀 ', '').replace('...', '').trim());
   logger.command('pr', t('pr.starting').replace('🚀 ', '').replace('...', '').trim());
-  logger.command('changelog', t('changelog.starting').replace('🚀 ', '').replace('...', '').trim());
 
   // Options section
   logger.section(t('cli.options'));
@@ -52,28 +56,18 @@ function getUsageText(): string {
   logger.listItem(`${logger.text.warning('-v, --version')} - ${logger.text.dim(t('cli.version'))}`);
   logger.line();
 
-  // Global options section
-  logger.section(t('cli.globalOptions') || 'Global Options');
-  logger.listItem(`${logger.text.warning('--apikey')} - ${logger.text.dim('OpenAI API key (overrides config)')}`);
-  logger.listItem(`${logger.text.warning('--baseurl')} - ${logger.text.dim('OpenAI API base URL (overrides config)')}`);
-  logger.listItem(`${logger.text.warning('--model')} - ${logger.text.dim('OpenAI model name (overrides config)')}`);
-  logger.line();
-
   // Examples section
   logger.section(t('cli.examples'));
+  logger.example(t('cli.initProject'), 'quartz init');
   logger.example(t('cli.initConfig'), 'quartz config init');
+  logger.example('交互式分支管理', 'quartz branch');
+  logger.example('从 Issue 创建分支', 'quartz branch create');
+  logger.example('生成变更日志', 'quartz changelog');
+  logger.example('预览变更日志', 'quartz changelog --preview');
   logger.example(t('review.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz review');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit');
   logger.example(t('commit.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz commit --edit');
   logger.example(t('pr.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz pr --auto --base main');
-  logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog');
-  logger.example(t('changelog.starting').replace('🚀 ', '').replace('...', '').trim(), 'quartz changelog --preview');
-  logger.line();
-
-  // CI example
-  logger.section('CI Examples');
-  logger.example('Use with environment variables in CI', 'quartz commit --apikey=$OPENAI_API_KEY --model=gpt-4');
-  logger.example('Override base URL', 'quartz review --baseurl=https://api.custom.com/v1 --apikey=sk-xxx');
   logger.line();
   logger.box(
     `📚 ${t('cli.moreInfo')}\n\n${logger.text.primary('https://github.com/QuartzKazoku/Quartz-CLI.git')}`,
@@ -83,34 +77,31 @@ function getUsageText(): string {
   return '';
 }
 
-// Initialize language
-i18n.init();
+// Initialize language from config
+try {
+  const configManager = getConfigManager();
+  if (configManager.configExists()) {
+    const config = configManager.readConfig();
+    i18n.set(config.language.ui as any);
+  } else {
+    i18n.init();
+  }
+} catch {
+  i18n.init();
+}
 const t = i18n.t;
 
 // Get command line arguments
-const args = process.argv.slice(2);
-
-// Parse global CLI overrides
-const cliOverrides = parseCLIOverrides(args);
-
-// Filter out global options from args to pass to commands
-const filteredArgs = args.filter(arg =>
-  !arg.startsWith('--apikey') &&
-  !arg.startsWith('--baseurl') &&
-  !arg.startsWith('--model') &&
-  arg !== '--apikey' &&
-  arg !== '--baseurl' &&
-  arg !== '--model'
-);
+const args = process.argv.slice(CLI.ARGS_START_INDEX);
 
 // Handle help flag
-if (filteredArgs.length === 0 || filteredArgs.includes('-h') || filteredArgs.includes('--help')) {
+if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
   getUsageText();
   process.exit(0);
 }
 
 // Handle version flag
-if (filteredArgs.includes('-v') || filteredArgs.includes('--version')) {
+if (args.includes('-v') || args.includes('--version')) {
   const pkg = await import('../package.json');
   logger.line();
   logger.box(
@@ -122,30 +113,53 @@ if (filteredArgs.includes('-v') || filteredArgs.includes('--version')) {
 }
 
 // Get command
-const command = filteredArgs[0];
+const command = args[0];
+
+// Check and run migrations if needed (skip for certain commands)
+if (!shouldSkipMigration(command)) {
+  try {
+    await checkAndMigrate();
+  } catch (error) {
+    logger.line();
+    logger.box(
+      `${logger.text.error(t('migration.failed'))}\n\n${error instanceof Error ? error.message : String(error)}`,
+      { title: '❌ Migration Error', padding: 1 }
+    );
+    logger.line();
+    process.exit(1);
+  }
+}
 
 // Execute command
 try {
   switch (command) {
+    // Initialize project
+    case 'init':
+      await initCommand(args.slice(1));
+      break;
     // Config management
     case 'config':
-      await configCommand(filteredArgs.slice(1), cliOverrides);
+      await configCommand(args.slice(1));
       break;
-    // Review code
-    case 'review':
-      await reviewCode(filteredArgs.slice(1), cliOverrides);
-      break;
-    // Generate commit message
-    case 'commit':
-      await generateCommit(filteredArgs.slice(1), cliOverrides);
-      break;
-    // Generate PR description
-    case 'pr':
-      await generatePR(filteredArgs.slice(1), cliOverrides);
+    // Branch management
+    case 'branch':
+      await branchCommand(args.slice(1));
       break;
     // Generate changelog
     case 'changelog':
-      await generateChangelog(filteredArgs.slice(1), cliOverrides);
+      await generateChangelog(args.slice(1));
+      break;
+    // Review code
+    case 'review':
+      await reviewCode(args.slice(1));
+      break;
+    // Generate commit message
+    case 'commit':
+      await generateCommit(args.slice(1));
+      break;
+    // Generate PR description
+    case 'pr':
+      await generatePR(args.slice(1));
       break;
     // Handle unknown command
     default:

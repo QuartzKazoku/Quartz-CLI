@@ -1,24 +1,56 @@
 //cli/utils/prompt.ts
 import { getLanguage } from '@/i18n';
+import { getConfigManager } from '@/manager/config';
+import { logger } from '@/utils/logger';
+import { t } from '@/i18n';
 
-// Get prompt language from UI language
+/**
+ * Get prompt language from configuration
+ * Throws error if configuration is missing or invalid
+ * @returns Language code for prompts
+ * @throws Error if prompt language is not configured
+ */
 function getPromptLanguage(): string {
-  return getLanguage();
+  try {
+    const configManager = getConfigManager();
+    const config = configManager.readConfig();
+    
+    if (!config.language?.prompt) {
+      logger.error(t('errors.noPromptLanguage'));
+      logger.error('Please run: quartz config --set language.prompt <language-code>');
+      process.exit(1);
+    }
+    
+    return config.language.prompt;
+  } catch (error) {
+    logger.error('Failed to read configuration:', error);
+    process.exit(1);
+  }
 }
 
-// Get language name
+/**
+ * Get language name from language code
+ * @param lang - Language code (e.g., 'en', 'zh-CN')
+ * @returns Human-readable language name
+ */
 function getLanguageName(lang: string): string {
   const names: Record<string, string> = {
-    'zh-CN': '简体中文',
-    'zh-TW': '繁體中文',
-    'ja': '日本語',
-    'ko': '한국어',
+    'zh-CN': 'Simplified Chinese',
+    'zh-TW': 'Traditional Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
     'en': 'English',
   };
   return names[lang] || 'English';
 }
 
-// Code review prompt
+/**
+ * Generate code review prompt for AI
+ * @param file - File path being reviewed
+ * @param diff - Git diff content
+ * @param content - Full file content
+ * @returns Formatted prompt string for code review
+ */
 export function getReviewPrompt(file: string, diff: string, content: string): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
@@ -65,10 +97,20 @@ Note:
 - All messages must be in ${langName}`;
 }
 
-// Commit message prompt
-export function getCommitPrompt(diff: string, files: string[]): string {
+/**
+ * Generate commit message prompt for AI
+ * @param diff - Git diff content
+ * @param files - Array of changed file paths
+ * @param issueNumber - Optional issue number to reference
+ * @returns Formatted prompt string for commit message generation
+ */
+export function getCommitPrompt(diff: string, files: string[], issueNumber?: number): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);
+
+  const issueContext = issueNumber
+    ? `\n\nNote: This commit is related to issue #${issueNumber}. DO NOT include any issue reference (like "Refs: #${issueNumber}" or "Closes: #${issueNumber}") in your generated message - the system will add it automatically based on user preference.`
+    : '';
 
   return `You are a professional Git commit message generator working with Quartz engine. Please generate a commit message following the Conventional Commits specification in ${langName}.
 
@@ -98,7 +140,7 @@ ${files.map(f => `- ${f}`).join('\n')}
 Code Changes (diff):
 \`\`\`diff
 ${diff.slice(0, 8000)}${diff.length > 8000 ? '\n... (diff truncated)' : ''}
-\`\`\`
+\`\`\`${issueContext}
 
 Requirements:
 1. subject must be a concise one-sentence description (within 50 characters)
@@ -108,11 +150,20 @@ Requirements:
 5. If there are breaking changes, explain in footer
 6. Choose the most appropriate type based on actual changes
 7. scope is optional, indicating the scope of impact
+8. If an issue number is provided, you may include it in the footer section
 
 Please directly return the commit message in ${langName}, do not add other explanatory text.`;
 }
 
-// Pull request description prompt
+/**
+ * Generate pull request description prompt for AI
+ * @param diff - Git diff content
+ * @param commits - Array of commit messages
+ * @param files - Array of changed file paths
+ * @param currentBranch - Current branch name
+ * @param baseBranch - Base branch name
+ * @returns Formatted prompt string for PR description generation
+ */
 export function getPRPrompt(
   diff: string,
   commits: string[],
@@ -161,7 +212,14 @@ Requirements:
 - Return only JSON, do not add other text`;
 }
 
-// Summary prompt
+/**
+ * Generate code review summary prompt for AI
+ * @param errorCount - Number of errors found
+ * @param warningCount - Number of warnings found
+ * @param infoCount - Number of info suggestions found
+ * @param score - Overall code quality score
+ * @returns Formatted prompt string for summary generation
+ */
 export function getSummaryPrompt(errorCount: number, warningCount: number, infoCount: number, score: number): string {
   const lang = getPromptLanguage();
   const langName = getLanguageName(lang);

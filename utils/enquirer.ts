@@ -116,30 +116,147 @@ export async function multiselect<T = string>(
 }
 
 /**
- * AutoComplete prompt
+ * AutoComplete prompt with enhanced features
  * @param message - Prompt message
- * @param choices - Array of choices
- * @param initial - Initial value
+ * @param choices - Array of choices (can be strings or objects)
+ * @param options - Optional configuration
  * @returns Selected value
  */
 export async function autocomplete<T = string>(
   message: string,
-  choices: Array<{ name: string; value: T; message?: string }>,
-  initial?: number
+  choices: Array<string | { name: string; value: T; message?: string }>,
+  options?: {
+    initial?: number;
+    limit?: number;
+    suggest?: (input: string, choices: any[]) => any[];
+    multiple?: boolean;
+    footer?: () => string;
+  }
 ): Promise<T> {
-  const response = await enquirer.prompt({
-    type: 'autocomplete',
-    name: 'value',
-    message,
-    choices: choices.map(c => ({
+  // Normalize choices to object format
+  const normalizedChoices = choices.map(c => {
+    if (typeof c === 'string') {
+      return { name: c, value: c as any, message: c };
+    }
+    return {
       name: c.name,
       message: c.message || c.name,
       value: c.value,
-    })),
-    initial,
-  }) as any;
+    };
+  });
+
+  const promptConfig: any = {
+    type: 'autocomplete',
+    name: 'value',
+    message,
+    limit: options?.limit || 10,
+    initial: options?.initial || 0,
+    multiple: options?.multiple || false,
+    choices: normalizedChoices,
+  };
+
+  if (options?.suggest) {
+    promptConfig.suggest = options.suggest;
+  }
+
+  if (options?.footer) {
+    promptConfig.footer = options.footer;
+  }
+
+  const response = await enquirer.prompt(promptConfig) as any;
 
   return response.value;
+}
+
+/**
+ * AutoComplete prompt for selecting branches
+ * @param message - Prompt message
+ * @param branches - Array of branch names
+ * @param currentBranch - Current branch name (will be highlighted)
+ * @returns Selected branch name
+ */
+export async function autocompleteBranch(
+  message: string,
+  branches: string[],
+  currentBranch?: string
+): Promise<string> {
+  const choices = branches.map(branch => ({
+    name: branch,
+    value: branch,
+    message: branch === currentBranch ? `${branch} (current)` : branch,
+  }));
+
+  return await autocomplete(message, choices, {
+    limit: 10,
+    suggest: (input: string, choices: any[]) => {
+      if (!input) return choices;
+      const lowerInput = input.toLowerCase();
+      return choices.filter((choice: any) =>
+        choice.message.toLowerCase().includes(lowerInput)
+      );
+    },
+    footer: () => '\n  Type to filter branches',
+  });
+}
+
+/**
+ * AutoComplete prompt for selecting files
+ * @param message - Prompt message
+ * @param files - Array of file paths
+ * @param options - Optional configuration
+ * @returns Selected file path(s)
+ */
+export async function autocompleteFile(
+  message: string,
+  files: string[],
+  options?: {
+    multiple?: boolean;
+    limit?: number;
+  }
+): Promise<string | string[]> {
+  return await autocomplete(message, files, {
+    limit: options?.limit || 15,
+    multiple: options?.multiple || false,
+    suggest: (input: string, choices: any[]) => {
+      if (!input) return choices;
+      const lowerInput = input.toLowerCase();
+      return choices.filter((choice: any) =>
+        choice.name.toLowerCase().includes(lowerInput)
+      );
+    },
+    footer: () => '\n  Type to filter files',
+  });
+}
+
+/**
+ * AutoComplete prompt for selecting issues
+ * @param message - Prompt message
+ * @param issues - Array of issues
+ * @returns Selected issue
+ */
+export async function autocompleteIssue<T extends { number: number; title: string; labels?: string[] }>(
+  message: string,
+  issues: T[]
+): Promise<T> {
+  const choices = issues.map(issue => ({
+    name: `${issue.number}`,
+    value: issue,
+    message: `#${issue.number} - ${issue.title}${issue.labels && issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : ''}`,
+  }));
+
+  return await autocomplete(message, choices, {
+    limit: 10,
+    suggest: (input: string, choices: any[]) => {
+      if (!input) return choices;
+      const lowerInput = input.toLowerCase();
+      return choices.filter((choice: any) => {
+        const message = choice.message.toLowerCase();
+        const number = choice.name;
+        return message.includes(lowerInput) || number.includes(input);
+      });
+    },
+    footer: () => '\n  Type issue number or keywords to filter',
+  });
 }
 
 /**

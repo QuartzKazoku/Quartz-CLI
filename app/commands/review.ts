@@ -1,13 +1,12 @@
-//app/commands/review.ts
+//cli/commands/review.ts
 import OpenAI from 'openai';
-import { $ } from '@/utils/shell';
+import {$} from '@/utils/shell';
 import fs from 'node:fs';
-import path from 'node:path';
-import { t } from '@/i18n';
-import { getReviewPrompt, getSummaryPrompt } from '@/utils/prompt';
-import { readQuartzConfig, type CLIOverrides } from '@/utils/config';
-import { DEFAULT_VALUES } from '@/constants';
-import { logger } from '@/utils/logger';
+import {t} from '@/i18n';
+import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
+import {getConfigManager} from '@/manager/config';
+import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
+import {logger} from '@/utils/logger';
 
 interface ReviewComment {
   file: string;
@@ -28,22 +27,49 @@ interface ReviewResult {
  * Validate configuration and exit if invalid
  * @param config - Configuration object to validate
  */
-function validateConfig(config: { openaiApiKey: string }): void {
+function validateConfig(config: { openaiApiKey: string; openaiModel: string }): void {
   if (!config.openaiApiKey) {
     logger.error(t('errors.noApiKey'));
     logger.error(t('errors.setApiKey'));
+    process.exit(1);
+  }
+  
+  if (!config.openaiModel) {
+    logger.error('OpenAI model is not configured');
+    logger.error('Please run: quartz config --set openai.model <model-name>');
+    process.exit(1);
+  }
+}
+
+/**
+ * Validate language configuration
+ * @param quartzConfig - Quartz configuration object
+ */
+function validateLanguageConfig(quartzConfig: any): void {
+  if (!quartzConfig.language?.ui) {
+    logger.error('UI language is not configured');
+    logger.error('Please run: quartz config --set language.ui <language-code>');
+    process.exit(1);
+  }
+  
+  if (!quartzConfig.language?.prompt) {
+    logger.error('Prompt language is not configured');
+    logger.error('Please run: quartz config --set language.prompt <language-code>');
     process.exit(1);
   }
 }
 
 /**
  * Load configuration from quartz.json
- * @param cliOverrides - CLI overrides for OpenAI config
  * @returns Configuration object
  */
-function loadConfig(cliOverrides?: CLIOverrides) {
-  // Use new configuration reading method
-  const quartzConfig = readQuartzConfig(cliOverrides);
+function loadConfig() {
+  // Use ConfigManager to read configuration
+  const configManager = getConfigManager();
+  const quartzConfig = configManager.readConfig();
+  
+  // Validate language configuration first
+  validateLanguageConfig(quartzConfig);
 
   const config = {
     openaiApiKey: quartzConfig.openai.apiKey || '',
@@ -110,7 +136,7 @@ async function getFileDiff(file: string): Promise<string> {
 
     // If still no diff, might be a new file
     if (!diff) {
-      const content = fs.readFileSync(file, 'utf-8');
+      const content = fs.readFileSync(file, ENCODING.UTF8);
       return `+++ b/${file}\n${content}`;
     }
 
@@ -128,7 +154,7 @@ async function getFileDiff(file: string): Promise<string> {
  */
 function readFileContent(file: string): string {
   try {
-    return fs.readFileSync(file, 'utf-8');
+    return fs.readFileSync(file, ENCODING.UTF8);
   } catch (error) {
     logger.warn(t('errors.fileNotFound'), error);
     return '';
@@ -252,9 +278,9 @@ function printResult(result: ReviewResult) {
   }
 
   logger.line();
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.log(`${scoreEmoji} ${t('review.result')}`);
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.line();
   const scoreText = `${score}/100`;
   logger.info(`${t('review.score')}: ${logger.text.bold(scoreText)} (${scoreDesc})`);
@@ -295,7 +321,7 @@ function printResult(result: ReviewResult) {
     }
   }
 
-  logger.separator(60, '=');
+  logger.separator(REVIEW_SCORE.SEPARATOR_LENGTH, '=');
   logger.line();
 }
 
@@ -333,12 +359,11 @@ function parseArgs(args: string[]): { files?: string[]; output?: string } {
 /**
  * Main function to review code
  * @param args - Command line arguments
- * @param cliOverrides - CLI overrides for OpenAI config
  */
-export async function reviewCode(args: string[], cliOverrides?: CLIOverrides) {
+export async function reviewCode(args: string[]) {
   logger.info(t('review.starting'));
 
-  const config = loadConfig(cliOverrides);
+  const config = loadConfig();
   const { files: specificFiles, output } = parseArgs(args);
 
   // Initialize OpenAI client
@@ -389,7 +414,7 @@ export async function reviewCode(args: string[], cliOverrides?: CLIOverrides) {
 
   // Save to file
   if (output) {
-    fs.writeFileSync(output, JSON.stringify(result, null, 2));
+    fs.writeFileSync(output, JSON.stringify(result, null, JSON_FORMAT.INDENT));
     logger.success(t('review.saved', { path: output }));
   }
 

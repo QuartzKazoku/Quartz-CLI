@@ -1,36 +1,27 @@
-//app/commands/config.ts
-import fs from 'node:fs';
-import path from 'node:path';
-import { setLanguage, t } from '@/i18n';
-import {
-    readQuartzConfig as readConfig,
-    upsertPlatformConfig,
-    writeQuartzConfig as writeConfig,
-    type CLIOverrides
-} from '@/utils/config';
-import { QuartzConfig } from '@/types/config';
+//cli/commands/config.ts
+import {setLanguage, t} from '@/i18n';
+import {getConfigManager} from '@/manager/config';
+import {QuartzConfig} from '@/types/config';
 import {
     CONFIG_FILE,
+    CONFIG_ICONS,
     CONFIG_KEYS,
     DEFAULT_VALUES,
+    INDENT,
     PLATFORM_TYPES,
+    SENSITIVE_KEYS,
+    SEPARATOR_LENGTH,
     SUPPORTED_LANGUAGES,
     SUPPORTED_PLATFORMS,
-    CONFIG_ICONS,
-    SENSITIVE_KEYS,
     TOKEN_DISPLAY_LENGTH,
-    SEPARATOR_LENGTH,
-    INDENT,
 } from '@/constants';
-import { select, input, message } from '@/utils/enquirer';
-import { logger } from '@/utils/logger';
+import {input, message, select} from '@/utils/enquirer';
+import {logger} from '@/utils/logger';
+import {getActiveRuntimeVars, generateEnvExample, logConfigurationSource} from '@/utils/runtime-config';
 
-/**
- * Get quartz.jsonc file path
- */
-function getQuartzPath(): string {
-    return path.join(process.cwd(), CONFIG_FILE.NAME);
-}
+// Get configuration manager instance
+// Note: This is re-evaluated on each access for testability
+const getConfigManagerInstance = () => getConfigManager();
 
 /**
  * Helper function to get display value from new configuration structure
@@ -62,6 +53,8 @@ function getConfigDisplayValue(config: QuartzConfig, key: string): string | unde
 
 /**
  * Check if configuration key is sensitive information
+ * @param key - Configuration key to check
+ * @returns True if the key contains sensitive information
  */
 function isSensitiveKey(key: string): boolean {
     return SENSITIVE_KEYS.includes(key as any);
@@ -69,6 +62,8 @@ function isSensitiveKey(key: string): boolean {
 
 /**
  * Format sensitive value display
+ * @param value - Sensitive value to format
+ * @returns Formatted string with partial masking
  */
 function formatSensitiveValue(value: string): string {
     return value.substring(0, TOKEN_DISPLAY_LENGTH) + '***';
@@ -76,9 +71,12 @@ function formatSensitiveValue(value: string): string {
 
 /**
  * Set configuration value
+ * @param key - Configuration key to set
+ * @param value - Value to set
  */
 function setConfig(key: string, value: string) {
-    const config = readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
 
     switch (key) {
         case CONFIG_KEYS.OPENAI_API_KEY:
@@ -97,23 +95,25 @@ function setConfig(key: string, value: string) {
             config.language.prompt = value;
             break;
         case CONFIG_KEYS.GITHUB_TOKEN:
-            upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
+            manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
             logger.log(t('config.set', { key, value: '***' }));
+            logger.success(t('config.updated'));
             return;
         case CONFIG_KEYS.GITLAB_TOKEN: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
-            upsertPlatformConfig({
+            manager.upsertPlatformConfig({
                 type: PLATFORM_TYPES.GITLAB,
                 token: value,
                 url: existingGitlab?.url || DEFAULT_VALUES.GITLAB_URL
             });
             logger.log(t('config.set', { key, value: '***' }));
+            logger.success(t('config.updated'));
             return;
         }
         case CONFIG_KEYS.GITLAB_URL: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             if (existingGitlab) {
-                upsertPlatformConfig({ ...existingGitlab, url: value });
+                manager.upsertPlatformConfig({ ...existingGitlab, url: value });
             } else {
                 logger.error(t('config.gitlabTokenSetFirst'));
                 return;
@@ -129,15 +129,18 @@ function setConfig(key: string, value: string) {
             return;
     }
 
-    writeConfig(config);
+    manager.writeConfig(config);
     logger.log(t('config.set', { key, value: isSensitiveKey(key) ? '***' : value }));
+    logger.success(t('config.updated'));
 }
 
 /**
  * Get configuration value
+ * @param key - Configuration key to retrieve
  */
 function getConfig(key: string) {
-    const config = readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
     const value = getConfigDisplayValue(config, key);
 
     if (value) {
@@ -150,16 +153,21 @@ function getConfig(key: string) {
 
 /**
  * Get icon for configuration key
+ * @param key - Configuration key
+ * @returns Emoji icon for the key
  */
 function getConfigIcon(key: string): string {
     return CONFIG_ICONS[key] || '⚙️';
 }
 
 /**
- * List all configurations
+ * List all configurations and display them in a formatted view
  */
 function listConfig() {
-    const config = readConfig();
+    const manager = getConfigManagerInstance();
+    const baseConfig = manager.readBaseConfig();
+    const config = manager.readRuntimeConfig();
+    const hasRuntimeOverrides = manager.hasRuntimeOverrides();
 
     logger.line();
     printLogo();
@@ -167,6 +175,13 @@ function listConfig() {
     console.log(logger.text.bold(t('config.current')));
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
+
+    // Show runtime override notice if applicable
+    if (hasRuntimeOverrides) {
+        const activeVars = getActiveRuntimeVars();
+        console.log(logger.text.success('🔧 ' + t('config.runtimeOverridesActive', { count: Object.keys(activeVars).length })));
+        logger.line();
+    }
 
     // Configuration items list
     const configItems = [
@@ -211,7 +226,13 @@ function listConfig() {
     }
 
     logger.separator(SEPARATOR_LENGTH);
-    console.log(logger.text.dim(`💾 ${getQuartzPath()}`));
+    console.log(logger.text.dim(`💾 ${manager.getConfigPath()}`));
+    
+    // Show configuration source analysis if runtime overrides are active
+    if (hasRuntimeOverrides) {
+        logConfigurationSource(baseConfig, config);
+    }
+    
     logger.line();
 }
 
@@ -239,7 +260,7 @@ async function askQuestion(
     initialValue?: string
 ): Promise<string> {
     const message = description ? `${label}\n\x1b[2m${description}\x1b[0m` : label;
-
+    
     try {
         return await input(message, initialValue);
     } catch (error) {
@@ -314,7 +335,8 @@ async function setupWizard() {
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
 
-    const config = readConfig();
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
 
     try {
         await configureLanguages(config);
@@ -398,8 +420,9 @@ async function configureOpenAI(config: QuartzConfig) {
  */
 async function configurePlatformTokens(config: QuartzConfig, platform: string) {
     // Save current config before updating platform tokens
-    writeConfig(config);
-
+    const manager = getConfigManagerInstance();
+    manager.writeConfig(config);
+    
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
     } else if (platform === PLATFORM_TYPES.GITLAB) {
@@ -420,7 +443,8 @@ async function configureGitHubToken(config: QuartzConfig) {
 
     const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
     if (githubToken.trim()) {
-        upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
+        const manager = getConfigManagerInstance();
+        manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
     }
 }
 
@@ -443,7 +467,8 @@ async function configureGitLabToken(config: QuartzConfig) {
         const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
 
         const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
-        upsertPlatformConfig({
+        const manager = getConfigManagerInstance();
+        manager.upsertPlatformConfig({
             type: PLATFORM_TYPES.GITLAB,
             token: gitlabToken.trim(),
             url: gitlabUrl.trim() || defaultGitlabUrl
@@ -455,22 +480,23 @@ async function configureGitLabToken(config: QuartzConfig) {
  * Save wizard configuration and show success message
  */
 async function saveWizardConfig(config: QuartzConfig) {
+    const manager = getConfigManagerInstance();
     // Read the latest config to ensure we have all updates including platform tokens
-    const latestConfig = readConfig();
-
+    const latestConfig = manager.readConfig();
+    
     // Merge the wizard config with latest config to preserve platform tokens
     const finalConfig: QuartzConfig = {
         openai: config.openai,
         language: config.language,
         platforms: latestConfig.platforms
     };
-
-    writeConfig(finalConfig);
+    
+    manager.writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     await message(
         t('config.wizard.success'),
-        t('config.wizard.saved', { path: getQuartzPath() }),
+        t('config.wizard.saved', { path: manager.getConfigPath() }),
         'success'
     );
 }
@@ -493,6 +519,7 @@ function showHelp() {
     logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
     logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
     logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
+    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc', { default: 'Show runtime environment variable overrides' })));
 
     console.log(logger.text.bold('🔑 ' + t('config.availableKeys')));
     logger.line();
@@ -529,7 +556,8 @@ function showHelp() {
     logger.example('', `quartz config set ${CONFIG_KEYS.QUARTZ_LANG} zh-CN`);
     logger.example('', `quartz config set ${CONFIG_KEYS.PROMPT_LANG} en`);
     logger.example(t('config.profilesDesc'), 'quartz config save-profile my-profile');
-    logger.example('', 'quartz config load-profile my-profile');
+    logger.example('', 'quartz config switch-profile my-profile');
+    logger.example('', 'quartz config active-profile');
     logger.example('', 'quartz config list-profiles');
     logger.example(t('config.getDesc'), `quartz config get ${CONFIG_KEYS.OPENAI_API_KEY}`);
     logger.example(t('config.listDesc'), 'quartz config list');
@@ -541,8 +569,9 @@ function showHelp() {
  * Save current configuration as profile
  */
 function saveProfile(name: string) {
-    const config = readConfig();
-    writeConfig(config, name);
+    const manager = getConfigManagerInstance();
+    const config = manager.readConfig();
+    manager.writeConfig(config, name);
     logger.log(t('config.profileSaved', { name }));
 }
 
@@ -550,76 +579,124 @@ function saveProfile(name: string) {
  * Load profiles from quartz.jsonc
  */
 function loadProfiles(): Record<string, any> {
-    const quartzPath = getQuartzPath();
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(quartzPath, 'utf-8'));
-            const { [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = data;
-            return profiles;
-        } catch (error) {
-            logger.error('Failed to load profiles:', error);
-            return {};
-        }
+    const manager = getConfigManagerInstance();
+    if (!manager.configExists()) {
+        return {};
     }
-    return {};
+    
+    try {
+        const configFile = manager.readConfigFile();
+        const { _metadata, [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = configFile;
+        return profiles;
+    } catch (error) {
+        logger.error('Failed to load profiles:', error);
+        return {};
+    }
 }
 
 /**
- * Load configuration profile
+ * Load configuration profile (legacy - copy profile to default)
+ * @param name - Profile name to load
  */
 function loadProfile(name: string) {
-    const quartzPath = getQuartzPath();
-    let data: any = {};
-
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const content = fs.readFileSync(quartzPath, 'utf-8');
-            data = JSON.parse(content);
-        } catch (error) {
-            logger.error('Failed to load quartz.jsonc:', error);
-            process.exit(1);
-        }
-    }
-
-    if (!data[name]) {
+    const manager = getConfigManagerInstance();
+    if (!manager.profileExists(name)) {
         logger.error(t('config.profileNotFound', { name }));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
         process.exit(1);
     }
 
-    // Update default profile with selected profile
-    data[CONFIG_FILE.DEFAULT_PROFILE] = data[name];
+    try {
+        const configFile = manager.readConfigFile();
+        const profileData = configFile[name];
+        
+        // Type check: ensure profile is QuartzProfile
+        if (!profileData || profileData === configFile._metadata || !('config' in profileData)) {
+            logger.error(t('config.profileNotFound', { name }));
+            process.exit(1);
+        }
+        
+        // Update default profile with selected profile
+        configFile[CONFIG_FILE.DEFAULT_PROFILE] = profileData;
 
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
-    logger.log(t('config.profileLoaded', { name }));
+        manager.writeConfigFile(configFile);
+        logger.log(t('config.profileLoaded', { name }));
+    } catch (error) {
+        logger.error('Failed to load profile:', error);
+        process.exit(1);
+    }
+}
+
+/**
+ * Switch to a different profile (recommended approach - set active profile)
+ * @param name - Profile name to switch to
+ */
+function switchProfile(name: string) {
+    const manager = getConfigManagerInstance();
+    if (!manager.profileExists(name)) {
+        logger.error(t('config.profileNotFound', { name }));
+        logger.log('\n' + t('config.availableProfiles'));
+        listProfiles();
+        process.exit(1);
+    }
+
+    try {
+        manager.setActiveProfile(name);
+        logger.log(t('config.profileSwitched', { name }));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(errorMessage);
+        process.exit(1);
+    }
+}
+
+/**
+ * Show current active profile
+ */
+function showActiveProfile() {
+    const manager = getConfigManagerInstance();
+    const activeProfile = manager.getActiveProfile();
+    logger.line();
+    console.log(logger.text.bold('📌 ' + t('config.currentProfile')));
+    logger.line();
+    console.log(`${' '.repeat(INDENT.LEVEL_1)}${logger.text.primary(activeProfile)}`);
+    logger.line();
 }
 
 /**
  * List all saved profiles
  */
 function listProfiles() {
+    const manager = getConfigManagerInstance();
     const profiles = loadProfiles();
     const profileNames = Object.keys(profiles);
-
-    if (profileNames.length === 0) {
-        logger.log(t('config.noProfiles'));
-        return;
-    }
+    const activeProfile = manager.getActiveProfile();
 
     logger.line();
     console.log(logger.text.bold('📋 ' + t('config.savedProfiles')));
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 
-    for (const name of profileNames) {
-        const profile = profiles[name];
-        console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)}`);
-        if (profile.config) {
-            const platformCount = profile.config.platforms?.length || 0;
-            console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
+    // Show default profile first
+    console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(CONFIG_FILE.DEFAULT_PROFILE)} ${activeProfile === CONFIG_FILE.DEFAULT_PROFILE ? logger.text.success('(active)') : ''}`);
+    const defaultConfig = manager.readConfig(CONFIG_FILE.DEFAULT_PROFILE);
+    const defaultPlatformCount = defaultConfig.platforms?.length || 0;
+    console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: defaultPlatformCount }))}`);
+    logger.line();
+
+    // Show other profiles
+    if (profileNames.length > 0) {
+        for (const name of profileNames) {
+            const profile = profiles[name];
+            const isActive = name === activeProfile;
+            console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)} ${isActive ? logger.text.success('(active)') : ''}`);
+            if (profile.config) {
+                const platformCount = profile.config.platforms?.length || 0;
+                console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
+            }
+            logger.line();
         }
-        logger.line();
     }
 }
 
@@ -627,36 +704,62 @@ function listProfiles() {
  * Delete configuration profile
  */
 function deleteProfile(name: string) {
-    const quartzPath = getQuartzPath();
-    let data: any = {};
-
-    if (fs.existsSync(quartzPath)) {
-        try {
-            const content = fs.readFileSync(quartzPath, 'utf-8');
-            data = JSON.parse(content);
-        } catch (error) {
-            logger.error('Failed to load quartz.jsonc:', error);
-            process.exit(1);
-        }
-    }
-
-    if (!data[name]) {
-        logger.error(t('config.profileNotFound', { name }));
+    const manager = getConfigManagerInstance();
+    try {
+        manager.deleteProfile(name);
+        logger.log(t('config.profileDeleted', { name }));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(errorMessage);
         process.exit(1);
     }
+}
 
-    delete data[name];
-    fs.writeFileSync(quartzPath, JSON.stringify(data, null, 2), 'utf-8');
-    logger.log(t('config.profileDeleted', { name }));
+/**
+ * Show runtime configuration information
+ */
+function showRuntimeConfig() {
+    const manager = getConfigManagerInstance();
+    const hasOverrides = manager.hasRuntimeOverrides();
+    
+    logger.line();
+    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle', { default: 'Runtime Configuration' })));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
+
+    const hasNotOverrides = !hasOverrides;
+    if (hasNotOverrides) {
+        console.log(logger.text.dim(t('config.noRuntimeOverrides', { default: 'No runtime environment variable overrides detected.' })));
+        logger.line();
+        console.log(logger.text.dim(t('config.setEnvVarsHint', { default: 'Set environment variables with QUARTZ_ prefix to override configuration.' })));
+    } else {
+        const activeVars = getActiveRuntimeVars();
+        console.log(logger.text.success(t('config.activeOverrides', {
+            default: 'Active environment variable overrides:',
+            count: Object.keys(activeVars).length
+        })));
+        logger.line();
+        
+        for (const [key, value] of Object.entries(activeVars)) {
+            const isSensitive = SENSITIVE_KEYS.includes(key as any);
+            const displayValue = isSensitive ? formatSensitiveValue(value) : value;
+            console.log(`  ${logger.text.primary(key)}: ${displayValue}`);
+        }
+    }
+    
+    logger.line();
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
+    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle', { default: 'Environment Variable Examples:' })));
+    logger.line();
+    console.log(logger.text.dim(generateEnvExample()));
+    logger.line();
 }
 
 /**
  * Main configuration command handler
- * @param args - Command line arguments
- * @param cliOverrides - CLI overrides (not used in config command itself)
  */
-export async function configCommand(args: string[], cliOverrides?: CLIOverrides) {
-    // Note: cliOverrides are not used in config command as it manages the config itself
+export async function configCommand(args: string[]) {
     const subCommand = args[0];
 
     if (!subCommand || subCommand === 'help' || subCommand === '-h' || subCommand === '--help') {
@@ -714,6 +817,22 @@ export async function configCommand(args: string[], cliOverrides?: CLIOverrides)
             listProfiles();
             break;
 
+        case 'switch-profile':
+        case 'switch':
+        case 'use':
+            if (args.length < 2) {
+                logger.error(t('config.errors.switchProfileUsage'));
+                process.exit(1);
+            }
+            switchProfile(args[1]);
+            break;
+
+        case 'active-profile':
+        case 'current':
+        case 'active':
+            showActiveProfile();
+            break;
+
         case 'delete-profile':
         case 'delete':
         case 'rm':
@@ -722,6 +841,12 @@ export async function configCommand(args: string[], cliOverrides?: CLIOverrides)
                 process.exit(1);
             }
             deleteProfile(args[1]);
+            break;
+
+        case 'runtime':
+        case 'env':
+        case 'environment':
+            showRuntimeConfig();
             break;
 
         default:

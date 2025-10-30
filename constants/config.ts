@@ -1,8 +1,11 @@
 /**
  * @fileoverview Configuration-related constants for Quartz CLI
  * @description Defines configuration file names, keys, and default values
- * @author @GeWuYou
+ * @author Quartz CLI Team
+ * @version 1.0.0
  * @since 2025-10-28
+ * @license MIT
+ * @copyright (c) 2025 Quartz
  *
  * @example
  *   import { CONFIG_FILE, CONFIG_KEYS, DEFAULT_VALUES } from '@/constants/config';
@@ -19,12 +22,20 @@
  * Defines the configuration file name and default profile settings
  * @type {object}
  * @readonly
+ * @property {string} DIR - The configuration directory name
  * @property {string} NAME - The name of the configuration file (JSON with comments)
+ * @property {string} EXAMPLE_NAME - The name of the example configuration file
  * @property {string} DEFAULT_PROFILE - The default profile name to use
  */
 export const CONFIG_FILE = {
+    /** Configuration directory name */
+    DIR: '.quartz',
     /** Configuration file name with JSONC extension (JSON with comments) */
-    NAME: process.env.NODE_ENV === 'test' ? 'quartz.example.jsonc' : 'quartz.jsonc',
+    NAME: 'quartz.jsonc',
+    /** Test configuration file name */
+    TEST_NAME: 'quartz-test.jsonc',
+    /** Example configuration file name */
+    EXAMPLE_NAME: 'quartz.example.jsonc',
     /** Default profile name used when no profile is specified */
     DEFAULT_PROFILE: 'default',
 } as const;
@@ -88,3 +99,91 @@ export const DEFAULT_VALUES = {
     /** Default prompt language (English) */
     LANGUAGE_PROMPT: 'en',
 } as const;
+/**
+ * Default configuration content for quartz.jsonc
+ * Provides a template for users to understand the configuration structure
+ * @type {string}
+ * @readonly
+ */
+export const DEFAULT_CONFIG_CONTENT = `{
+  "default": {
+    "name": "default",
+    "config": {
+      "openai": {
+        "apiKey": "sk-",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "github",
+          "token": ""
+        },
+        {
+          "type": "gitlab",
+          "url": "${DEFAULT_VALUES.GITLAB_URL}",
+          "token": "glpat-your-gitlab-token-here"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_PROMPT}"
+      }
+    }
+  }
+}` as const;
+
+/**
+ * Example configuration content for quartz.example.jsonc
+ * Provides a template for users to understand the configuration structure
+ * @type {string}
+ * @readonly
+ */
+export const EXAMPLE_CONFIG_CONTENT = `{
+  "default": {
+    "name": "default",
+    "config": {
+      "openai": {
+        "apiKey": "sk-",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "github",
+          "token": ""
+        },
+        {
+          "type": "gitlab",
+          "url": "${DEFAULT_VALUES.GITLAB_URL}",
+          "token": "glpat-your-gitlab-token-here"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_PROMPT}"
+      }
+    }
+  },
+  "work": {
+    "name": "work",
+    "config": {
+      "openai": {
+        "apiKey": "sk-your-work-openai-api-key",
+        "baseUrl": "${DEFAULT_VALUES.OPENAI_BASE_URL}",
+        "model": "${DEFAULT_VALUES.OPENAI_MODEL}"
+      },
+      "platforms": [
+        {
+          "type": "gitlab",
+          "url": "https://gitlab.company.com",
+          "token": "glpat-your-company-gitlab-token"
+        }
+      ],
+      "language": {
+        "ui": "${DEFAULT_VALUES.LANGUAGE_UI}",
+        "prompt": "${DEFAULT_VALUES.LANGUAGE_UI}"
+      }
+    }
+  }
+}` as const;
