@@ -1,10 +1,10 @@
 //app/commands/changelog.ts
-import { $ } from '@/utils/shell';
-import { execa } from 'execa';
+import {$} from '@/utils/shell';
+import {execa} from 'execa';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '@/i18n';
-import { logger } from '@/utils/logger';
+import {t} from '@/i18n';
+import {logger} from '@/utils/logger';
 
 /**
  * Get git tags sorted by version

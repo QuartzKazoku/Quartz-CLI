@@ -1,6 +1,5 @@
 //app/commands/commit.ts
 import OpenAI from 'openai';
-import { $ } from '@/utils/shell';
 import { execa } from 'execa';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,13 +8,14 @@ import { getCommitPrompt } from '@/utils/prompt';
 import { getConfigManager } from '@/manager/config';
 import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
+import { GitExecutor } from '@/utils/git';
 
 /**
  * Stage all changes using git add .
  */
 async function stageAllChanges(): Promise<void> {
   try {
-    await $`git add .`;
+    await GitExecutor.stageAll();
     logger.success(t('commit.autoStaged'));
   } catch (error) {
     logger.error(t('commit.stageFailed'), error);
@@ -30,7 +30,7 @@ async function stageAllChanges(): Promise<void> {
 async function getGitDiff(): Promise<string> {
   try {
     // Get staged changes
-    const diff = await $`git diff --cached`.text();
+    const diff = await GitExecutor.getStagedDiff();
 
     if (!diff) {
       logger.error(t('commit.noStaged'));
@@ -50,10 +50,7 @@ async function getGitDiff(): Promise<string> {
  */
 async function getChangedFiles(): Promise<string[]> {
   try {
-    return (await $`git diff --cached --name-only`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
+    return await GitExecutor.getStagedFiles();
   } catch (error) {
     logger.error('Failed to get changed files:', error);
     return [];
@@ -242,7 +239,7 @@ export async function generateCommit(args: string[]) {
     fs.writeFileSync(tempFile, messages[0]);
 
     try {
-      await $`git commit -e -F ${tempFile}`;
+      await GitExecutor.commitWithMessageFile(tempFile);
       logger.success(t('commit.success'));
     } catch (error) {
       logger.error('Commit cancelled or failed:', error);

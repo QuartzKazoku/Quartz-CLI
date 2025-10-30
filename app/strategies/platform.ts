@@ -1,5 +1,5 @@
 //app/strategies/platform.ts
-import { $ } from '@/utils/shell';
+import { GitExecutor } from '@/utils/git';
 
 /**
  * PR/MR creation result interface
@@ -63,15 +63,7 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      * @returns Promise<boolean> Returns true if branch exists in remote repository, otherwise returns false
      */
     async isBranchOnRemote(branch: string): Promise<boolean> {
-        try {
-            // Execute git ls-remote command to check if remote branch exists
-            const output = await $`git ls-remote --heads origin ${branch}`.text();
-            // Check if output contains the branch reference
-            // Output format: <sha> refs/heads/<branch-name>
-            return output.trim().length > 0;
-        } catch {
-            return false;
-        }
+        return await GitExecutor.isBranchOnRemote(branch);
     }
 
     /**
@@ -82,8 +74,7 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      */
     async pushBranchToRemote(branch: string): Promise<void> {
         try {
-            // Execute git push command to push branch to remote repository
-            await $`git push -u origin ${branch}`.quiet();
+            await GitExecutor.pushBranch(branch);
         } catch (error) {
             throw new Error(`Failed to push branch: ${error}`);
         }

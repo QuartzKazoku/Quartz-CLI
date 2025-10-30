@@ -1,10 +1,10 @@
 // app/commands/branch.ts
-import {$} from '@/utils/shell';
 import {t} from '@/i18n';
 import {logger} from '@/utils/logger';
 import {select, input, confirm, multiselect} from '@/utils/enquirer';
 import {getConfigManager} from '@/manager/config';
 import {PlatformStrategyFactory} from '@/app/strategies/factory';
+import {GitExecutor} from '@/utils/git';
 
 /**
  * Get current branch name
@@ -12,7 +12,7 @@ import {PlatformStrategyFactory} from '@/app/strategies/factory';
  */
 async function getCurrentBranch(): Promise<string> {
     try {
-        return (await $`git branch --show-current`.text()).trim();
+        return await GitExecutor.getCurrentBranch();
     } catch (error) {
         logger.error(t('errors.gitError'), error);
         process.exit(1);
@@ -25,10 +25,7 @@ async function getCurrentBranch(): Promise<string> {
  */
 async function getAllBranches(): Promise<string[]> {
     try {
-        return (await $`git branch --format='%(refname:short)'`.text())
-            .trim()
-            .split('\n')
-            .filter(Boolean);
+        return await GitExecutor.getAllBranches();
     } catch (error) {
         logger.error(t('errors.gitError'), error);
         process.exit(1);
@@ -40,37 +37,7 @@ async function getAllBranches(): Promise<string[]> {
  * @returns Repository owner, name, and platform
  */
 async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
-    try {
-        const remoteUrl = (await $`git remote get-url origin`.text()).trim();
-
-        // Parse GitHub URL
-        const githubSshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const githubSshMatch = githubSshRegex.exec(remoteUrl);
-        const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
-
-        if (githubSshMatch) {
-            return {owner: githubSshMatch[1], repo: githubSshMatch[2], platform: 'github'};
-        } else if (githubHttpsMatch) {
-            return {owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: 'github'};
-        }
-
-        // Parse GitLab URL
-        const gitlabSshRegex = /git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
-        const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
-
-        if (gitlabSshMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab'};
-        } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab'};
-        }
-
-        return null;
-    } catch {
-        return null;
-    }
+    return await GitExecutor.getRepoInfo();
 }
 
 /**
@@ -143,11 +110,10 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
  */
 async function createBranch(branchName: string, checkout: boolean = true): Promise<void> {
     try {
+        await GitExecutor.createBranch(branchName, checkout);
         if (checkout) {
-            await $`git checkout -b ${branchName}`.text();
             logger.success(t('branch.created', {name: branchName}));
         } else {
-            await $`git branch ${branchName}`.text();
             logger.success(t('branch.createdNoCheckout', {name: branchName}));
         }
     } catch (error: any) {
@@ -189,8 +155,7 @@ async function deleteBranch(branchName: string, force: boolean = false): Promise
             process.exit(1);
         }
 
-        const flag = force ? '-D' : '-d';
-        await $`git branch ${flag} ${branchName}`.quiet();
+        await GitExecutor.deleteBranch(branchName, force);
         logger.success(t('branch.deleted', {name: branchName}));
     } catch (error) {
         logger.error(t('branch.deleteFailed'), error);

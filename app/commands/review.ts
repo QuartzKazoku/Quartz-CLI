@@ -1,12 +1,12 @@
 //cli/commands/review.ts
 import OpenAI from 'openai';
-import {$} from '@/utils/shell';
 import fs from 'node:fs';
 import {t} from '@/i18n';
 import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
 import {getConfigManager} from '@/manager/config';
 import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
 import {logger} from '@/utils/logger';
+import {GitExecutor} from '@/utils/git';
 
 interface ReviewComment {
   file: string;
@@ -94,16 +94,10 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
     }
 
     // Get staged files
-    const staged = (await $`git diff --cached --name-only`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
+    const staged = await GitExecutor.getStagedFiles();
 
     // Get unstaged files
-    const unstaged = (await $`git diff --name-only`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
+    const unstaged = await GitExecutor.getUnstagedFiles();
 
     // Merge and deduplicate
     const allFiles = [...new Set([...staged, ...unstaged])];
@@ -126,13 +120,8 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
  */
 async function getFileDiff(file: string): Promise<string> {
   try {
-    // Try to get staged diff
-    let diff = await $`git diff --cached -- "${file}"`.text();
-
-    // If no staged diff, get working directory diff
-    if (!diff) {
-      diff = await $`git diff -- "${file}"`.text();
-    }
+    // Try to get diff using GitExecutor
+    let diff = await GitExecutor.getFileDiff(file);
 
     // If still no diff, might be a new file
     if (!diff) {
