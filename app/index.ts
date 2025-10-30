@@ -1,11 +1,10 @@
 //app/index.ts
-import { reviewCode, generateCommit, generatePR, configCommand, initCommand, branchCommand }
-  from '@/app/commands';
-import { i18n } from '@/i18n';
-import { logger } from '@/utils/logger';
-import { checkAndMigrate, shouldSkipMigration } from '@/utils/hooks';
-import { CLI } from '@/constants';
-import { getConfigManager } from '@/manager/config';
+import {branchCommand, configCommand, generateCommit, generatePR, initCommand, reviewCode} from '@/app/commands';
+import {i18n} from '@/i18n';
+import {logger} from '@/utils/logger';
+import {checkAndMigrate, shouldSkipMigration} from '@/utils/hooks';
+import {CLI} from '@/constants';
+import {configManager} from '@/manager/config';
 
 /**
  * Print ASCII art logo
@@ -76,7 +75,6 @@ function getUsageText(): string {
 
 // Initialize language from config
 try {
-  const configManager = getConfigManager();
   if (configManager.configExists()) {
     const config = configManager.readConfig();
     i18n.set(config.language.ui as any);

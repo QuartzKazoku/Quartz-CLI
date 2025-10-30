@@ -1,8 +1,8 @@
 // app/commands/branch.ts
 import {t} from '@/i18n';
 import {logger} from '@/utils/logger';
-import {select, input, confirm, multiselect} from '@/utils/enquirer';
-import {getConfigManager} from '@/manager/config';
+import {confirm, input, multiselect, select} from '@/utils/enquirer';
+import {configManager} from '@/manager/config';
 import {PlatformStrategyFactory} from '@/app/strategies/factory';
 import {GitCommandHelper} from '@/helpers/git';
 
@@ -17,7 +17,6 @@ async function fetchIssues(): Promise<Array<{ number: number; title: string; lab
         return [];
     }
 
-    const configManager = getConfigManager();
     const platformConfigs = configManager.getPlatformConfigs();
     const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
 

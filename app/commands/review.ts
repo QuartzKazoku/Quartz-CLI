@@ -3,8 +3,8 @@ import OpenAI from 'openai';
 import fs from 'node:fs';
 import {t} from '@/i18n';
 import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
-import {getConfigManager} from '@/manager/config';
-import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
+import {configManager} from '@/manager/config';
+import {DEFAULT_VALUES, ENCODING, JSON_FORMAT, REVIEW_SCORE} from '@/constants';
 import {logger} from '@/utils/logger';
 import {GitCommandHelper} from '@/helpers/git';
 
@@ -65,7 +65,6 @@ function validateLanguageConfig(quartzConfig: any): void {
  */
 function loadConfig() {
   // Use ConfigManager to read configuration
-  const configManager = getConfigManager();
   const quartzConfig = configManager.readConfig();
   
   // Validate language configuration first

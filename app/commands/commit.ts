@@ -1,14 +1,14 @@
 //app/commands/commit.ts
 import OpenAI from 'openai';
-import { execa } from 'execa';
+import {execa} from 'execa';
 import fs from 'node:fs';
 import path from 'node:path';
-import { t } from '@/i18n';
-import { getCommitPrompt } from '@/utils/prompt';
-import { getConfigManager } from '@/manager/config';
-import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
-import { logger } from '@/utils/logger';
-import { GitCommandHelper } from '@/helpers/git';
+import {t} from '@/i18n';
+import {getCommitPrompt} from '@/utils/prompt';
+import {configManager} from '@/manager/config';
+import {formatCommitMessage, selectFromList} from '@/utils/enquirer';
+import {logger} from '@/utils/logger';
+import {GitCommandHelper} from '@/helpers/git';
 
 /**
  * Stage all changes using git add .
@@ -189,7 +189,6 @@ function validateConfiguration(config: any): void {
 export async function generateCommit(args: string[]) {
   logger.info(t('commit.starting'));
 
-  const configManager = getConfigManager();
   const config = configManager.readConfig();
   
   // Validate configuration before proceeding

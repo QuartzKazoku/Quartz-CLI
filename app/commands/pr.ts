@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {t} from '@/i18n';
 import {getPRPrompt} from '@/utils/prompt';
-import {getConfigManager} from '@/manager/config';
+import {configManager} from '@/manager/config';
 import {PlatformStrategy} from '@/app/strategies/platform';
 import {PlatformStrategyFactory} from "@/app/strategies/factory";
 import {logger} from '@/utils/logger';
@@ -250,7 +250,6 @@ function validateConfiguration(config: any): void {
 export async function generatePR(args: string[]) {
     logger.section(t('pr.starting'));
 
-    const configManager = getConfigManager();
     const config = configManager.readConfig();
     
     // Validate configuration before proceeding
