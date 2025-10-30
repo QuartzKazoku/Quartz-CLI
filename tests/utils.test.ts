@@ -4,45 +4,30 @@ import { getReviewPrompt, getCommitPrompt, getPRPrompt, getSummaryPrompt } from 
 import { initLanguage, setLanguage, getLanguage, t } from '@/i18n';
 
 // Mock config manager
+const mockReadConfig = vi.fn(() => ({
+  openai: {
+    apiKey: 'test-key',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4'
+  },
+  language: {
+    ui: 'en',
+    prompt: 'en'
+  },
+  platforms: []
+}));
+
 vi.mock('@/manager/config', () => ({
   getConfigManager: vi.fn(() => ({
-    readConfig: vi.fn(() => ({
-      openai: {
-        apiKey: 'test-key',
-        baseUrl: 'https://api.openai.com/v1',
-        model: 'gpt-4'
-      },
-      language: {
-        ui: 'en',
-        prompt: 'en'
-      },
-      platforms: []
-    }))
+    readConfig: mockReadConfig
   }))
 }));
 
 describe('Utils Functions', () => {
   describe('Prompt Functions', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       // Set default language to English for testing
       setLanguage('en');
-      
-      // Reset mock to return English config
-      const { getConfigManager } = require('@/manager/config');
-      getConfigManager.mockReturnValue({
-        readConfig: vi.fn(() => ({
-          openai: {
-            apiKey: 'test-key',
-            baseUrl: 'https://api.openai.com/v1',
-            model: 'gpt-4'
-          },
-          language: {
-            ui: 'en',
-            prompt: 'en'
-          },
-          platforms: []
-        }))
-      });
     });
 
     it('should generate review prompt with all required fields', () => {
@@ -60,21 +45,19 @@ describe('Utils Functions', () => {
       expect(prompt.length).toBeGreaterThan(0);
     });
 
-    it('should generate review prompt in Chinese', () => {
-      const { getConfigManager } = require('@/manager/config');
-      getConfigManager.mockReturnValue({
-        readConfig: vi.fn(() => ({
-          openai: {
-            apiKey: 'test-key',
-            baseUrl: 'https://api.openai.com/v1',
-            model: 'gpt-4'
-          },
-          language: {
-            ui: 'zh-CN',
-            prompt: 'zh-CN'
-          },
-          platforms: []
-        }))
+    it('should generate review prompt in Chinese', async () => {
+      // Update mock to return Chinese config
+      mockReadConfig.mockReturnValueOnce({
+        openai: {
+          apiKey: 'test-key',
+          baseUrl: 'https://api.openai.com/v1',
+          model: 'gpt-4'
+        },
+        language: {
+          ui: 'zh-CN',
+          prompt: 'zh-CN'
+        },
+        platforms: []
       });
       
       setLanguage('zh-CN');

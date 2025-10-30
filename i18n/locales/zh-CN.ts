@@ -77,6 +77,14 @@ export const zhCN: Translations = {
     selectPrompt: '📝 请选择一个提交消息 (使用 ↑↓ 键选择, Enter 确认, Ctrl+C 取消):\n',
     generatingOptions: '🤖 正在生成 {count} 个提交消息选项...\n',
     selectedMessage: '\n✨ 已选择提交消息 [{index}]:\n',
+    linkIssue: '关联 Issue?',
+    fetchingIssues: '🔍 正在获取 Issues...',
+    noIssues: '⚠️  未找到可用的 Issues',
+    selectIssue: '请选择要关联的 Issue',
+    linkedIssue: '🔗 已关联 Issue #{number}: {title}',
+    closeIssue: '是否在合并时自动关闭此 Issue?',
+    issueWillClose: '✅ 合并后将自动关闭 Issue #{number}',
+    skipIssue: '⏭️  跳过 Issue 关联',
   },
 
   pr: {
@@ -254,6 +262,10 @@ export const zhCN: Translations = {
     fetchIssuesFailed: '⚠️  获取 Issues 失败',
     unknownCommand: '❌ 未知命令: {command}',
     usage: '💡 用法: quartz branch [create|delete|list] [分支名] [选项]',
+    switchToExisting: '是否切换到已存在的分支?',
+    switchedTo: '✅ 已切换到分支: {name}',
+    switchFailed: '❌ 切换分支失败',
+    operationCancelled: '⚠️  操作已取消',
   },
 };
 

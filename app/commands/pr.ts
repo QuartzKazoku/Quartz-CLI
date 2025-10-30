@@ -482,7 +482,9 @@ export async function generatePR(args: string[]) {
 
         createSpinner.succeed(t('pr.success'));
         logger.line();
-        logger.box(`🔗 ${result.url}`, {title: 'PR/MR URL', padding: 1});
+        if (result) {
+            logger.box(`🔗 ${result.url}`, {title: 'PR/MR URL', padding: 1});
+        }
     } else {
         createSpinner.fail(t('pr.noToken'));
         logger.error(t('pr.useGHTip'));

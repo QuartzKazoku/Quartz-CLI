@@ -302,6 +302,10 @@ export interface Translations {
     fetchIssuesFailed: string;
     unknownCommand: string;
     usage: string;
+    switchToExisting: string;
+    switchedTo: string;
+    switchFailed: string;
+    operationCancelled: string;
   };
 }
 

@@ -60,3 +60,5 @@ package-lock.json
 CHANGELOG.md
 # quartz
 .quartz/
+# But keep test config
+!.quartz/quartz-test.jsonc
