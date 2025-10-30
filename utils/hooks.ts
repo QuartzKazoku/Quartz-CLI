@@ -13,8 +13,11 @@ import { t } from '@/i18n';
  * This should be called before any command that requires config
  */
 export async function checkAndMigrate(): Promise<void> {
-  // Check if migration is needed
-  if (!needsMigration()) {
+  // Check both project and global configs for migration
+  const needsProjectMigration = needsMigration(false);
+  const needsGlobalMigration = needsMigration(true);
+  
+  if (!needsProjectMigration && !needsGlobalMigration) {
     return;
   }
   
@@ -23,33 +26,70 @@ export async function checkAndMigrate(): Promise<void> {
   logger.info(t('migration.starting'));
   
   try {
-    const result = await runMigrations();
-    
-    if (result.migrated) {
-      logger.line();
-      logger.success(t('migration.success', {
-        from: result.fromVersion,
-        to: result.toVersion,
-      }));
+    // Migrate global config first if needed
+    if (needsGlobalMigration) {
+      logger.info('Migrating global configuration...');
+      const globalResult = await runMigrations(true);
       
-      if (result.appliedMigrations.length > 0) {
-        logger.info(t('migration.applied'));
-        for (const version of result.appliedMigrations) {
-          logger.log(`  - ${version}`);
+      if (globalResult.migrated) {
+        logger.line();
+        logger.success(t('migration.success', {
+          from: globalResult.fromVersion,
+          to: globalResult.toVersion,
+        }) + ' (Global)');
+        
+        if (globalResult.appliedMigrations.length > 0) {
+          logger.info(t('migration.applied'));
+          for (const version of globalResult.appliedMigrations) {
+            logger.log(`  - ${version}`);
+          }
         }
+        
+        logger.line();
       }
       
-      logger.line();
+      if (globalResult.errors && globalResult.errors.length > 0) {
+        logger.line();
+        logger.error(t('migration.errors') + ' (Global)');
+        for (const error of globalResult.errors) {
+          logger.error(`  - ${error}`);
+        }
+        logger.line();
+        throw new Error('Global migration failed');
+      }
     }
     
-    if (result.errors && result.errors.length > 0) {
-      logger.line();
-      logger.error(t('migration.errors'));
-      for (const error of result.errors) {
-        logger.error(`  - ${error}`);
+    // Migrate project config if needed
+    if (needsProjectMigration) {
+      logger.info('Migrating project configuration...');
+      const projectResult = await runMigrations(false);
+      
+      if (projectResult.migrated) {
+        logger.line();
+        logger.success(t('migration.success', {
+          from: projectResult.fromVersion,
+          to: projectResult.toVersion,
+        }) + ' (Project)');
+        
+        if (projectResult.appliedMigrations.length > 0) {
+          logger.info(t('migration.applied'));
+          for (const version of projectResult.appliedMigrations) {
+            logger.log(`  - ${version}`);
+          }
+        }
+        
+        logger.line();
       }
-      logger.line();
-      throw new Error('Migration failed');
+      
+      if (projectResult.errors && projectResult.errors.length > 0) {
+        logger.line();
+        logger.error(t('migration.errors') + ' (Project)');
+        for (const error of projectResult.errors) {
+          logger.error(`  - ${error}`);
+        }
+        logger.line();
+        throw new Error('Project migration failed');
+      }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

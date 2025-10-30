@@ -48,11 +48,20 @@ function compareVersions(a: string, b: string): number {
 
 
 /**
- * Check if migration is needed
+ * Check if migration is needed for a specific config (project or global)
+ * @param global - If true, checks global config; otherwise, checks project config
  * @returns True if migration is required
  */
-export function needsMigration(): boolean {
-    const metadata = getConfigManager().readVersionMetadata();
+export function needsMigration(global = false): boolean {
+    const configManager = getConfigManager();
+    
+    // Check if config file exists
+    if (!configManager.configExists(global)) {
+        return false;
+    }
+    
+    const configFile = configManager.readConfigFile(global);
+    const metadata = configFile._metadata;
 
     if (!metadata) {
         return false;
@@ -74,12 +83,25 @@ function getMigrationsToApply(fromVersion: string): Migration[] {
 }
 
 /**
- * Execute migrations
+ * Execute migrations for a specific config (project or global)
+ * @param global - If true, migrates global config; otherwise, migrates project config
  * @returns Migration result with status and applied migrations
  */
-export async function runMigrations(): Promise<MigrationResult> {
+export async function runMigrations(global = false): Promise<MigrationResult> {
     const configManager = getConfigManager();
-    const metadata = configManager.readVersionMetadata();
+    
+    // Check if config file exists
+    if (!configManager.configExists(global)) {
+        return {
+            migrated: false,
+            fromVersion: 'unknown',
+            toVersion: CURRENT_CONFIG_VERSION,
+            appliedMigrations: [],
+        };
+    }
+    
+    const configFile = configManager.readConfigFile(global);
+    const metadata = configFile._metadata;
 
     if (!metadata) {
         return {
@@ -103,7 +125,7 @@ export async function runMigrations(): Promise<MigrationResult> {
     }
 
     // Use ConfigManager to read configuration file
-    let configFile = configManager.readConfigFile();
+    let migratedConfigFile = structuredClone(configFile);
 
     const appliedMigrations: string[] = [];
     const errors: string[] = [];
@@ -112,7 +134,7 @@ export async function runMigrations(): Promise<MigrationResult> {
     for (const migration of migrationsToApply) {
         try {
             logger.info(`Applying migration: ${migration.version} - ${migration.description}`);
-            configFile = migration.migrate(configFile);
+            migratedConfigFile = migration.migrate(migratedConfigFile);
             appliedMigrations.push(migration.version);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -124,7 +146,8 @@ export async function runMigrations(): Promise<MigrationResult> {
     }
 
     // Update metadata
-    configFile._metadata = {
+    migratedConfigFile._metadata = {
+        ...migratedConfigFile._metadata,
         configVersion: CURRENT_CONFIG_VERSION,
         cliVersion: configManager.getCliVersion(),
         updatedAt: new Date().toISOString(),
@@ -132,7 +155,7 @@ export async function runMigrations(): Promise<MigrationResult> {
 
     // Write migrated config using ConfigManager
     try {
-        configManager.writeConfigFile(configFile);
+        configManager.writeConfigFile(migratedConfigFile, global);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push(`Failed to write migrated config: ${errorMessage}`);

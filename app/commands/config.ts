@@ -164,7 +164,7 @@ function getConfigIcon(key: string): string {
  * Display configuration priority information
  */
 function displayConfigPriority() {
-    console.log(logger.text.dim('📊 ' + t('config.priority', {default: 'Priority: Environment > Project > Global > Default'})));
+    console.log(logger.text.dim('📊 ' + t('config.priority')));
     logger.line();
 }
 
@@ -185,7 +185,7 @@ function displayActiveSources(hasRuntimeOverrides: boolean, hasProjectConfig: bo
     }
     sources.push(logger.text.dim('✓ Default Config'));
 
-    console.log(logger.text.bold('📁 ' + t('config.activeSources', {default: 'Active Configuration Sources:'})));
+    console.log(logger.text.bold('📁 ' + t('config.activeSources')));
     for (const source of sources) {
         console.log(`  ${source}`);
     }
@@ -569,11 +569,11 @@ function displayHelpCommands() {
     logger.line();
     logger.command('quartz config list', logger.text.dim(t('config.listDesc')));
     logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
-    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')} --global`, logger.text.dim(t('config.setGlobalDesc', {default: 'Set global configuration value'})));
+    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')} --global`, logger.text.dim(t('config.setGlobalDesc')));
     logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
     logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
-    logger.command('quartz config init --global', logger.text.dim(t('config.initGlobalDesc', {default: 'Initialize global configuration'})));
-    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc', {default: 'Show runtime environment variable overrides'})));
+    logger.command('quartz config init --global', logger.text.dim(t('config.initGlobalDesc')));
+    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc')));
 }
 
 /**
@@ -798,12 +798,12 @@ async function initGlobalConfig() {
     const globalConfigPath = manager.getConfigPath(true);
 
     logger.line();
-    logger.log(t('config.initGlobal', {default: 'Initializing global configuration...'}));
+    logger.log(t('config.initGlobal'));
     logger.line();
 
     if (manager.globalConfigExists()) {
-        logger.warn(t('config.globalConfigExists', {default: 'Global configuration already exists'}));
-        logger.info(t('config.globalConfigPath', {default: 'Path: {path}', path: globalConfigPath}));
+        logger.warn(t('config.globalConfigExists'));
+        logger.info(t('config.globalConfigPath', {path: globalConfigPath}));
         logger.line();
         return;
     }
@@ -815,16 +815,16 @@ async function initGlobalConfig() {
     const defaultConfig = manager.readConfigFile(true);
     manager.writeConfigFile(defaultConfig, true);
 
-    logger.success(t('config.globalConfigCreated', {default: 'Global configuration created'}));
-    logger.info(t('config.globalConfigPath', {default: 'Path: {path}', path: globalConfigPath}));
+    logger.success(t('config.globalConfigCreated'));
+    logger.info(t('config.globalConfigPath', {path: globalConfigPath}));
     logger.line();
     logger.box(
-        `${logger.text.success('✓')} ${t('config.globalInitSuccess', {default: 'Global configuration initialized successfully'})}
+        `${logger.text.success('✓')} ${t('config.globalInitSuccess')}
 
-${logger.text.dim(t('config.globalConfigInfo', {default: 'This configuration will be used as fallback for all projects'}))}
+${logger.text.dim(t('config.globalConfigInfo'))}
 
-${logger.text.primary('quartz config set <key> <value> --global')} - ${t('config.setGlobalDesc', {default: 'Set global configuration value'})}`,
-        {title: '🌍 ' + t('config.globalConfig', {default: 'Global Configuration'}), padding: 1}
+${logger.text.primary('quartz config set <key> <value> --global')} - ${t('config.setGlobalDesc')}`,
+        {title: '🌍 ' + t('config.globalConfig'), padding: 1}
     );
     logger.line();
 }
@@ -851,21 +851,18 @@ function showRuntimeConfig() {
     const hasOverrides = manager.hasRuntimeOverrides();
 
     logger.line();
-    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle', {default: 'Runtime Configuration'})));
+    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle')));
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 
     const hasNotOverrides = !hasOverrides;
     if (hasNotOverrides) {
-        console.log(logger.text.dim(t('config.noRuntimeOverrides', {default: 'No runtime environment variable overrides detected.'})));
+        console.log(logger.text.dim(t('config.noRuntimeOverrides')));
         logger.line();
-        console.log(logger.text.dim(t('config.setEnvVarsHint', {default: 'Set environment variables with QUARTZ_ prefix to override configuration.'})));
+        console.log(logger.text.dim(t('config.setEnvVarsHint')));
     } else {
         const activeVars = getActiveRuntimeVars();
-        console.log(logger.text.success(t('config.activeOverrides', {
-            default: 'Active environment variable overrides:',
-            count: Object.keys(activeVars).length
-        })));
+        console.log(logger.text.success(t('config.activeOverrides', {count: Object.keys(activeVars).length})));
         logger.line();
 
         for (const [key, value] of Object.entries(activeVars)) {
@@ -878,7 +875,7 @@ function showRuntimeConfig() {
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
-    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle', {default: 'Environment Variable Examples:'})));
+    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle')));
     logger.line();
     console.log(logger.text.dim(generateEnvExample()));
     logger.line();
@@ -1051,7 +1048,7 @@ export async function configCommand(args: string[]) {
 
     if (handler) {
         if (isGlobal && ['set'].includes(subCommand)) {
-            logger.warn(t('config.globalSetNotImplemented', {default: 'Global set is not yet fully implemented, setting in project config'}));
+            logger.warn(t('config.globalSetNotImplemented'));
         }
         await handler(cleanArgs, isGlobal);
     } else {
