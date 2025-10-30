@@ -1,5 +1,4 @@
 //app/commands/review.ts
-//cli/commands/review.ts
 import OpenAI from 'openai';
 import fs from 'node:fs';
 import {t} from '@/i18n';

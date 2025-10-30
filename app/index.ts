@@ -1,5 +1,4 @@
 //app/index.ts
-// cli/index.ts
 import { reviewCode, generateCommit, generatePR, configCommand, initCommand, branchCommand }
   from '@/app/commands';
 import { i18n } from '@/i18n';

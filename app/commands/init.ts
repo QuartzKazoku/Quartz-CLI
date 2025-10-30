@@ -1,5 +1,4 @@
 //app/commands/init.ts
-//cli/commands/init.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import {DEFAULT_CONFIG_CONTENT, ENCODING} from '@/constants';
