@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { t } from '@/i18n';
 import { logger } from '@/utils/logger';
+import { getConfigManager } from '@/manager/config';
 
 /**
  * Get git tags sorted by version
@@ -133,26 +134,125 @@ function groupCommitsByType(commits: Array<{ hash: string; message: string; auth
 }
 
 /**
- * Get type emoji and label from changelog config
+ * Get language name from language code
+ * @param lang - Language code (e.g., 'en', 'zh-CN')
+ * @returns Human-readable language name
+ */
+function getLanguageName(lang: string): string {
+  const names: Record<string, string> = {
+    'zh-CN': 'Simplified Chinese',
+    'zh-TW': 'Traditional Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'en': 'English',
+  };
+  return names[lang] || 'English';
+}
+
+/**
+ * Get prompt language from configuration
+ * @returns Language code for prompts
+ */
+function getPromptLanguage(): string {
+  try {
+    const configManager = getConfigManager();
+    const config = configManager.readConfig();
+    
+    if (!config.language?.prompt) {
+      return 'en';
+    }
+    
+    return config.language.prompt;
+  } catch (error) {
+    return 'en';
+  }
+}
+
+/**
+ * Get type emoji and label based on language
  * @param type - Commit type
  * @returns Object with emoji and label
  */
 function getTypeInfo(type: string): { emoji: string; label: string } {
-  const typeMap: Record<string, { emoji: string; label: string }> = {
-    feat: { emoji: '✨', label: 'Features' },
-    fix: { emoji: '🐛', label: 'Bug Fixes' },
-    docs: { emoji: '📚', label: 'Documentation' },
-    style: { emoji: '💄', label: 'Styles' },
-    refactor: { emoji: '♻️', label: 'Code Refactoring' },
-    perf: { emoji: '⚡', label: 'Performance Improvements' },
-    test: { emoji: '✅', label: 'Tests' },
-    build: { emoji: '📦', label: 'Build System' },
-    ci: { emoji: '👷', label: 'CI/CD' },
-    chore: { emoji: '🔧', label: 'Chores' },
-    revert: { emoji: '⏪', label: 'Reverts' },
+  const lang = getPromptLanguage();
+  
+  // Type labels in different languages
+  const typeMaps: Record<string, Record<string, { emoji: string; label: string }>> = {
+    'en': {
+      feat: { emoji: '✨', label: 'Features' },
+      fix: { emoji: '🐛', label: 'Bug Fixes' },
+      docs: { emoji: '📚', label: 'Documentation' },
+      style: { emoji: '💄', label: 'Styles' },
+      refactor: { emoji: '♻️', label: 'Code Refactoring' },
+      perf: { emoji: '⚡', label: 'Performance Improvements' },
+      test: { emoji: '✅', label: 'Tests' },
+      build: { emoji: '📦', label: 'Build System' },
+      ci: { emoji: '👷', label: 'CI/CD' },
+      chore: { emoji: '🔧', label: 'Chores' },
+      revert: { emoji: '⏪', label: 'Reverts' },
+    },
+    'zh-CN': {
+      feat: { emoji: '✨', label: '新功能' },
+      fix: { emoji: '🐛', label: '问题修复' },
+      docs: { emoji: '📚', label: '文档' },
+      style: { emoji: '💄', label: '代码样式' },
+      refactor: { emoji: '♻️', label: '代码重构' },
+      perf: { emoji: '⚡', label: '性能优化' },
+      test: { emoji: '✅', label: '测试' },
+      build: { emoji: '📦', label: '构建系统' },
+      ci: { emoji: '👷', label: 'CI/CD' },
+      chore: { emoji: '🔧', label: '其他更改' },
+      revert: { emoji: '⏪', label: '回退' },
+    },
+    'zh-TW': {
+      feat: { emoji: '✨', label: '新功能' },
+      fix: { emoji: '🐛', label: '問題修復' },
+      docs: { emoji: '📚', label: '文檔' },
+      style: { emoji: '💄', label: '代碼樣式' },
+      refactor: { emoji: '♻️', label: '代碼重構' },
+      perf: { emoji: '⚡', label: '性能優化' },
+      test: { emoji: '✅', label: '測試' },
+      build: { emoji: '📦', label: '構建系統' },
+      ci: { emoji: '👷', label: 'CI/CD' },
+      chore: { emoji: '🔧', label: '其他更改' },
+      revert: { emoji: '⏪', label: '回退' },
+    },
+    'ja': {
+      feat: { emoji: '✨', label: '新機能' },
+      fix: { emoji: '🐛', label: 'バグ修正' },
+      docs: { emoji: '📚', label: 'ドキュメント' },
+      style: { emoji: '💄', label: 'スタイル' },
+      refactor: { emoji: '♻️', label: 'リファクタリング' },
+      perf: { emoji: '⚡', label: 'パフォーマンス改善' },
+      test: { emoji: '✅', label: 'テスト' },
+      build: { emoji: '📦', label: 'ビルドシステム' },
+      ci: { emoji: '👷', label: 'CI/CD' },
+      chore: { emoji: '🔧', label: 'その他の変更' },
+      revert: { emoji: '⏪', label: '差し戻し' },
+    },
+    'ko': {
+      feat: { emoji: '✨', label: '새로운 기능' },
+      fix: { emoji: '🐛', label: '버그 수정' },
+      docs: { emoji: '📚', label: '문서' },
+      style: { emoji: '💄', label: '스타일' },
+      refactor: { emoji: '♻️', label: '코드 리팩토링' },
+      perf: { emoji: '⚡', label: '성능 개선' },
+      test: { emoji: '✅', label: '테스트' },
+      build: { emoji: '📦', label: '빌드 시스템' },
+      ci: { emoji: '👷', label: 'CI/CD' },
+      chore: { emoji: '🔧', label: '기타 변경사항' },
+      revert: { emoji: '⏪', label: '되돌리기' },
+    },
   };
 
-  return typeMap[type] || { emoji: '📝', label: 'Other Changes' };
+  const typeMap = typeMaps[lang] || typeMaps['en'];
+  const defaultLabel = lang === 'zh-CN' ? '其他更改' :
+                       lang === 'zh-TW' ? '其他更改' :
+                       lang === 'ja' ? 'その他の変更' :
+                       lang === 'ko' ? '기타 변경사항' :
+                       'Other Changes';
+  
+  return typeMap[type] || { emoji: '📝', label: defaultLabel };
 }
 
 /**

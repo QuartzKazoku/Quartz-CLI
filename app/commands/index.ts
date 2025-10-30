@@ -33,3 +33,8 @@ export { reviewCode } from './review';
  * Export branch command for branch management
  */
 export { branchCommand } from './branch';
+
+/**
+ * Export changelog command for generating changelog
+ */
+export { generateChangelog } from './changelog';

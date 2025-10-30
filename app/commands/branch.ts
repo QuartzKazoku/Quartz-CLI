@@ -217,20 +217,15 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
   if (await branchExists(branchName)) {
     logger.warn(`Branch "${branchName}" already exists`);
     
-    if (checkout) {
-      const shouldSwitch = await confirm(t('branch.switchToExisting'), true);
-      if (shouldSwitch) {
-        try {
-          await $`git checkout ${branchName}`.text();
-          logger.success(t('branch.switchedTo', { name: branchName }));
-          return;
-        } catch (error) {
-          logger.error(t('branch.switchFailed'), error);
-          process.exit(1);
-        }
-      } else {
-        logger.info(t('branch.operationCancelled'));
-        process.exit(0);
+    const shouldSwitch = await confirm(t('branch.switchToExisting'), true);
+    if (shouldSwitch) {
+      try {
+        await $`git checkout ${branchName}`.text();
+        logger.success(t('branch.switchedTo', { name: branchName }));
+        return;
+      } catch (error) {
+        logger.error(t('branch.switchFailed'), error);
+        process.exit(1);
       }
     } else {
       logger.info(t('branch.operationCancelled'));
@@ -254,6 +249,22 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
     if (errorMessage.includes('not a valid branch name')) {
       logger.error(`"${branchName}" is not a valid branch name`);
       logger.info('Branch names cannot contain spaces or special characters like :, ~, ^, ?, *, [');
+    } else if (errorMessage.includes('already exists')) {
+      // Handle race condition where branch was created after our check
+      logger.warn(`Branch "${branchName}" already exists`);
+      const shouldSwitch = await confirm(t('branch.switchToExisting'), true);
+      if (shouldSwitch) {
+        try {
+          await $`git checkout ${branchName}`.text();
+          logger.success(t('branch.switchedTo', { name: branchName }));
+          return;
+        } catch (switchError) {
+          logger.error(t('branch.switchFailed'), switchError);
+          process.exit(1);
+        }
+      } else {
+        process.exit(0);
+      }
     } else {
       // Show the actual git error message
       logger.error('Failed to create branch');
@@ -264,8 +275,8 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
       } else {
         logger.info(errorMessage);
       }
+      process.exit(1);
     }
-    process.exit(1);
   }
 }
 
