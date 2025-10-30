@@ -3,99 +3,118 @@
  * Pre-command hooks for automatic migrations and checks
  */
 
-import { needsMigration, runMigrations } from '@/utils/migration';
+import {needsMigration, runMigrations} from '@/utils/migration';
 import '@/utils/migrations'; // Import to register all migrations
-import { logger } from '@/utils/logger';
-import { t } from '@/i18n';
+import {logger} from '@/utils/logger';
+import {t} from '@/i18n';
+import {MigrationResult} from "@/types/migration";
 
 /**
- * Check and run migrations if needed before executing commands
- * This should be called before any command that requires config
+ * Run migrations for a given scope (global or project) and handle logging.
+ *
+ * @param isGlobal - true = global config, false = project config
+ * @returns the MigrationResult returned by runMigrations
+ * @throws Error when migration reports errors (the caller may catch and rethrow)
+ */
+async function runAndLogMigration(isGlobal: boolean): Promise<MigrationResult> {
+    const scopeName = isGlobal ? 'Global' : 'Project';
+    logger.info(`Migrating ${scopeName.toLowerCase()} configuration...`);
+    const result: MigrationResult = await runMigrations(isGlobal);
+
+    if (result.migrated) {
+        logger.line();
+        logger.success(
+            t('migration.success', {
+                from: result.fromVersion,
+                to: result.toVersion,
+            }) + ` (${scopeName})`
+        );
+
+        if (result.appliedMigrations.length > 0) {
+            logger.info(t('migration.applied'));
+            for (const version of result.appliedMigrations) {
+                logger.log(`  - ${version}`);
+            }
+        }
+        logger.line();
+    }
+
+    if (result.errors && result.errors.length > 0) {
+        logger.line();
+        logger.error(t('migration.errors') + ` (${scopeName})`);
+        for (const error of result.errors) {
+            logger.error(`  - ${error}`);
+        }
+        logger.line();
+        throw new Error(`${scopeName} migration failed`);
+    }
+
+    return result;
+}
+
+/**
+ * Check whether any migration is required for either project or global config.
+ *
+ * This function centralizes the two needsMigration calls so callers don't repeat them.
+ *
+ * @returns an object with boolean flags for project/global migration needs
+ */
+function checkMigrationNeeds(): { project: boolean; global: boolean } {
+    const project = needsMigration(false);
+    const global = needsMigration(true);
+    return {project, global};
+}
+
+/**
+ * Orchestrates migration for a specific scope only when needed.
+ *
+ * @param isGlobal - true for global config, false for project config
+ * @returns void
+ * @throws Error if migration for the given scope fails
+ */
+async function migrateIfNeeded(isGlobal: boolean): Promise<void> {
+    const needs = needsMigration(isGlobal);
+    if (!needs) return;
+
+    await runAndLogMigration(isGlobal);
+}
+
+/**
+ * Check and run migrations if needed before executing commands.
+ *
+ * Call this before any command that requires configuration to ensure both
+ * global and project configurations are migrated and consistent.
+ *
+ * @example
+ * await checkAndMigrate();
+ *
+ * @throws Error when either global or project migration fails (error is logged and rethrown)
  */
 export async function checkAndMigrate(): Promise<void> {
-  // Check both project and global configs for migration
-  const needsProjectMigration = needsMigration(false);
-  const needsGlobalMigration = needsMigration(true);
-  
-  if (!needsProjectMigration && !needsGlobalMigration) {
-    return;
-  }
-  
-  logger.line();
-  logger.warn(t('migration.detected'));
-  logger.info(t('migration.starting'));
-  
-  try {
-    // Migrate global config first if needed
-    if (needsGlobalMigration) {
-      logger.info('Migrating global configuration...');
-      const globalResult = await runMigrations(true);
-      
-      if (globalResult.migrated) {
-        logger.line();
-        logger.success(t('migration.success', {
-          from: globalResult.fromVersion,
-          to: globalResult.toVersion,
-        }) + ' (Global)');
-        
-        if (globalResult.appliedMigrations.length > 0) {
-          logger.info(t('migration.applied'));
-          for (const version of globalResult.appliedMigrations) {
-            logger.log(`  - ${version}`);
-          }
-        }
-        
-        logger.line();
-      }
-      
-      if (globalResult.errors && globalResult.errors.length > 0) {
-        logger.line();
-        logger.error(t('migration.errors') + ' (Global)');
-        for (const error of globalResult.errors) {
-          logger.error(`  - ${error}`);
-        }
-        logger.line();
-        throw new Error('Global migration failed');
-      }
+    const {project: needsProjectMigration, global: needsGlobalMigration} = checkMigrationNeeds();
+
+    if (!needsProjectMigration && !needsGlobalMigration) {
+        return;
     }
-    
-    // Migrate project config if needed
-    if (needsProjectMigration) {
-      logger.info('Migrating project configuration...');
-      const projectResult = await runMigrations(false);
-      
-      if (projectResult.migrated) {
-        logger.line();
-        logger.success(t('migration.success', {
-          from: projectResult.fromVersion,
-          to: projectResult.toVersion,
-        }) + ' (Project)');
-        
-        if (projectResult.appliedMigrations.length > 0) {
-          logger.info(t('migration.applied'));
-          for (const version of projectResult.appliedMigrations) {
-            logger.log(`  - ${version}`);
-          }
+
+    logger.line();
+    logger.warn(t('migration.detected'));
+    logger.info(t('migration.starting'));
+
+    try {
+        // migrate global first (if required) then project
+        if (needsGlobalMigration) {
+            await migrateIfNeeded(true);
         }
-        
-        logger.line();
-      }
-      
-      if (projectResult.errors && projectResult.errors.length > 0) {
-        logger.line();
-        logger.error(t('migration.errors') + ' (Project)');
-        for (const error of projectResult.errors) {
-          logger.error(`  - ${error}`);
+
+        if (needsProjectMigration) {
+            await migrateIfNeeded(false);
         }
-        logger.line();
-        throw new Error('Project migration failed');
-      }
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logger.error(t('migration.failed', {error: errorMessage}));
+        throw err;
     }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(t('migration.failed', { error: errorMessage }));
-    throw error;
-  }
 }
 
 /**
