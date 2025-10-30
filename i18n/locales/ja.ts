@@ -1,3 +1,4 @@
+//i18n/locales/ja.ts
 // Japanese translations
 import type { Translations } from '@/i18n/locales';
 

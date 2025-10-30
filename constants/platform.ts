@@ -1,3 +1,4 @@
+//constants/platform.ts
 /**
  * @fileoverview Platform-related constants for Quartz CLI
  * @description Defines supported Git platform types and their display labels

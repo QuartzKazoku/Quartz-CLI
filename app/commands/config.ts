@@ -1,3 +1,4 @@
+//app/commands/config.ts
 //cli/commands/config.ts
 import {setLanguage, t} from '@/i18n';
 import {getConfigManager} from '@/manager/config';

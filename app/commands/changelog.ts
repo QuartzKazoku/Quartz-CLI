@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {t} from '@/i18n';
 import {logger} from '@/utils/logger';
-import {GitExecutor} from '@/utils/git';
+import {GitCommandHelper} from '@/helpers/git';
 import minimist from 'minimist';
 
 /**
@@ -12,7 +12,7 @@ import minimist from 'minimist';
  * @returns Array of git tags
  */
 async function getGitTags(): Promise<string[]> {
-    return await GitExecutor.getGitTags();
+    return await GitCommandHelper.getGitTags();
 }
 
 /**
@@ -22,12 +22,7 @@ async function getGitTags(): Promise<string[]> {
  * @returns Array of commit messages
  */
 async function getCommitsBetween(from: string, to: string = 'HEAD'): Promise<string[]> {
-    try {
-        return await GitExecutor.getCommitsBetween(from, to);
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        return [];
-    }
+    return await GitCommandHelper.getCommitsBetween(from, to);
 }
 
 /**

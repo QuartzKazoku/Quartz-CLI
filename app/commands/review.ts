@@ -1,3 +1,4 @@
+//app/commands/review.ts
 //cli/commands/review.ts
 import OpenAI from 'openai';
 import fs from 'node:fs';
@@ -6,7 +7,7 @@ import {getReviewPrompt, getSummaryPrompt} from '@/utils/prompt';
 import {getConfigManager} from '@/manager/config';
 import {DEFAULT_VALUES, REVIEW_SCORE, ENCODING, JSON_FORMAT} from '@/constants';
 import {logger} from '@/utils/logger';
-import {GitExecutor} from '@/utils/git';
+import {GitCommandHelper} from '@/helpers/git';
 
 interface ReviewComment {
   file: string;
@@ -94,10 +95,10 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
     }
 
     // Get staged files
-    const staged = await GitExecutor.getStagedFiles();
+    const staged = await GitCommandHelper.getStagedFiles();
 
     // Get unstaged files
-    const unstaged = await GitExecutor.getUnstagedFiles();
+    const unstaged = await GitCommandHelper.getUnstagedFiles();
 
     // Merge and deduplicate
     const allFiles = [...new Set([...staged, ...unstaged])];
@@ -120,8 +121,8 @@ async function getChangedFiles(specificFiles?: string[]): Promise<string[]> {
  */
 async function getFileDiff(file: string): Promise<string> {
   try {
-    // Try to get diff using GitExecutor
-    let diff = await GitExecutor.getFileDiff(file);
+    // Try to get diff using GitCommandHelper
+    let diff = await GitCommandHelper.getFileDiff(file);
 
     // If still no diff, might be a new file
     if (!diff) {

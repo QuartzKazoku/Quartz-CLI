@@ -4,15 +4,15 @@
  * Usage: bun run scripts/add-path-comments.ts
  */
 
-import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { ENCODING } from '../constants/encoding';
+import {readdirSync, readFileSync, statSync, writeFileSync} from 'node:fs';
+import {join, relative} from 'node:path';
+import {ENCODING} from '@/constants';
 
 // Project root directory
 const ROOT_DIR = process.cwd();
 
 // Directories to process
-const TARGET_DIRS = ['cli', 'tests', 'scripts'];
+const TARGET_DIRS = ['app', 'constants', 'helpers','utils','i18n','manager','scripts','tests','types','utils'];
 
 // Directories to exclude
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'docs']);

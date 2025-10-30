@@ -1,3 +1,4 @@
+//constants/cli.ts
 /**
  * @fileoverview CLI-related constants for Quartz CLI
  * @description Defines CLI argument parsing and command-line interface constants

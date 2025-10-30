@@ -4,48 +4,14 @@ import {logger} from '@/utils/logger';
 import {select, input, confirm, multiselect} from '@/utils/enquirer';
 import {getConfigManager} from '@/manager/config';
 import {PlatformStrategyFactory} from '@/app/strategies/factory';
-import {GitExecutor} from '@/utils/git';
-
-/**
- * Get current branch name
- * @returns Current branch name
- */
-async function getCurrentBranch(): Promise<string> {
-    try {
-        return await GitExecutor.getCurrentBranch();
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
-
-/**
- * Get all local branches
- * @returns Array of branch names
- */
-async function getAllBranches(): Promise<string[]> {
-    try {
-        return await GitExecutor.getAllBranches();
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
-
-/**
- * Get remote repository information
- * @returns Repository owner, name, and platform
- */
-async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
-    return await GitExecutor.getRepoInfo();
-}
+import {GitCommandHelper} from '@/helpers/git';
 
 /**
  * Fetch issues from remote repository
  * @returns Array of issues
  */
 async function fetchIssues(): Promise<Array<{ number: number; title: string; labels: string[] }>> {
-    const repoInfo = await getRepoInfo();
+    const repoInfo = await GitCommandHelper.getRepoInfo();
     if (!repoInfo) {
         logger.warn(t('branch.noRepoInfo'));
         return [];
@@ -109,37 +75,7 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
  * @param checkout - Whether to checkout the branch after creation
  */
 async function createBranch(branchName: string, checkout: boolean = true): Promise<void> {
-    try {
-        await GitExecutor.createBranch(branchName, checkout);
-        if (checkout) {
-            logger.success(t('branch.created', {name: branchName}));
-        } else {
-            logger.success(t('branch.createdNoCheckout', {name: branchName}));
-        }
-    } catch (error: any) {
-        // Extract the actual git error message
-        const errorMessage = error?.message || String(error);
-
-        // Parse git error messages for better user feedback
-        if (errorMessage.includes('already exists') || errorMessage.includes('cannot lock ref')) {
-            logger.error(`Branch "${branchName}" already exists`);
-            logger.info('Switch to existing branch: git checkout ' + branchName);
-        } else if (errorMessage.includes('not a valid branch name')) {
-            logger.error(`"${branchName}" is not a valid branch name`);
-            logger.info('Branch names cannot contain spaces or special characters like :, ~, ^, ?, *, [');
-        } else {
-            // Show the actual git error message
-            logger.error('Failed to create branch');
-            // Extract just the git error without the command wrapper
-            const gitError = errorMessage.split('\n').find((line: string) => line.trim().startsWith('fatal:') || line.trim().startsWith('error:'));
-            if (gitError) {
-                logger.info(gitError.trim());
-            } else {
-                logger.info(errorMessage);
-            }
-        }
-        process.exit(1);
-    }
+    await GitCommandHelper.createBranch(branchName, checkout);
 }
 
 /**
@@ -148,30 +84,21 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
  * @param force - Whether to force delete
  */
 async function deleteBranch(branchName: string, force: boolean = false): Promise<void> {
-    try {
-        const currentBranch = await getCurrentBranch();
-        if (currentBranch === branchName) {
-            logger.error(t('branch.cannotDeleteCurrent'));
-            process.exit(1);
-        }
-
-        await GitExecutor.deleteBranch(branchName, force);
-        logger.success(t('branch.deleted', {name: branchName}));
-    } catch (error) {
-        logger.error(t('branch.deleteFailed'), error);
-        if (!force) {
-            logger.info(t('branch.useForceDelete'));
-        }
+    const currentBranch = await GitCommandHelper.getCurrentBranch();
+    if (currentBranch === branchName) {
+        logger.error(t('branch.cannotDeleteCurrent'));
         process.exit(1);
     }
+
+    await GitCommandHelper.deleteBranch(branchName, force);
 }
 
 /**
  * List all branches with current branch highlighted
  */
 async function listBranches(): Promise<void> {
-    const branches = await getAllBranches();
-    const currentBranch = await getCurrentBranch();
+    const branches = await GitCommandHelper.getAllBranches();
+    const currentBranch = await GitCommandHelper.getCurrentBranch();
 
     logger.section(t('branch.list'));
     for (const branch of branches) {
@@ -258,8 +185,8 @@ async function interactiveCreate(): Promise<void> {
 async function interactiveDelete(): Promise<void> {
     logger.section(t('branch.deleteMode'));
 
-    const branches = await getAllBranches();
-    const currentBranch = await getCurrentBranch();
+    const branches = await GitCommandHelper.getAllBranches();
+    const currentBranch = await GitCommandHelper.getCurrentBranch();
     const deletableBranches = branches.filter(b => b !== currentBranch);
 
     if (deletableBranches.length === 0) {

@@ -1,3 +1,4 @@
+//i18n/locales/en.ts
 // English translations
 import type { Translations } from '@/i18n/locales';
 

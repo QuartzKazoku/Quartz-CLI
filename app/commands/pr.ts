@@ -1,3 +1,4 @@
+//app/commands/pr.ts
 //cli/commands/pr.ts
 import OpenAI from 'openai';
 import {$} from '@/utils/shell';
@@ -10,34 +11,8 @@ import {PlatformStrategy} from '@/app/strategies/platform';
 import {PlatformStrategyFactory} from "@/app/strategies/factory";
 import {logger} from '@/utils/logger';
 import {select} from '@/utils/enquirer';
-import {ENCODING, PLATFORM_TYPES} from '@/constants';
-import {GitExecutor} from '@/utils/git';
-
-/**
- * Get current branch name
- * @returns Current branch name
- */
-async function getCurrentBranch(): Promise<string> {
-    try {
-        return await GitExecutor.getCurrentBranch();
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
-
-/**
- * Get all local branches
- * @returns Array of branch names
- */
-async function getAllBranches(): Promise<string[]> {
-    try {
-        return await GitExecutor.getAllBranches();
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
+import {ENCODING} from '@/constants';
+import {GitCommandHelper} from '@/helpers/git';
 
 /**
  * Interactive branch selector using enquirer
@@ -45,7 +20,7 @@ async function getAllBranches(): Promise<string[]> {
  * @returns Selected branch name
  */
 async function selectBranch(currentBranch: string): Promise<string> {
-    const allBranches = await getAllBranches();
+    const allBranches = await GitCommandHelper.getAllBranches();
     const branches = allBranches.filter(b => b !== currentBranch);
 
     if (branches.length === 0) {
@@ -74,62 +49,15 @@ async function selectBranch(currentBranch: string): Promise<string> {
  */
 async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
     try {
-        const remoteUrl = await GitExecutor.getRemoteUrl();
+        const remoteUrl = await GitCommandHelper.getRemoteUrl();
         
         // Debug: 输出远程 URL
         logger.info(`🔍 Git Remote URL: ${remoteUrl}`);
 
+        const {GitExecutor} = await import('@/utils/git');
         return GitExecutor.parseRepoInfo(remoteUrl);
     } catch {
         return null;
-    }
-}
-
-/**
- * Get diff with base branch
- * @param baseBranch - Base branch name
- * @returns Git diff content
- */
-async function getDiffWithBase(baseBranch: string): Promise<string> {
-    try {
-        const diff = await GitExecutor.getDiffWithBase(baseBranch);
-
-        if (!diff) {
-            logger.error(t('pr.noDiff', {base: baseBranch}));
-            process.exit(1);
-        }
-
-        return diff;
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        logger.error(t('pr.ensureBranch', {base: baseBranch}));
-        process.exit(1);
-    }
-}
-
-/**
- * Get commit history since base branch
- * @param baseBranch - Base branch name
- * @returns Array of commit messages
- */
-async function getCommitHistory(baseBranch: string): Promise<string[]> {
-    try {
-        return await GitExecutor.getCommitHistory(baseBranch);
-    } catch {
-        return [];
-    }
-}
-
-/**
- * Get list of changed files since base branch
- * @param baseBranch - Base branch name
- * @returns Array of changed file paths
- */
-async function getChangedFiles(baseBranch: string): Promise<string[]> {
-    try {
-        return await GitExecutor.getChangedFilesSinceBase(baseBranch);
-    } catch {
-        return [];
     }
 }
 
@@ -192,7 +120,7 @@ async function generatePRDescription(
  * @returns True if branch exists on remote
  */
 async function isBranchOnRemote(branch: string): Promise<boolean> {
-    return await GitExecutor.isBranchOnRemote(branch);
+    return await GitCommandHelper.isBranchOnRemote(branch);
 }
 
 /**
@@ -200,11 +128,7 @@ async function isBranchOnRemote(branch: string): Promise<boolean> {
  * @param branch - Branch name
  */
 async function pushBranchToRemote(branch: string): Promise<void> {
-    try {
-        await GitExecutor.pushBranch(branch);
-    } catch (error) {
-        throw new Error(`Failed to push branch: ${error}`);
-    }
+    await GitCommandHelper.pushBranch(branch);
 }
 
 /**
@@ -338,7 +262,7 @@ export async function generatePR(args: string[]) {
     const {base: specifiedBase, useGH, interactive} = parseArgs(args);
 
     // Get current branch
-    const currentBranch = await getCurrentBranch();
+    const currentBranch = await GitCommandHelper.getCurrentBranch();
 
     // Determine base branch
     let baseBranch: string;
@@ -368,9 +292,9 @@ export async function generatePR(args: string[]) {
     logger.line();
 
     // Get change information
-    const diff = await getDiffWithBase(baseBranch);
-    const commits = await getCommitHistory(baseBranch);
-    const files = await getChangedFiles(baseBranch);
+    const diff = await GitCommandHelper.getDiffWithBase(baseBranch);
+    const commits = await GitCommandHelper.getCommitHistory(baseBranch);
+    const files = await GitCommandHelper.getChangedFiles(baseBranch);
 
     logger.section(t('pr.statistics'));
     logger.listItem(`${logger.text.primary(commits.length.toString())} ${t('pr.commits')}`);

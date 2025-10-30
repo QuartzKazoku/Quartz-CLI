@@ -8,19 +8,14 @@ import { getCommitPrompt } from '@/utils/prompt';
 import { getConfigManager } from '@/manager/config';
 import { selectFromList, formatCommitMessage } from '@/utils/enquirer';
 import { logger } from '@/utils/logger';
-import { GitExecutor } from '@/utils/git';
+import { GitCommandHelper } from '@/helpers/git';
 
 /**
  * Stage all changes using git add .
  */
 async function stageAllChanges(): Promise<void> {
-  try {
-    await GitExecutor.stageAll();
-    logger.success(t('commit.autoStaged'));
-  } catch (error) {
-    logger.error(t('commit.stageFailed'), error);
-    process.exit(1);
-  }
+  await GitCommandHelper.stageAll();
+  logger.success(t('commit.autoStaged'));
 }
 
 /**
@@ -28,20 +23,14 @@ async function stageAllChanges(): Promise<void> {
  * @returns Git diff content
  */
 async function getGitDiff(): Promise<string> {
-  try {
-    // Get staged changes
-    const diff = await GitExecutor.getStagedDiff();
+  const diff = await GitCommandHelper.getStagedDiff();
 
-    if (!diff) {
-      logger.error(t('commit.noStaged'));
-      process.exit(1);
-    }
-
-    return diff;
-  } catch (error) {
-    logger.error(t('errors.gitError'), error);
+  if (!diff) {
+    logger.error(t('commit.noStaged'));
     process.exit(1);
   }
+
+  return diff;
 }
 
 /**
@@ -50,7 +39,7 @@ async function getGitDiff(): Promise<string> {
  */
 async function getChangedFiles(): Promise<string[]> {
   try {
-    return await GitExecutor.getStagedFiles();
+    return await GitCommandHelper.getStagedFiles();
   } catch (error) {
     logger.error('Failed to get changed files:', error);
     return [];
@@ -239,7 +228,7 @@ export async function generateCommit(args: string[]) {
     fs.writeFileSync(tempFile, messages[0]);
 
     try {
-      await GitExecutor.commitWithMessageFile(tempFile);
+      await GitCommandHelper.commitWithMessageFile(tempFile);
       logger.success(t('commit.success'));
     } catch (error) {
       logger.error('Commit cancelled or failed:', error);

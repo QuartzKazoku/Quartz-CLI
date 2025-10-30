@@ -1,3 +1,4 @@
+//constants/review.ts
 /**
  * @fileoverview Code review related constants for Quartz CLI
  * @description Defines score thresholds, rating levels, and review-related constants

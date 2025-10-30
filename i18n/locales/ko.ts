@@ -1,3 +1,4 @@
+//i18n/locales/ko.ts
 // Korean translations
 import type { Translations } from '@/i18n/locales';
 

@@ -1,3 +1,4 @@
+//i18n/locales/zh-TW.ts
 // Traditional Chinese translations
 import type { Translations } from '@/i18n/locales';
 

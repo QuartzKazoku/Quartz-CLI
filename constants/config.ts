@@ -1,3 +1,4 @@
+//constants/config.ts
 /**
  * @fileoverview Configuration-related constants for Quartz CLI
  * @description Defines configuration file names, keys, and default values

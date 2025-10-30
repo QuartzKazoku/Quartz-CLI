@@ -1,3 +1,4 @@
+//app/commands/init.ts
 //cli/commands/init.ts
 import fs from 'node:fs';
 import path from 'node:path';
