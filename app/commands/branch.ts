@@ -252,7 +252,11 @@ async function interactiveCreate(): Promise<void> {
             };
         });
 
-        const selectedIssueNumberOrObject = await select(t('branch.selectIssue'), choices, 0);
+        const selectedIssueNumberOrObject = await select<{ number: number; title: string; labels: string[] } | string>(
+            t('branch.selectIssue'),
+            choices,
+            0
+        );
 
         // Handle case where select returns name (string) instead of value (object)
         const selectedIssue = typeof selectedIssueNumberOrObject === 'string'
