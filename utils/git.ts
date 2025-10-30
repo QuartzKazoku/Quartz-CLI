@@ -1,5 +1,7 @@
 // utils/git.ts
 import { $ } from '@/utils/shell';
+import {logger} from "@/utils/logger";
+import {t} from "@/i18n";
 
 /**
  * Repository information interface
@@ -246,5 +248,36 @@ export class GitExecutor {
      */
     static async commitWithMessageFile(messageFile: string): Promise<void> {
         await $`git commit -e -F ${messageFile}`;
+    }
+
+    /**
+     * Get git tags sorted by version
+     * @returns Array of git tags
+     */
+    static async getGitTags(): Promise<string[]> {
+        try {
+            const output = await $`git tag --sort=-version:refname`.text();
+            return output.trim().split('\n').filter(Boolean);
+        } catch (error) {
+            logger.warn(t('utils.git.failedToGetTags'), error);
+            return [];
+        }
+    }
+
+    /**
+     * Get commits between two tags or from tag to HEAD
+     * @param from Starting tag or commit
+     * @param to Ending tag or commit (default: HEAD)
+     * @returns Array of commit messages
+     */
+    static async getCommitsBetween(from: string, to: string = 'HEAD'): Promise<string[]> {
+        try {
+            const range = from ? `${from}..${to}` : to;
+            const output = await $`git log ${range} --pretty=format:%s`.text();
+            return output.trim().split('\n').filter(Boolean);
+        } catch (error) {
+            logger.warn(`Failed to get commits between ${from} and ${to}:`, error);
+            return [];
+        }
     }
 }
