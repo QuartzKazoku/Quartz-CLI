@@ -1,22 +1,22 @@
 // app/commands/branch.ts
-import { $ } from '@/utils/shell';
-import { t } from '@/i18n';
-import { logger } from '@/utils/logger';
-import { select, input, confirm, multiselect } from '@/utils/enquirer';
-import { getConfigManager } from '@/manager/config';
-import { PlatformStrategyFactory } from '@/app/strategies/factory';
+import {$} from '@/utils/shell';
+import {t} from '@/i18n';
+import {logger} from '@/utils/logger';
+import {select, input, confirm, multiselect} from '@/utils/enquirer';
+import {getConfigManager} from '@/manager/config';
+import {PlatformStrategyFactory} from '@/app/strategies/factory';
 
 /**
  * Get current branch name
  * @returns Current branch name
  */
 async function getCurrentBranch(): Promise<string> {
-  try {
-    return (await $`git branch --show-current`.text()).trim();
-  } catch (error) {
-    logger.error(t('errors.gitError'), error);
-    process.exit(1);
-  }
+    try {
+        return (await $`git branch --show-current`.text()).trim();
+    } catch (error) {
+        logger.error(t('errors.gitError'), error);
+        process.exit(1);
+    }
 }
 
 /**
@@ -24,15 +24,15 @@ async function getCurrentBranch(): Promise<string> {
  * @returns Array of branch names
  */
 async function getAllBranches(): Promise<string[]> {
-  try {
-    return (await $`git branch --format='%(refname:short)'`.text())
-      .trim()
-      .split('\n')
-      .filter(Boolean);
-  } catch (error) {
-    logger.error(t('errors.gitError'), error);
-    process.exit(1);
-  }
+    try {
+        return (await $`git branch --format='%(refname:short)'`.text())
+            .trim()
+            .split('\n')
+            .filter(Boolean);
+    } catch (error) {
+        logger.error(t('errors.gitError'), error);
+        process.exit(1);
+    }
 }
 
 /**
@@ -40,37 +40,37 @@ async function getAllBranches(): Promise<string[]> {
  * @returns Repository owner, name, and platform
  */
 async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
-  try {
-    const remoteUrl = (await $`git remote get-url origin`.text()).trim();
+    try {
+        const remoteUrl = (await $`git remote get-url origin`.text()).trim();
 
-    // Parse GitHub URL
-    const githubSshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const githubSshMatch = githubSshRegex.exec(remoteUrl);
-    const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
+        // Parse GitHub URL
+        const githubSshRegex = /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/;
+        const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
+        const githubSshMatch = githubSshRegex.exec(remoteUrl);
+        const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
 
-    if (githubSshMatch) {
-      return { owner: githubSshMatch[1], repo: githubSshMatch[2], platform: 'github' };
-    } else if (githubHttpsMatch) {
-      return { owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: 'github' };
+        if (githubSshMatch) {
+            return {owner: githubSshMatch[1], repo: githubSshMatch[2], platform: 'github'};
+        } else if (githubHttpsMatch) {
+            return {owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: 'github'};
+        }
+
+        // Parse GitLab URL
+        const gitlabSshRegex = /git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/;
+        const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
+        const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
+        const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
+
+        if (gitlabSshMatch?.[1]?.includes('gitlab')) {
+            return {owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab'};
+        } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
+            return {owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab'};
+        }
+
+        return null;
+    } catch {
+        return null;
     }
-
-    // Parse GitLab URL
-    const gitlabSshRegex = /git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-    const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
-    const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
-
-    if (gitlabSshMatch?.[1]?.includes('gitlab')) {
-      return { owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: 'gitlab' };
-    } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
-      return { owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: 'gitlab' };
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -78,85 +78,87 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: '
  * @returns Array of issues
  */
 async function fetchIssues(): Promise<Array<{ number: number; title: string; labels: string[] }>> {
-  const repoInfo = await getRepoInfo();
-  if (!repoInfo) {
-    logger.warn(t('branch.noRepoInfo'));
-    return [];
-  }
-
-  const configManager = getConfigManager();
-  const platformConfigs = configManager.getPlatformConfigs();
-  const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
-
-  if (!matchingConfig) {
-    logger.warn(t('branch.noToken'));
-    return [];
-  }
-
-  try {
-    const strategy = PlatformStrategyFactory.create(matchingConfig);
-    
-    if (repoInfo.platform === 'github') {
-      const apiUrl = matchingConfig.url
-        ? `${matchingConfig.url}/api/v3/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`
-        : `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `token ${matchingConfig.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      });
-
-      if (!response.ok) {
-        logger.warn(t('branch.fetchIssuesFailed'));
+    const repoInfo = await getRepoInfo();
+    if (!repoInfo) {
+        logger.warn(t('branch.noRepoInfo'));
         return [];
-      }
-
-      const issues = await response.json() as Array<{
-        number: number;
-        title: string;
-        labels: Array<{ name: string }>;
-      }>;
-
-      return issues.map(issue => ({
-        number: issue.number,
-        title: issue.title,
-        labels: issue.labels.map(l => l.name),
-      }));
-    } else if (repoInfo.platform === 'gitlab') {
-      const apiUrl = matchingConfig.url
-        ? `${matchingConfig.url}/api/v4/projects/${encodeURIComponent(`${repoInfo.owner}/${repoInfo.repo}`)}/issues?state=opened&per_page=20`
-        : `https://gitlab.com/api/v4/projects/${encodeURIComponent(`${repoInfo.owner}/${repoInfo.repo}`)}/issues?state=opened&per_page=20`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${matchingConfig.token}`,
-        },
-      });
-
-      if (!response.ok) {
-        logger.warn(t('branch.fetchIssuesFailed'));
-        return [];
-      }
-
-      const issues = await response.json() as Array<{
-        iid: number;
-        title: string;
-        labels: string[];
-      }>;
-
-      return issues.map(issue => ({
-        number: issue.iid,
-        title: issue.title,
-        labels: issue.labels,
-      }));
     }
-  } catch (error) {
-    logger.warn(t('branch.fetchIssuesFailed'), error);
-  }
 
-  return [];
+    const configManager = getConfigManager();
+    const platformConfigs = configManager.getPlatformConfigs();
+    const matchingConfig = platformConfigs.find(p => p.type === repoInfo.platform);
+
+    if (!matchingConfig) {
+        logger.warn(t('branch.noToken'));
+        return [];
+    }
+
+    try {
+        const strategy = PlatformStrategyFactory.create(matchingConfig);
+
+        if (repoInfo.platform === 'github') {
+            const apiUrl = matchingConfig.url
+                ? `${matchingConfig.url}/api/v3/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`
+                : `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`;
+
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `token ${matchingConfig.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                },
+            });
+
+            if (!response.ok) {
+                logger.warn(t('branch.fetchIssuesFailed'));
+                return [];
+            }
+
+            const issues = await response.json() as Array<{
+                number: number;
+                title: string;
+                labels: Array<{ name: string }>;
+            }>;
+
+            return issues.map(issue => ({
+                number: issue.number,
+                title: issue.title,
+                labels: issue.labels.map(l => l.name),
+            }));
+        } else if (repoInfo.platform === 'gitlab') {
+            const projectPath = `${repoInfo.owner}/${repoInfo.repo}`;
+            const encodedProjectPath = encodeURIComponent(projectPath);
+            const apiUrl = matchingConfig.url
+                ? `${matchingConfig.url}/api/v4/projects/${encodedProjectPath}/issues?state=opened&per_page=20`
+                : `https://gitlab.com/api/v4/projects/${encodedProjectPath}/issues?state=opened&per_page=20`;
+
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${matchingConfig.token}`,
+                },
+            });
+
+            if (!response.ok) {
+                logger.warn(t('branch.fetchIssuesFailed'));
+                return [];
+            }
+
+            const issues = await response.json() as Array<{
+                iid: number;
+                title: string;
+                labels: string[];
+            }>;
+
+            return issues.map(issue => ({
+                number: issue.iid,
+                title: issue.title,
+                labels: issue.labels,
+            }));
+        }
+    } catch (error) {
+        logger.warn(t('branch.fetchIssuesFailed'), error);
+    }
+
+    return [];
 }
 
 /**
@@ -165,32 +167,32 @@ async function fetchIssues(): Promise<Array<{ number: number; title: string; lab
  * @returns Generated branch name
  */
 function generateBranchName(issue: { number: number; title: string; labels: string[] }): string {
-  // Determine branch type from labels
-  let type = 'feature';
-  const labels = issue.labels || [];
-  if (labels.some(l => l && l.toLowerCase().includes('bug'))) {
-    type = 'fix';
-  } else if (labels.some(l => l && l.toLowerCase().includes('doc'))) {
-    type = 'docs';
-  } else if (labels.some(l => l && l.toLowerCase().includes('refactor'))) {
-    type = 'refactor';
-  } else if (labels.some(l => l && l.toLowerCase().includes('test'))) {
-    type = 'test';
-  } else if (labels.some(l => l && l.toLowerCase().includes('chore'))) {
-    type = 'chore';
-  }
+    // Determine branch type from labels
+    let type = 'feature';
+    const labels = issue.labels || [];
+    if (labels.some(l => l && l.toLowerCase().includes('bug'))) {
+        type = 'fix';
+    } else if (labels.some(l => l && l.toLowerCase().includes('doc'))) {
+        type = 'docs';
+    } else if (labels.some(l => l && l.toLowerCase().includes('refactor'))) {
+        type = 'refactor';
+    } else if (labels.some(l => l && l.toLowerCase().includes('test'))) {
+        type = 'test';
+    } else if (labels.some(l => l && l.toLowerCase().includes('chore'))) {
+        type = 'chore';
+    }
 
-  // Clean and format title
-  const title = issue.title || 'untitled';
-  const cleanTitle = title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-    .substring(0, 50); // Limit length
+    // Clean and format title
+    const title = issue.title || 'untitled';
+    const cleanTitle = title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .substring(0, 50); // Limit length
 
-  const issueNumber = issue.number || 0;
-  return `${type}/${issueNumber}-${cleanTitle}`;
+    const issueNumber = issue.number || 0;
+    return `${type}/${issueNumber}-${cleanTitle}`;
 }
 
 /**
@@ -199,38 +201,38 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
  * @param checkout - Whether to checkout the branch after creation
  */
 async function createBranch(branchName: string, checkout: boolean = true): Promise<void> {
-  try {
-    if (checkout) {
-      await $`git checkout -b ${branchName}`.text();
-      logger.success(t('branch.created', { name: branchName }));
-    } else {
-      await $`git branch ${branchName}`.text();
-      logger.success(t('branch.createdNoCheckout', { name: branchName }));
+    try {
+        if (checkout) {
+            await $`git checkout -b ${branchName}`.text();
+            logger.success(t('branch.created', {name: branchName}));
+        } else {
+            await $`git branch ${branchName}`.text();
+            logger.success(t('branch.createdNoCheckout', {name: branchName}));
+        }
+    } catch (error: any) {
+        // Extract the actual git error message
+        const errorMessage = error?.message || String(error);
+
+        // Parse git error messages for better user feedback
+        if (errorMessage.includes('already exists') || errorMessage.includes('cannot lock ref')) {
+            logger.error(`Branch "${branchName}" already exists`);
+            logger.info('Switch to existing branch: git checkout ' + branchName);
+        } else if (errorMessage.includes('not a valid branch name')) {
+            logger.error(`"${branchName}" is not a valid branch name`);
+            logger.info('Branch names cannot contain spaces or special characters like :, ~, ^, ?, *, [');
+        } else {
+            // Show the actual git error message
+            logger.error('Failed to create branch');
+            // Extract just the git error without the command wrapper
+            const gitError = errorMessage.split('\n').find((line: string) => line.trim().startsWith('fatal:') || line.trim().startsWith('error:'));
+            if (gitError) {
+                logger.info(gitError.trim());
+            } else {
+                logger.info(errorMessage);
+            }
+        }
+        process.exit(1);
     }
-  } catch (error: any) {
-    // Extract the actual git error message
-    const errorMessage = error?.message || String(error);
-    
-    // Parse git error messages for better user feedback
-    if (errorMessage.includes('already exists') || errorMessage.includes('cannot lock ref')) {
-      logger.error(`Branch "${branchName}" already exists`);
-      logger.info('Switch to existing branch: git checkout ' + branchName);
-    } else if (errorMessage.includes('not a valid branch name')) {
-      logger.error(`"${branchName}" is not a valid branch name`);
-      logger.info('Branch names cannot contain spaces or special characters like :, ~, ^, ?, *, [');
-    } else {
-      // Show the actual git error message
-      logger.error('Failed to create branch');
-      // Extract just the git error without the command wrapper
-      const gitError = errorMessage.split('\n').find((line: string) => line.trim().startsWith('fatal:') || line.trim().startsWith('error:'));
-      if (gitError) {
-        logger.info(gitError.trim());
-      } else {
-        logger.info(errorMessage);
-      }
-    }
-    process.exit(1);
-  }
 }
 
 /**
@@ -239,153 +241,153 @@ async function createBranch(branchName: string, checkout: boolean = true): Promi
  * @param force - Whether to force delete
  */
 async function deleteBranch(branchName: string, force: boolean = false): Promise<void> {
-  try {
-    const currentBranch = await getCurrentBranch();
-    if (currentBranch === branchName) {
-      logger.error(t('branch.cannotDeleteCurrent'));
-      process.exit(1);
-    }
+    try {
+        const currentBranch = await getCurrentBranch();
+        if (currentBranch === branchName) {
+            logger.error(t('branch.cannotDeleteCurrent'));
+            process.exit(1);
+        }
 
-    const flag = force ? '-D' : '-d';
-    await $`git branch ${flag} ${branchName}`.quiet();
-    logger.success(t('branch.deleted', { name: branchName }));
-  } catch (error) {
-    logger.error(t('branch.deleteFailed'), error);
-    if (!force) {
-      logger.info(t('branch.useForceDelete'));
+        const flag = force ? '-D' : '-d';
+        await $`git branch ${flag} ${branchName}`.quiet();
+        logger.success(t('branch.deleted', {name: branchName}));
+    } catch (error) {
+        logger.error(t('branch.deleteFailed'), error);
+        if (!force) {
+            logger.info(t('branch.useForceDelete'));
+        }
+        process.exit(1);
     }
-    process.exit(1);
-  }
 }
 
 /**
  * List all branches with current branch highlighted
  */
 async function listBranches(): Promise<void> {
-  const branches = await getAllBranches();
-  const currentBranch = await getCurrentBranch();
+    const branches = await getAllBranches();
+    const currentBranch = await getCurrentBranch();
 
-  logger.section(t('branch.list'));
-  for (const branch of branches) {
-    if (branch === currentBranch) {
-      logger.listItem(`${logger.text.success('* ' + branch)} ${logger.text.dim('(current)')}`);
-    } else {
-      logger.listItem(`  ${branch}`);
+    logger.section(t('branch.list'));
+    for (const branch of branches) {
+        if (branch === currentBranch) {
+            logger.listItem(`${logger.text.success('* ' + branch)} ${logger.text.dim('(current)')}`);
+        } else {
+            logger.listItem(`  ${branch}`);
+        }
     }
-  }
-  logger.line();
+    logger.line();
 }
 
 /**
  * Interactive branch creation with issue selection
  */
 async function interactiveCreate(): Promise<void> {
-  logger.section(t('branch.createMode'));
+    logger.section(t('branch.createMode'));
 
-  // Ask if user wants to create from issue
-  const createFromIssue = await confirm(t('branch.createFromIssue'), false);
+    // Ask if user wants to create from issue
+    const createFromIssue = await confirm(t('branch.createFromIssue'), false);
 
-  if (createFromIssue) {
-    const spinner = logger.spinner(t('branch.fetchingIssues'));
-    const issues = await fetchIssues();
-    spinner.stop();
+    if (createFromIssue) {
+        const spinner = logger.spinner(t('branch.fetchingIssues'));
+        const issues = await fetchIssues();
+        spinner.stop();
 
-    if (issues.length === 0) {
-      logger.warn(t('branch.noIssues'));
-      logger.info(t('branch.manualCreate'));
-      const branchName = await input(t('branch.enterBranchName'));
-      await createBranch(branchName);
-      return;
-    }
+        if (issues.length === 0) {
+            logger.warn(t('branch.noIssues'));
+            logger.info(t('branch.manualCreate'));
+            const branchName = await input(t('branch.enterBranchName'));
+            await createBranch(branchName);
+            return;
+        }
 
-    // Select issue
-    const choices = issues.map(issue => ({
-      name: `${issue.number}`,
-      value: issue,
-      message: `#${issue.number} - ${issue.title}${issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : ''}`,
-    }));
+        // Select issue
+        const choices = issues.map(issue => ({
+            name: `${issue.number}`,
+            value: issue,
+            message: `#${issue.number} - ${issue.title}${issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : ''}`,
+        }));
 
-    const selectedIssueNumberOrObject = await select(t('branch.selectIssue'), choices, 0);
-    
-    // Handle case where select returns name (string) instead of value (object)
-    const selectedIssue = typeof selectedIssueNumberOrObject === 'string'
-      ? issues.find(issue => `${issue.number}` === selectedIssueNumberOrObject)
-      : selectedIssueNumberOrObject;
-    
-    if (!selectedIssue) {
-      logger.error('Failed to find selected issue');
-      process.exit(1);
-    }
-    
-    const suggestedName = generateBranchName(selectedIssue);
+        const selectedIssueNumberOrObject = await select(t('branch.selectIssue'), choices, 0);
 
-    logger.info(t('branch.suggestedName', { name: suggestedName }));
-    const useSuggested = await confirm(t('branch.useSuggestedName'), true);
+        // Handle case where select returns name (string) instead of value (object)
+        const selectedIssue = typeof selectedIssueNumberOrObject === 'string'
+            ? issues.find(issue => `${issue.number}` === selectedIssueNumberOrObject)
+            : selectedIssueNumberOrObject;
 
-    let branchName: string;
-    if (useSuggested) {
-      branchName = suggestedName;
+        if (!selectedIssue) {
+            logger.error('Failed to find selected issue');
+            process.exit(1);
+        }
+
+        const suggestedName = generateBranchName(selectedIssue);
+
+        logger.info(t('branch.suggestedName', {name: suggestedName}));
+        const useSuggested = await confirm(t('branch.useSuggestedName'), true);
+
+        let branchName: string;
+        if (useSuggested) {
+            branchName = suggestedName;
+        } else {
+            branchName = await input(t('branch.enterBranchName'), suggestedName);
+        }
+
+        await createBranch(branchName);
     } else {
-      branchName = await input(t('branch.enterBranchName'), suggestedName);
+        const branchName = await input(t('branch.enterBranchName'));
+        await createBranch(branchName);
     }
-
-    await createBranch(branchName);
-  } else {
-    const branchName = await input(t('branch.enterBranchName'));
-    await createBranch(branchName);
-  }
 }
 
 /**
  * Interactive branch deletion with multi-select support
  */
 async function interactiveDelete(): Promise<void> {
-  logger.section(t('branch.deleteMode'));
+    logger.section(t('branch.deleteMode'));
 
-  const branches = await getAllBranches();
-  const currentBranch = await getCurrentBranch();
-  const deletableBranches = branches.filter(b => b !== currentBranch);
+    const branches = await getAllBranches();
+    const currentBranch = await getCurrentBranch();
+    const deletableBranches = branches.filter(b => b !== currentBranch);
 
-  if (deletableBranches.length === 0) {
-    logger.warn(t('branch.noDeletableBranches'));
-    return;
-  }
-
-  const choices = deletableBranches.map(branch => ({
-    name: branch,
-    value: branch,
-    message: branch,
-  }));
-
-  const branchesToDelete = await multiselect(t('branch.selectBranchesToDelete'), choices);
-
-  if (branchesToDelete.length === 0) {
-    logger.info(t('branch.deleteCancelled'));
-    return;
-  }
-
-  const confirmDelete = await confirm(
-    t('branch.confirmDeleteMultiple', { count: branchesToDelete.length, branches: branchesToDelete.join(', ') }),
-    false
-  );
-
-  if (confirmDelete) {
-    const forceDelete = await confirm(t('branch.forceDelete'), false);
-    
-    logger.line();
-    for (const branch of branchesToDelete) {
-      try {
-        await deleteBranch(branch, forceDelete);
-      } catch (error) {
-        // Continue deleting other branches even if one fails
-        logger.error(t('branch.deleteFailed') + `: ${branch}`);
-      }
+    if (deletableBranches.length === 0) {
+        logger.warn(t('branch.noDeletableBranches'));
+        return;
     }
-    logger.line();
-    logger.success(t('branch.deleteComplete', { count: branchesToDelete.length }));
-  } else {
-    logger.info(t('branch.deleteCancelled'));
-  }
+
+    const choices = deletableBranches.map(branch => ({
+        name: branch,
+        value: branch,
+        message: branch,
+    }));
+
+    const branchesToDelete = await multiselect(t('branch.selectBranchesToDelete'), choices);
+
+    if (branchesToDelete.length === 0) {
+        logger.info(t('branch.deleteCancelled'));
+        return;
+    }
+
+    const confirmDelete = await confirm(
+        t('branch.confirmDeleteMultiple', {count: branchesToDelete.length, branches: branchesToDelete.join(', ')}),
+        false
+    );
+
+    if (confirmDelete) {
+        const forceDelete = await confirm(t('branch.forceDelete'), false);
+
+        logger.line();
+        for (const branch of branchesToDelete) {
+            try {
+                await deleteBranch(branch, forceDelete);
+            } catch (error) {
+                // Continue deleting other branches even if one fails
+                logger.error(t('branch.deleteFailed') + `: ${branch}`);
+            }
+        }
+        logger.line();
+        logger.success(t('branch.deleteComplete', {count: branchesToDelete.length}));
+    } else {
+        logger.info(t('branch.deleteCancelled'));
+    }
 }
 
 /**
@@ -393,65 +395,65 @@ async function interactiveDelete(): Promise<void> {
  * @param args - Command line arguments
  */
 export async function branchCommand(args: string[]): Promise<void> {
-  logger.section(t('branch.starting'));
+    logger.section(t('branch.starting'));
 
-  // If no arguments, show interactive menu
-  if (args.length === 0) {
-    const action = await select(
-      t('branch.selectAction'),
-      [
-        { name: 'create', value: 'create', message: t('branch.actionCreate') },
-        { name: 'delete', value: 'delete', message: t('branch.actionDelete') },
-        { name: 'list', value: 'list', message: t('branch.actionList') },
-      ],
-      0
-    );
+    // If no arguments, show interactive menu
+    if (args.length === 0) {
+        const action = await select(
+            t('branch.selectAction'),
+            [
+                {name: 'create', value: 'create', message: t('branch.actionCreate')},
+                {name: 'delete', value: 'delete', message: t('branch.actionDelete')},
+                {name: 'list', value: 'list', message: t('branch.actionList')},
+            ],
+            0
+        );
 
-    switch (action) {
-      case 'create':
-        await interactiveCreate();
-        break;
-      case 'delete':
-        await interactiveDelete();
-        break;
-      case 'list':
-        await listBranches();
-        break;
+        switch (action) {
+            case 'create':
+                await interactiveCreate();
+                break;
+            case 'delete':
+                await interactiveDelete();
+                break;
+            case 'list':
+                await listBranches();
+                break;
+        }
+        return;
     }
-    return;
-  }
 
-  // Parse command line arguments
-  const subcommand = args[0];
+    // Parse command line arguments
+    const subcommand = args[0];
 
-  switch (subcommand) {
-    case 'create':
-    case 'c':
-      if (args[1]) {
-        await createBranch(args[1]);
-      } else {
-        await interactiveCreate();
-      }
-      break;
+    switch (subcommand) {
+        case 'create':
+        case 'c':
+            if (args[1]) {
+                await createBranch(args[1]);
+            } else {
+                await interactiveCreate();
+            }
+            break;
 
-    case 'delete':
-    case 'd':
-      if (args[1]) {
-        const force = args.includes('--force') || args.includes('-f');
-        await deleteBranch(args[1], force);
-      } else {
-        await interactiveDelete();
-      }
-      break;
+        case 'delete':
+        case 'd':
+            if (args[1]) {
+                const force = args.includes('--force') || args.includes('-f');
+                await deleteBranch(args[1], force);
+            } else {
+                await interactiveDelete();
+            }
+            break;
 
-    case 'list':
-    case 'l':
-      await listBranches();
-      break;
+        case 'list':
+        case 'l':
+            await listBranches();
+            break;
 
-    default:
-      logger.error(t('branch.unknownCommand', { command: subcommand }));
-      logger.info(t('branch.usage'));
-      process.exit(1);
-  }
+        default:
+            logger.error(t('branch.unknownCommand', {command: subcommand}));
+            logger.info(t('branch.usage'));
+            process.exit(1);
+    }
 }
