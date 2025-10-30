@@ -95,70 +95,11 @@ async function fetchIssues(): Promise<Array<{ number: number; title: string; lab
 
     try {
         const strategy = PlatformStrategyFactory.create(matchingConfig);
-
-        if (repoInfo.platform === 'github') {
-            const apiUrl = matchingConfig.url
-                ? `${matchingConfig.url}/api/v3/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`
-                : `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`;
-
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `token ${matchingConfig.token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                },
-            });
-
-            if (!response.ok) {
-                logger.warn(t('branch.fetchIssuesFailed'));
-                return [];
-            }
-
-            const issues = await response.json() as Array<{
-                number: number;
-                title: string;
-                labels: Array<{ name: string }>;
-            }>;
-
-            return issues.map(issue => ({
-                number: issue.number,
-                title: issue.title,
-                labels: issue.labels.map(l => l.name),
-            }));
-        } else if (repoInfo.platform === 'gitlab') {
-            const projectPath = `${repoInfo.owner}/${repoInfo.repo}`;
-            const encodedProjectPath = encodeURIComponent(projectPath);
-            const apiUrl = matchingConfig.url
-                ? `${matchingConfig.url}/api/v4/projects/${encodedProjectPath}/issues?state=opened&per_page=20`
-                : `https://gitlab.com/api/v4/projects/${encodedProjectPath}/issues?state=opened&per_page=20`;
-
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `Bearer ${matchingConfig.token}`,
-                },
-            });
-
-            if (!response.ok) {
-                logger.warn(t('branch.fetchIssuesFailed'));
-                return [];
-            }
-
-            const issues = await response.json() as Array<{
-                iid: number;
-                title: string;
-                labels: string[];
-            }>;
-
-            return issues.map(issue => ({
-                number: issue.iid,
-                title: issue.title,
-                labels: issue.labels,
-            }));
-        }
+        return await strategy.fetchIssues(repoInfo.owner, repoInfo.repo);
     } catch (error) {
         logger.warn(t('branch.fetchIssuesFailed'), error);
+        return [];
     }
-
-    return [];
 }
 
 /**
@@ -170,15 +111,15 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
     // Determine branch type from labels
     let type = 'feature';
     const labels = issue.labels || [];
-    if (labels.some(l => l && l.toLowerCase().includes('bug'))) {
+    if (labels.some(l => l?.toLowerCase().includes('bug'))) {
         type = 'fix';
-    } else if (labels.some(l => l && l.toLowerCase().includes('doc'))) {
+    } else if (labels.some(l => l?.toLowerCase().includes('doc'))) {
         type = 'docs';
-    } else if (labels.some(l => l && l.toLowerCase().includes('refactor'))) {
+    } else if (labels.some(l => l?.toLowerCase().includes('refactor'))) {
         type = 'refactor';
-    } else if (labels.some(l => l && l.toLowerCase().includes('test'))) {
+    } else if (labels.some(l => l?.toLowerCase().includes('test'))) {
         type = 'test';
-    } else if (labels.some(l => l && l.toLowerCase().includes('chore'))) {
+    } else if (labels.some(l => l?.toLowerCase().includes('chore'))) {
         type = 'chore';
     }
 
@@ -186,9 +127,9 @@ function generateBranchName(issue: { number: number; title: string; labels: stri
     const title = issue.title || 'untitled';
     const cleanTitle = title
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replaceAll(/[^\w\s-]/g, '') // Remove special characters
+        .replaceAll(/\s+/g, '-') // Replace spaces with hyphens
+        .replaceAll(/-+/g, '-') // Replace multiple hyphens with single hyphen
         .substring(0, 50); // Limit length
 
     const issueNumber = issue.number || 0;
@@ -301,11 +242,15 @@ async function interactiveCreate(): Promise<void> {
         }
 
         // Select issue
-        const choices = issues.map(issue => ({
-            name: `${issue.number}`,
-            value: issue,
-            message: `#${issue.number} - ${issue.title}${issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : ''}`,
-        }));
+        const choices = issues.map(issue => {
+            const labelInfo = issue.labels.length > 0 ? ` [${issue.labels.join(', ')}]` : '';
+            const message = `#${issue.number} - ${issue.title}${labelInfo}`;
+            return {
+                name: `${issue.number}`,
+                value: issue,
+                message,
+            };
+        });
 
         const selectedIssueNumberOrObject = await select(t('branch.selectIssue'), choices, 0);
 

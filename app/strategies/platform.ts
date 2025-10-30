@@ -11,6 +11,15 @@ export interface PullRequestResult {
 }
 
 /**
+ * Issue interface
+ */
+export interface Issue {
+    number: number;
+    title: string;
+    labels: string[];
+}
+
+/**
  * Platform strategy interface
  */
 export interface PlatformStrategy {
@@ -35,6 +44,11 @@ export interface PlatformStrategy {
      * Push branch to remote
      */
     pushBranchToRemote(branch: string): Promise<void>;
+
+    /**
+     * Fetch issues from remote repository
+     */
+    fetchIssues(owner: string, repo: string): Promise<Issue[]>;
 }
 
 /**
@@ -94,5 +108,13 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
         head: string,
         base: string
     ): Promise<PullRequestResult>;
+
+    /**
+     * Abstract method for fetching issues, needs subclasses to implement specific platform-related logic
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @returns Promise<Issue[]> Array of issues
+     */
+    abstract fetchIssues(owner: string, repo: string): Promise<Issue[]>;
 }
 

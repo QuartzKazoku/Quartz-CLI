@@ -1,5 +1,5 @@
 //app/strategies/gitlab.ts
-import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { BasePlatformStrategy, PullRequestResult, Issue } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
 
 /**
@@ -74,5 +74,40 @@ export class GitLabStrategy extends BasePlatformStrategy {
             url: mr.web_url,
             id: mr.iid,
         };
+    }
+
+    /**
+     * Fetch issues from GitLab repository.
+     * @param owner Project owner name.
+     * @param repo Repository name.
+     * @returns Returns a Promise that resolves to an array of issues.
+     * @throws Throws error when API request fails.
+     */
+    async fetchIssues(owner: string, repo: string): Promise<Issue[]> {
+        const gitlabUrl = this.config.url || 'https://gitlab.com';
+        const projectPath = encodeURIComponent(`${owner}/${repo}`);
+        const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/issues?state=opened&per_page=20`;
+
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `Bearer ${this.config.token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch issues: ${response.statusText}`);
+        }
+
+        const issues = await response.json() as Array<{
+            iid: number;
+            title: string;
+            labels: string[];
+        }>;
+
+        return issues.map(issue => ({
+            number: issue.iid,
+            title: issue.title,
+            labels: issue.labels,
+        }));
     }
 }

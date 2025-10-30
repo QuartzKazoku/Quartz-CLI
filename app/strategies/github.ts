@@ -1,5 +1,5 @@
 //app/strategies/github.ts
-import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { BasePlatformStrategy, PullRequestResult, Issue } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
 import { PLATFORM_TYPES, JSON_FORMAT } from "@/constants";
 
@@ -96,5 +96,41 @@ export class GitHubStrategy extends BasePlatformStrategy {
             url: pr.html_url,
             number: pr.number,
         };
+    }
+
+    /**
+     * Fetch issues from GitHub repository.
+     * @param owner Repository owner name.
+     * @param repo Repository name.
+     * @returns Returns a Promise that resolves to an array of issues.
+     * @throws Throws error when API request fails.
+     */
+    async fetchIssues(owner: string, repo: string): Promise<Issue[]> {
+        const apiUrl = this.config.url
+            ? `${this.config.url}/api/v3/repos/${owner}/${repo}/issues?state=open&per_page=20`
+            : `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=20`;
+
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `token ${this.config.token}`,
+                'Accept': 'application/vnd.github.v3+json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch issues: ${response.statusText}`);
+        }
+
+        const issues = await response.json() as Array<{
+            number: number;
+            title: string;
+            labels: Array<{ name: string }>;
+        }>;
+
+        return issues.map(issue => ({
+            number: issue.number,
+            title: issue.title,
+            labels: issue.labels.map(l => l.name),
+        }));
     }
 }
