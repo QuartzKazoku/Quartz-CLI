@@ -1,11 +1,11 @@
-//cli/manager/config.ts
+//manager/config.ts
 import fs from 'node:fs';
 import {parse as parseJsonc} from 'jsonc-parser';
 import type {PlatformConfig, QuartzConfig, QuartzConfigFile, QuartzProfile} from '@/types/config';
 import type {VersionMetadata} from '@/types/migration';
 import {CONFIG_FILE, DEFAULT_VALUES, ENCODING, JSON_FORMAT, VERSION} from '@/constants';
 import {logger} from '@/utils/logger';
-import {ensureQuartzDir, getQuartzDir, getQuartzPath} from '@/utils/path';
+import {ensureQuartzDir, getQuartzDir, getQuartzPath, getGlobalQuartzPath, getGlobalQuartzDir, globalConfigExists, projectConfigExists} from '@/utils/path';
 import {CURRENT_CONFIG_VERSION} from "@/utils/migration";
 import {formatDate} from "@/utils/date";
 import {getRuntimeConfig, hasRuntimeConfig} from '@/utils/runtime-config';
@@ -36,33 +36,53 @@ export class ConfigManager {
 
     /**
      * Get configuration file path
+     * @param global - If true, returns global config path; otherwise, returns project config path
      * @returns Path to configuration file
      */
-    public getConfigPath(): string {
-        return getQuartzPath();
+    public getConfigPath(global = false): string {
+        return global ? getGlobalQuartzPath() : getQuartzPath();
     }
 
     /**
      * Get configuration directory path
+     * @param global - If true, returns global config directory; otherwise, returns project config directory
      * @returns Path to configuration directory
      */
-    public getConfigDir(): string {
-        return getQuartzDir();
+    public getConfigDir(global = false): string {
+        return global ? getGlobalQuartzDir() : getQuartzDir();
     }
 
     /**
      * Ensure configuration directory exists
+     * @param global - If true, ensures global directory exists; otherwise, ensures project directory exists
      */
-    public ensureConfigDir(): void {
-        ensureQuartzDir();
+    public ensureConfigDir(global = false): void {
+        ensureQuartzDir(global);
     }
 
     /**
      * Check if configuration file exists
+     * @param global - If true, checks global config; otherwise, checks project config
      * @returns True if configuration file exists
      */
-    public configExists(): boolean {
-        return fs.existsSync(this.getConfigPath());
+    public configExists(global = false): boolean {
+        return fs.existsSync(this.getConfigPath(global));
+    }
+
+    /**
+     * Check if global configuration file exists
+     * @returns True if global configuration file exists
+     */
+    public globalConfigExists(): boolean {
+        return globalConfigExists();
+    }
+
+    /**
+     * Check if project configuration file exists
+     * @returns True if project configuration file exists
+     */
+    public projectConfigExists(): boolean {
+        return projectConfigExists();
     }
 
     /**
@@ -75,17 +95,18 @@ export class ConfigManager {
 
     /**
      * Read complete configuration file (including all profiles and metadata)
+     * @param global - If true, reads global config; otherwise, reads project config
      * @returns Complete configuration file object
      */
-    public readConfigFile(): QuartzConfigFile {
+    public readConfigFile(global = false): QuartzConfigFile {
         const now = Date.now();
         
-        // Use cache
-        if (this.configCache && (now - this.cacheTimestamp) < this.CACHE_TTL) {
+        // Use cache only for project config
+        if (!global && this.configCache && (now - this.cacheTimestamp) < this.CACHE_TTL) {
             return this.configCache;
         }
 
-        const quartzPath = this.getConfigPath();
+        const quartzPath = this.getConfigPath(global);
 
         // If file doesn't exist, return default configuration file structure
         if (!fs.existsSync(quartzPath)) {
@@ -96,8 +117,10 @@ export class ConfigManager {
                     config: this.createDefaultConfig(),
                 },
             };
-            this.configCache = defaultConfigFile;
-            this.cacheTimestamp = now;
+            if (!global) {
+                this.configCache = defaultConfigFile;
+                this.cacheTimestamp = now;
+            }
             return defaultConfigFile;
         }
 
@@ -120,8 +143,10 @@ export class ConfigManager {
                 };
             }
 
-            this.configCache = data;
-            this.cacheTimestamp = now;
+            if (!global) {
+                this.configCache = data;
+                this.cacheTimestamp = now;
+            }
             return data;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -134,8 +159,10 @@ export class ConfigManager {
                     config: this.createDefaultConfig(),
                 },
             };
-            this.configCache = defaultConfigFile;
-            this.cacheTimestamp = now;
+            if (!global) {
+                this.configCache = defaultConfigFile;
+                this.cacheTimestamp = now;
+            }
             return defaultConfigFile;
         }
     }
@@ -143,10 +170,11 @@ export class ConfigManager {
     /**
      * Write complete configuration file
      * @param configFile - Complete configuration file object to write
+     * @param global - If true, writes to global config; otherwise, writes to project config
      */
-    public writeConfigFile(configFile: QuartzConfigFile): void {
-        this.ensureConfigDir();
-        const quartzPath = this.getConfigPath();
+    public writeConfigFile(configFile: QuartzConfigFile, global = false): void {
+        this.ensureConfigDir(global);
+        const quartzPath = this.getConfigPath(global);
 
         try {
             // Update metadata timestamp
@@ -162,8 +190,10 @@ export class ConfigManager {
                 ENCODING.UTF8
             );
 
-            // Clear cache to ensure next read gets latest data
-            this.clearCache();
+            // Clear cache to ensure next read gets latest data (only for project config)
+            if (!global) {
+                this.clearCache();
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error(`Failed to write config file: ${errorMessage}`);
@@ -172,34 +202,86 @@ export class ConfigManager {
     }
 
     /**
-     * Read configuration for specified profile
+     * Read configuration for specified profile with priority: env > project > global > default
      * @param profileName - Profile name to read. If not specified, uses currently active profile
      * @param applyRuntimeOverrides - If true, applies runtime environment variable overrides (default: true)
      * @returns Configuration object for the profile
      */
     public readConfig(profileName?: string, applyRuntimeOverrides = true): QuartzConfig {
-        const configFile = this.readConfigFile();
-        
-        // If profileName not specified, use active profile
-        const targetProfile = profileName || configFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
-        
-        const profile = configFile[targetProfile] as QuartzProfile | undefined;
+        // Start with default config
+        let config: QuartzConfig = this.createDefaultConfig();
 
-        let config: QuartzConfig;
-        if (profile?.config) {
-            // Validate and supplement missing required fields
-            config = this.validateAndFixConfig(profile.config);
-        } else {
-            // If specified profile doesn't exist, return default configuration
-            config = this.createDefaultConfig();
+        // Layer 1: Global config (if exists)
+        if (this.globalConfigExists()) {
+            const globalConfigFile = this.readConfigFile(true);
+            const targetProfile = profileName || globalConfigFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
+            const globalProfile = globalConfigFile[targetProfile] as QuartzProfile | undefined;
+            
+            if (globalProfile?.config) {
+                config = this.mergeConfigs(config, globalProfile.config);
+            }
         }
 
-        // Apply runtime overrides if enabled
+        // Layer 2: Project config (if exists) - overrides global
+        if (this.projectConfigExists()) {
+            const projectConfigFile = this.readConfigFile(false);
+            const targetProfile = profileName || projectConfigFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
+            const projectProfile = projectConfigFile[targetProfile] as QuartzProfile | undefined;
+            
+            if (projectProfile?.config) {
+                config = this.mergeConfigs(config, projectProfile.config);
+            }
+        }
+
+        // Validate and fix the merged config
+        config = this.validateAndFixConfig(config);
+
+        // Layer 3: Runtime environment variables (if enabled) - highest priority
         if (applyRuntimeOverrides) {
             return getRuntimeConfig(config);
         }
 
         return config;
+    }
+
+    /**
+     * Merge two configurations with the second config taking priority
+     * @param base - Base configuration
+     * @param override - Override configuration (takes priority)
+     * @returns Merged configuration
+     */
+    private mergeConfigs(base: QuartzConfig, override: Partial<QuartzConfig>): QuartzConfig {
+        const merged: QuartzConfig = structuredClone(base);
+
+        // Merge OpenAI config
+        if (override.openai) {
+            if (override.openai.apiKey?.trim()) {
+                merged.openai.apiKey = override.openai.apiKey;
+            }
+            if (override.openai.baseUrl?.trim()) {
+                merged.openai.baseUrl = override.openai.baseUrl;
+            }
+            if (override.openai.model?.trim()) {
+                merged.openai.model = override.openai.model;
+            }
+        }
+
+        // Merge platforms - override completely replaces if present and non-empty
+        if (override.platforms && override.platforms.length > 0) {
+            merged.platforms = structuredClone(override.platforms);
+        }
+
+        // Merge language config
+        if (override.language) {
+            if (override.language.ui?.trim()) {
+                merged.language.ui = override.language.ui;
+            }
+            if (override.language.prompt?.trim()) {
+                merged.language.prompt = override.language.prompt;
+            }
+        }
+
+        return merged;
     }
 
     /**
@@ -254,9 +336,10 @@ export class ConfigManager {
      * Write configuration for specified profile
      * @param config - Configuration object to write
      * @param profileName - Profile name to write to. If not specified, uses currently active profile
+     * @param global - If true, writes to global config; otherwise, writes to project config
      */
-    public writeConfig(config: QuartzConfig, profileName?: string): void {
-        const configFile = this.readConfigFile();
+    public writeConfig(config: QuartzConfig, profileName?: string, global = false): void {
+        const configFile = this.readConfigFile(global);
         
         // If profileName not specified, use active profile
         const targetProfile = profileName || configFile._metadata?.activeProfile || CONFIG_FILE.DEFAULT_PROFILE;
@@ -267,7 +350,7 @@ export class ConfigManager {
             config,
         };
 
-        this.writeConfigFile(configFile);
+        this.writeConfigFile(configFile, global);
     }
 
     /**

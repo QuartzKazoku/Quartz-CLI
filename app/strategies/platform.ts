@@ -1,5 +1,5 @@
 //app/strategies/platform.ts
-import { $ } from '@/utils/shell';
+import { GitExecutor } from '@/utils/git';
 
 /**
  * PR/MR creation result interface
@@ -8,6 +8,15 @@ export interface PullRequestResult {
     url: string;
     number?: number;
     id?: number;
+}
+
+/**
+ * Issue interface
+ */
+export interface Issue {
+    number: number;
+    title: string;
+    labels: string[];
 }
 
 /**
@@ -37,9 +46,9 @@ export interface PlatformStrategy {
     pushBranchToRemote(branch: string): Promise<void>;
 
     /**
-     * Close an issue
+     * Fetch issues from remote repository
      */
-    closeIssue(owner: string, repo: string, issueNumber: number): Promise<void>;
+    fetchIssues(owner: string, repo: string): Promise<Issue[]>;
 }
 
 /**
@@ -54,15 +63,7 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      * @returns Promise<boolean> Returns true if branch exists in remote repository, otherwise returns false
      */
     async isBranchOnRemote(branch: string): Promise<boolean> {
-        try {
-            // Execute git ls-remote command to check if remote branch exists
-            const output = await $`git ls-remote --heads origin ${branch}`.text();
-            // Check if output contains the branch reference
-            // Output format: <sha> refs/heads/<branch-name>
-            return output.trim().length > 0;
-        } catch {
-            return false;
-        }
+        return await GitExecutor.isBranchOnRemote(branch);
     }
 
     /**
@@ -73,8 +74,7 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
      */
     async pushBranchToRemote(branch: string): Promise<void> {
         try {
-            // Execute git push command to push branch to remote repository
-            await $`git push -u origin ${branch}`.quiet();
+            await GitExecutor.pushBranch(branch);
         } catch (error) {
             throw new Error(`Failed to push branch: ${error}`);
         }
@@ -99,5 +99,13 @@ export abstract class BasePlatformStrategy implements PlatformStrategy {
         head: string,
         base: string
     ): Promise<PullRequestResult>;
+
+    /**
+     * Abstract method for fetching issues, needs subclasses to implement specific platform-related logic
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @returns Promise<Issue[]> Array of issues
+     */
+    abstract fetchIssues(owner: string, repo: string): Promise<Issue[]>;
 }
 

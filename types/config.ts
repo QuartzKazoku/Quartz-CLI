@@ -1,4 +1,4 @@
-//cli/types/config.ts
+//types/config.ts
 import type { VersionMetadata } from './migration';
 
 /**
@@ -55,3 +55,8 @@ export interface QuartzConfigFile {
   /** Additional profiles */
   [profileName: string]: QuartzProfile | VersionMetadata | undefined;
 }
+
+/**
+ * Subcommand processor definitions
+ */
+export type CommandHandler = (args: string[], isGlobal: boolean) => Promise<void> | void;

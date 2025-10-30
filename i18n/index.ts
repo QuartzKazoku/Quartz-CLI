@@ -1,4 +1,4 @@
-//cli/i18n/index.ts
+//i18n/index.ts
 import type { Language, Translations } from './locales';
 import { locales, defaultLanguage } from './locales';
 

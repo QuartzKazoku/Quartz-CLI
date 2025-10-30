@@ -1,4 +1,4 @@
-//cli/types/migration.ts
+//types/migration.ts
 /**
  * Migration system type definitions
  */

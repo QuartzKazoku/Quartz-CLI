@@ -1,3 +1,4 @@
+//app/commands/index.ts
 /**
  * @fileoverview Commands module entry point
  * @description Exports all command functions for the Quartz CLI

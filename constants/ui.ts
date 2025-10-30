@@ -1,3 +1,4 @@
+//constants/ui.ts
 /**
  * @fileoverview UI-related constants for Quartz CLI
  * @description Defines UI elements, languages, icons, and terminal control constants

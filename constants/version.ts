@@ -1,3 +1,4 @@
+//constants/version.ts
 /**
  * @fileoverview Version-related constants for Quartz CLI
  * @description Defines version numbers and version-related constants

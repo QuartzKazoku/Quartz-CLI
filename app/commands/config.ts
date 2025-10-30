@@ -1,7 +1,7 @@
-//cli/commands/config.ts
+//app/commands/config.ts
 import {setLanguage, t} from '@/i18n';
 import {getConfigManager} from '@/manager/config';
-import {QuartzConfig} from '@/types/config';
+import {CommandHandler, QuartzConfig} from '@/types/config';
 import {
     CONFIG_FILE,
     CONFIG_ICONS,
@@ -95,8 +95,8 @@ function setConfig(key: string, value: string) {
             config.language.prompt = value;
             break;
         case CONFIG_KEYS.GITHUB_TOKEN:
-            manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: value });
-            logger.log(t('config.set', { key, value: '***' }));
+            manager.upsertPlatformConfig({type: PLATFORM_TYPES.GITHUB, token: value});
+            logger.log(t('config.set', {key, value: '***'}));
             logger.success(t('config.updated'));
             return;
         case CONFIG_KEYS.GITLAB_TOKEN: {
@@ -106,31 +106,31 @@ function setConfig(key: string, value: string) {
                 token: value,
                 url: existingGitlab?.url || DEFAULT_VALUES.GITLAB_URL
             });
-            logger.log(t('config.set', { key, value: '***' }));
+            logger.log(t('config.set', {key, value: '***'}));
             logger.success(t('config.updated'));
             return;
         }
         case CONFIG_KEYS.GITLAB_URL: {
             const existingGitlab = config.platforms.find(p => p.type === PLATFORM_TYPES.GITLAB);
             if (existingGitlab) {
-                manager.upsertPlatformConfig({ ...existingGitlab, url: value });
+                manager.upsertPlatformConfig({...existingGitlab, url: value});
             } else {
                 logger.error(t('config.gitlabTokenSetFirst'));
                 return;
             }
-            logger.log(t('config.set', { key, value }));
+            logger.log(t('config.set', {key, value}));
             return;
         }
         case CONFIG_KEYS.GIT_PLATFORM:
             logger.warn(t('config.gitPlatformDeprecated'));
             return;
         default:
-            logger.error(t('config.unknownKey', { key }));
+            logger.error(t('config.unknownKey', {key}));
             return;
     }
 
     manager.writeConfig(config);
-    logger.log(t('config.set', { key, value: isSensitiveKey(key) ? '***' : value }));
+    logger.log(t('config.set', {key, value: isSensitiveKey(key) ? '***' : value}));
     logger.success(t('config.updated'));
 }
 
@@ -147,7 +147,7 @@ function getConfig(key: string) {
         const displayValue = isSensitiveKey(key) ? formatSensitiveValue(value) : value;
         logger.log(`${key}=${displayValue}`);
     } else {
-        logger.log(t('config.notSet', { key }));
+        logger.log(t('config.notSet', {key}));
     }
 }
 
@@ -161,39 +161,58 @@ function getConfigIcon(key: string): string {
 }
 
 /**
- * List all configurations and display them in a formatted view
+ * Display configuration priority information
  */
-function listConfig() {
-    const manager = getConfigManagerInstance();
-    const baseConfig = manager.readBaseConfig();
-    const config = manager.readRuntimeConfig();
-    const hasRuntimeOverrides = manager.hasRuntimeOverrides();
+function displayConfigPriority() {
+    console.log(logger.text.dim('📊 ' + t('config.priority')));
+    logger.line();
+}
 
-    logger.line();
-    printLogo();
-    logger.line();
-    console.log(logger.text.bold(t('config.current')));
-    logger.separator(SEPARATOR_LENGTH);
-    logger.line();
-
-    // Show runtime override notice if applicable
+/**
+ * Display active configuration sources
+ */
+function displayActiveSources(hasRuntimeOverrides: boolean, hasProjectConfig: boolean, hasGlobalConfig: boolean) {
+    const sources = [];
     if (hasRuntimeOverrides) {
         const activeVars = getActiveRuntimeVars();
-        console.log(logger.text.success('🔧 ' + t('config.runtimeOverridesActive', { count: Object.keys(activeVars).length })));
-        logger.line();
+        sources.push(logger.text.success(`✓ Environment (${Object.keys(activeVars).length} vars)`));
     }
+    if (hasProjectConfig) {
+        sources.push(logger.text.primary('✓ Project Config'));
+    }
+    if (hasGlobalConfig) {
+        sources.push(logger.text.muted('✓ Global Config'));
+    }
+    sources.push(logger.text.dim('✓ Default Config'));
 
-    // Configuration items list
-    const configItems = [
-        { key: CONFIG_KEYS.OPENAI_API_KEY, label: t('config.keys.apiKey') },
-        { key: CONFIG_KEYS.OPENAI_BASE_URL, label: t('config.keys.baseUrl') },
-        { key: CONFIG_KEYS.OPENAI_MODEL, label: t('config.keys.model') },
-        { key: CONFIG_KEYS.GITHUB_TOKEN, label: t('config.keys.githubToken') },
-        { key: CONFIG_KEYS.GITLAB_TOKEN, label: t('config.keys.gitlabToken') },
-        { key: CONFIG_KEYS.GITLAB_URL, label: t('config.keys.gitlabUrl') },
-        { key: CONFIG_KEYS.QUARTZ_LANG, label: t('config.keys.language') },
-        { key: CONFIG_KEYS.PROMPT_LANG, label: t('config.keys.promptLanguage') },
+    console.log(logger.text.bold('📁 ' + t('config.activeSources')));
+    for (const source of sources) {
+        console.log(`  ${source}`);
+    }
+    logger.line();
+}
+
+/**
+ * Get configuration items list
+ */
+function getConfigItemsList() {
+    return [
+        {key: CONFIG_KEYS.OPENAI_API_KEY, label: t('config.keys.apiKey')},
+        {key: CONFIG_KEYS.OPENAI_BASE_URL, label: t('config.keys.baseUrl')},
+        {key: CONFIG_KEYS.OPENAI_MODEL, label: t('config.keys.model')},
+        {key: CONFIG_KEYS.GITHUB_TOKEN, label: t('config.keys.githubToken')},
+        {key: CONFIG_KEYS.GITLAB_TOKEN, label: t('config.keys.gitlabToken')},
+        {key: CONFIG_KEYS.GITLAB_URL, label: t('config.keys.gitlabUrl')},
+        {key: CONFIG_KEYS.QUARTZ_LANG, label: t('config.keys.language')},
+        {key: CONFIG_KEYS.PROMPT_LANG, label: t('config.keys.promptLanguage')},
     ];
+}
+
+/**
+ * Display configuration items
+ */
+function displayConfigItems(config: QuartzConfig) {
+    const configItems = getConfigItemsList();
 
     for (const item of configItems) {
         const value = getConfigDisplayValue(config, item.key);
@@ -201,7 +220,6 @@ function listConfig() {
 
         if (value) {
             const displayValue = isSensitiveKey(item.key) ? formatSensitiveValue(value) : value;
-
             console.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  ${logger.text.bold(item.label)}`);
             console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.primary(displayValue)}`);
         } else {
@@ -210,29 +228,71 @@ function listConfig() {
         }
         logger.line();
     }
+}
 
-    // Display configured platform information
-    if (config.platforms.length > 0) {
-        console.log(logger.text.bold('🔧 ' + t('config.configuredPlatforms')));
-        logger.line();
-        for (const platform of config.platforms) {
-            console.log(`${' '.repeat(INDENT.LEVEL_1)}✓ ${logger.text.primary(platform.type.toUpperCase())}`);
-            if (platform.url) {
-                console.log(`${' '.repeat(INDENT.LEVEL_2)}URL: ${platform.url}`);
-            }
-            console.log(`${' '.repeat(INDENT.LEVEL_2)}Token: ${formatSensitiveValue(platform.token)}`);
-            logger.line();
-        }
+/**
+ * Display configured platforms
+ */
+function displayPlatforms(config: QuartzConfig) {
+    if (config.platforms.length === 0) {
+        return;
     }
 
+    console.log(logger.text.bold('🔧 ' + t('config.configuredPlatforms')));
+    logger.line();
+
+    for (const platform of config.platforms) {
+        console.log(`${' '.repeat(INDENT.LEVEL_1)}✓ ${logger.text.primary(platform.type.toUpperCase())}`);
+        if (platform.url) {
+            console.log(`${' '.repeat(INDENT.LEVEL_2)}URL: ${platform.url}`);
+        }
+        console.log(`${' '.repeat(INDENT.LEVEL_2)}Token: ${formatSensitiveValue(platform.token)}`);
+        logger.line();
+    }
+}
+
+/**
+ * Display configuration file paths
+ */
+function displayConfigPaths(manager: ReturnType<typeof getConfigManagerInstance>, hasProjectConfig: boolean, hasGlobalConfig: boolean) {
     logger.separator(SEPARATOR_LENGTH);
-    console.log(logger.text.dim(`💾 ${manager.getConfigPath()}`));
-    
-    // Show configuration source analysis if runtime overrides are active
+
+    if (hasProjectConfig) {
+        console.log(logger.text.dim(`📄 Project: ${manager.getConfigPath()}`));
+    }
+    if (hasGlobalConfig) {
+        console.log(logger.text.dim(`📄 Global:  ${manager.getConfigPath(true)}`));
+    }
+}
+
+/**
+ * List all configurations and display them in a formatted view
+ */
+function listConfig() {
+    const manager = getConfigManagerInstance();
+    const baseConfig = manager.readBaseConfig();
+    const config = manager.readRuntimeConfig();
+    const hasRuntimeOverrides = manager.hasRuntimeOverrides();
+    const hasGlobalConfig = manager.globalConfigExists();
+    const hasProjectConfig = manager.projectConfigExists();
+
+    logger.line();
+    printLogo();
+    logger.line();
+    console.log(logger.text.bold(t('config.current')));
+    logger.separator(SEPARATOR_LENGTH);
+    logger.line();
+
+    displayConfigPriority();
+    displayActiveSources(hasRuntimeOverrides, hasProjectConfig, hasGlobalConfig);
+    displayConfigItems(config);
+    displayPlatforms(config);
+    displayConfigPaths(manager, hasProjectConfig, hasGlobalConfig);
+
     if (hasRuntimeOverrides) {
         logConfigurationSource(baseConfig, config);
     }
-    
+
     logger.line();
 }
 
@@ -260,7 +320,7 @@ async function askQuestion(
     initialValue?: string
 ): Promise<string> {
     const message = description ? `${label}\n\x1b[2m${description}\x1b[0m` : label;
-    
+
     try {
         return await input(message, initialValue);
     } catch (error) {
@@ -380,7 +440,7 @@ async function configureOpenAI(config: QuartzConfig) {
     const currentApiKey = config.openai.apiKey;
     const apiKeyLabel = '🔑 ' + t('config.keys.apiKey');
     const apiKeyDesc = currentApiKey
-        ? t('config.wizard.apiKeyWithCurrent', { current: formatSensitiveValue(currentApiKey) })
+        ? t('config.wizard.apiKeyWithCurrent', {current: formatSensitiveValue(currentApiKey)})
         : t('config.wizard.apiKey');
 
     const apiKey = await askQuestion(apiKeyLabel, apiKeyDesc, currentApiKey);
@@ -392,7 +452,7 @@ async function configureOpenAI(config: QuartzConfig) {
     const currentBaseUrl = config.openai.baseUrl;
     const defaultBaseUrl = currentBaseUrl || DEFAULT_VALUES.OPENAI_BASE_URL;
     const baseUrlLabel = '🌐 ' + t('config.keys.baseUrl');
-    const baseUrlDesc = t('config.wizard.baseUrl', { default: defaultBaseUrl });
+    const baseUrlDesc = t('config.wizard.baseUrl', {default: defaultBaseUrl});
 
     const baseUrl = await askQuestion(baseUrlLabel, baseUrlDesc, defaultBaseUrl);
     if (baseUrl.trim()) {
@@ -405,7 +465,7 @@ async function configureOpenAI(config: QuartzConfig) {
     const currentModel = config.openai.model;
     const defaultModel = currentModel || DEFAULT_VALUES.OPENAI_MODEL;
     const modelLabel = '🤖 ' + t('config.keys.model');
-    const modelDesc = t('config.wizard.model', { default: defaultModel });
+    const modelDesc = t('config.wizard.model', {default: defaultModel});
 
     const model = await askQuestion(modelLabel, modelDesc, defaultModel);
     if (model.trim()) {
@@ -422,7 +482,7 @@ async function configurePlatformTokens(config: QuartzConfig, platform: string) {
     // Save current config before updating platform tokens
     const manager = getConfigManagerInstance();
     manager.writeConfig(config);
-    
+
     if (platform === PLATFORM_TYPES.GITHUB) {
         await configureGitHubToken(config);
     } else if (platform === PLATFORM_TYPES.GITLAB) {
@@ -438,13 +498,13 @@ async function configureGitHubToken(config: QuartzConfig) {
     const currentGithubToken = existingGithub?.token;
     const githubTokenLabel = '🔐 ' + t('config.keys.githubToken');
     const githubTokenDesc = currentGithubToken
-        ? t('config.wizard.githubTokenWithCurrent', { current: formatSensitiveValue(currentGithubToken) })
+        ? t('config.wizard.githubTokenWithCurrent', {current: formatSensitiveValue(currentGithubToken)})
         : t('config.wizard.githubToken');
 
     const githubToken = await askQuestion(githubTokenLabel, githubTokenDesc, currentGithubToken);
     if (githubToken.trim()) {
         const manager = getConfigManagerInstance();
-        manager.upsertPlatformConfig({ type: PLATFORM_TYPES.GITHUB, token: githubToken.trim() });
+        manager.upsertPlatformConfig({type: PLATFORM_TYPES.GITHUB, token: githubToken.trim()});
     }
 }
 
@@ -456,7 +516,7 @@ async function configureGitLabToken(config: QuartzConfig) {
     const currentGitlabToken = existingGitlab?.token;
     const gitlabTokenLabel = '🔐 ' + t('config.keys.gitlabToken');
     const gitlabTokenDesc = currentGitlabToken
-        ? t('config.wizard.gitlabTokenWithCurrent', { current: formatSensitiveValue(currentGitlabToken) })
+        ? t('config.wizard.gitlabTokenWithCurrent', {current: formatSensitiveValue(currentGitlabToken)})
         : t('config.wizard.gitlabToken');
 
     const gitlabToken = await askQuestion(gitlabTokenLabel, gitlabTokenDesc, currentGitlabToken);
@@ -464,7 +524,7 @@ async function configureGitLabToken(config: QuartzConfig) {
         const currentGitlabUrl = existingGitlab?.url;
         const defaultGitlabUrl = currentGitlabUrl || DEFAULT_VALUES.GITLAB_URL;
         const gitlabUrlLabel = '🌐 ' + t('config.keys.gitlabUrl');
-        const gitlabUrlDesc = t('config.wizard.gitlabUrl', { default: defaultGitlabUrl });
+        const gitlabUrlDesc = t('config.wizard.gitlabUrl', {default: defaultGitlabUrl});
 
         const gitlabUrl = await askQuestion(gitlabUrlLabel, gitlabUrlDesc, defaultGitlabUrl);
         const manager = getConfigManagerInstance();
@@ -483,22 +543,81 @@ async function saveWizardConfig(config: QuartzConfig) {
     const manager = getConfigManagerInstance();
     // Read the latest config to ensure we have all updates including platform tokens
     const latestConfig = manager.readConfig();
-    
+
     // Merge the wizard config with latest config to preserve platform tokens
     const finalConfig: QuartzConfig = {
         openai: config.openai,
         language: config.language,
         platforms: latestConfig.platforms
     };
-    
+
     manager.writeConfig(finalConfig);
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     await message(
         t('config.wizard.success'),
-        t('config.wizard.saved', { path: manager.getConfigPath() }),
+        t('config.wizard.saved', {path: manager.getConfigPath()}),
         'success'
     );
+}
+
+/**
+ * Display available commands in help
+ */
+function displayHelpCommands() {
+    console.log(logger.text.bold('⚡ ' + t('config.commands')));
+    logger.line();
+    logger.command('quartz config list', logger.text.dim(t('config.listDesc')));
+    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
+    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')} --global`, logger.text.dim(t('config.setGlobalDesc')));
+    logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
+    logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
+    logger.command('quartz config init --global', logger.text.dim(t('config.initGlobalDesc')));
+    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc')));
+}
+
+/**
+ * Display a single config key in help
+ */
+function displayConfigKey(key: string, description: string) {
+    console.log('  ' + getConfigIcon(key) + '  ' + logger.text.warning(key));
+    console.log('     ' + logger.text.dim(description));
+    logger.line();
+}
+
+/**
+ * Display available config keys in help
+ */
+function displayHelpKeys() {
+    console.log(logger.text.bold('🔑 ' + t('config.availableKeys')));
+    logger.line();
+    displayConfigKey(CONFIG_KEYS.OPENAI_API_KEY, t('config.keys.apiKey'));
+    displayConfigKey(CONFIG_KEYS.OPENAI_BASE_URL, t('config.keys.baseUrl'));
+    displayConfigKey(CONFIG_KEYS.OPENAI_MODEL, t('config.keys.model'));
+    displayConfigKey(CONFIG_KEYS.GITHUB_TOKEN, t('config.keys.githubToken'));
+    displayConfigKey(CONFIG_KEYS.GITLAB_TOKEN, t('config.keys.gitlabToken'));
+    displayConfigKey(CONFIG_KEYS.GITLAB_URL, t('config.keys.gitlabUrl'));
+    displayConfigKey(CONFIG_KEYS.QUARTZ_LANG, t('config.keys.language'));
+    displayConfigKey(CONFIG_KEYS.PROMPT_LANG, t('config.keys.promptLanguage'));
+}
+
+/**
+ * Display usage examples in help
+ */
+function displayHelpExamples() {
+    console.log(logger.text.bold('💡 ' + t('config.examples')));
+    logger.line();
+    logger.example(t('config.initDesc'), 'quartz config init');
+    logger.example(t('config.setDesc'), `quartz config set ${CONFIG_KEYS.OPENAI_API_KEY} sk-your-key`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.OPENAI_MODEL} ${DEFAULT_VALUES.OPENAI_MODEL}`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.QUARTZ_LANG} zh-CN`);
+    logger.example('', `quartz config set ${CONFIG_KEYS.PROMPT_LANG} en`);
+    logger.example(t('config.profilesDesc'), 'quartz config save-profile my-profile');
+    logger.example('', 'quartz config switch-profile my-profile');
+    logger.example('', 'quartz config active-profile');
+    logger.example('', 'quartz config list-profiles');
+    logger.example(t('config.getDesc'), `quartz config get ${CONFIG_KEYS.OPENAI_API_KEY}`);
+    logger.example(t('config.listDesc'), 'quartz config list');
 }
 
 /**
@@ -513,54 +632,10 @@ function showHelp() {
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 
-    console.log(logger.text.bold('⚡ ' + t('config.commands')));
-    logger.line();
-    logger.command('quartz config list', logger.text.dim(t('config.listDesc')));
-    logger.command(`quartz config set ${logger.text.warning('<key>')} ${logger.text.warning('<value>')}`, logger.text.dim(t('config.setDesc')));
-    logger.command(`quartz config get ${logger.text.warning('<key>')}`, logger.text.dim(t('config.getDesc')));
-    logger.command('quartz config init', logger.text.dim(t('config.initDesc')));
-    logger.command('quartz config runtime', logger.text.dim(t('config.runtimeDesc', { default: 'Show runtime environment variable overrides' })));
+    displayHelpCommands();
+    displayHelpKeys();
+    displayHelpExamples();
 
-    console.log(logger.text.bold('🔑 ' + t('config.availableKeys')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_API_KEY) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_API_KEY));
-    console.log('     ' + logger.text.dim(t('config.keys.apiKey')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_BASE_URL) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_BASE_URL));
-    console.log('     ' + logger.text.dim(t('config.keys.baseUrl')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.OPENAI_MODEL) + '  ' + logger.text.warning(CONFIG_KEYS.OPENAI_MODEL));
-    console.log('     ' + logger.text.dim(t('config.keys.model')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITHUB_TOKEN) + '  ' + logger.text.warning(CONFIG_KEYS.GITHUB_TOKEN));
-    console.log('     ' + logger.text.dim(t('config.keys.githubToken')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_TOKEN) + '  ' + logger.text.warning(CONFIG_KEYS.GITLAB_TOKEN));
-    console.log('     ' + logger.text.dim(t('config.keys.gitlabToken')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.GITLAB_URL) + '  ' + logger.text.warning(CONFIG_KEYS.GITLAB_URL));
-    console.log('     ' + logger.text.dim(t('config.keys.gitlabUrl')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.QUARTZ_LANG) + '  ' + logger.text.warning(CONFIG_KEYS.QUARTZ_LANG));
-    console.log('     ' + logger.text.dim(t('config.keys.language')));
-    logger.line();
-    console.log('  ' + getConfigIcon(CONFIG_KEYS.PROMPT_LANG) + '  ' + logger.text.warning(CONFIG_KEYS.PROMPT_LANG));
-    console.log('     ' + logger.text.dim(t('config.keys.promptLanguage')));
-    logger.line();
-
-    console.log(logger.text.bold('💡 ' + t('config.examples')));
-    logger.line();
-    logger.example(t('config.initDesc'), 'quartz config init');
-    logger.example(t('config.setDesc'), `quartz config set ${CONFIG_KEYS.OPENAI_API_KEY} sk-your-key`);
-    logger.example('', `quartz config set ${CONFIG_KEYS.OPENAI_MODEL} ${DEFAULT_VALUES.OPENAI_MODEL}`);
-    logger.example('', `quartz config set ${CONFIG_KEYS.QUARTZ_LANG} zh-CN`);
-    logger.example('', `quartz config set ${CONFIG_KEYS.PROMPT_LANG} en`);
-    logger.example(t('config.profilesDesc'), 'quartz config save-profile my-profile');
-    logger.example('', 'quartz config switch-profile my-profile');
-    logger.example('', 'quartz config active-profile');
-    logger.example('', 'quartz config list-profiles');
-    logger.example(t('config.getDesc'), `quartz config get ${CONFIG_KEYS.OPENAI_API_KEY}`);
-    logger.example(t('config.listDesc'), 'quartz config list');
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 }
@@ -572,7 +647,7 @@ function saveProfile(name: string) {
     const manager = getConfigManagerInstance();
     const config = manager.readConfig();
     manager.writeConfig(config, name);
-    logger.log(t('config.profileSaved', { name }));
+    logger.log(t('config.profileSaved', {name}));
 }
 
 /**
@@ -583,10 +658,10 @@ function loadProfiles(): Record<string, any> {
     if (!manager.configExists()) {
         return {};
     }
-    
+
     try {
         const configFile = manager.readConfigFile();
-        const { _metadata, [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles } = configFile;
+        const {_metadata, [CONFIG_FILE.DEFAULT_PROFILE]: _, ...profiles} = configFile;
         return profiles;
     } catch (error) {
         logger.error('Failed to load profiles:', error);
@@ -601,7 +676,7 @@ function loadProfiles(): Record<string, any> {
 function loadProfile(name: string) {
     const manager = getConfigManagerInstance();
     if (!manager.profileExists(name)) {
-        logger.error(t('config.profileNotFound', { name }));
+        logger.error(t('config.profileNotFound', {name}));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
         process.exit(1);
@@ -610,18 +685,18 @@ function loadProfile(name: string) {
     try {
         const configFile = manager.readConfigFile();
         const profileData = configFile[name];
-        
+
         // Type check: ensure profile is QuartzProfile
         if (!profileData || profileData === configFile._metadata || !('config' in profileData)) {
-            logger.error(t('config.profileNotFound', { name }));
+            logger.error(t('config.profileNotFound', {name}));
             process.exit(1);
         }
-        
+
         // Update default profile with selected profile
         configFile[CONFIG_FILE.DEFAULT_PROFILE] = profileData;
 
         manager.writeConfigFile(configFile);
-        logger.log(t('config.profileLoaded', { name }));
+        logger.log(t('config.profileLoaded', {name}));
     } catch (error) {
         logger.error('Failed to load profile:', error);
         process.exit(1);
@@ -635,7 +710,7 @@ function loadProfile(name: string) {
 function switchProfile(name: string) {
     const manager = getConfigManagerInstance();
     if (!manager.profileExists(name)) {
-        logger.error(t('config.profileNotFound', { name }));
+        logger.error(t('config.profileNotFound', {name}));
         logger.log('\n' + t('config.availableProfiles'));
         listProfiles();
         process.exit(1);
@@ -643,7 +718,7 @@ function switchProfile(name: string) {
 
     try {
         manager.setActiveProfile(name);
-        logger.log(t('config.profileSwitched', { name }));
+        logger.log(t('config.profileSwitched', {name}));
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(errorMessage);
@@ -682,7 +757,7 @@ function listProfiles() {
     console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(CONFIG_FILE.DEFAULT_PROFILE)} ${activeProfile === CONFIG_FILE.DEFAULT_PROFILE ? logger.text.success('(active)') : ''}`);
     const defaultConfig = manager.readConfig(CONFIG_FILE.DEFAULT_PROFILE);
     const defaultPlatformCount = defaultConfig.platforms?.length || 0;
-    console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: defaultPlatformCount }))}`);
+    console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', {count: defaultPlatformCount}))}`);
     logger.line();
 
     // Show other profiles
@@ -693,7 +768,7 @@ function listProfiles() {
             console.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${logger.text.primary(name)} ${isActive ? logger.text.success('(active)') : ''}`);
             if (profile.config) {
                 const platformCount = profile.config.platforms?.length || 0;
-                console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', { count: platformCount }))}`);
+                console.log(`${' '.repeat(INDENT.LEVEL_3)}${logger.text.dim(t('config.platformCount', {count: platformCount}))}`);
             }
             logger.line();
         }
@@ -707,7 +782,7 @@ function deleteProfile(name: string) {
     const manager = getConfigManagerInstance();
     try {
         manager.deleteProfile(name);
-        logger.log(t('config.profileDeleted', { name }));
+        logger.log(t('config.profileDeleted', {name}));
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(errorMessage);
@@ -716,45 +791,245 @@ function deleteProfile(name: string) {
 }
 
 /**
+ * Initialize global configuration
+ */
+async function initGlobalConfig() {
+    const manager = getConfigManagerInstance();
+    const globalConfigPath = manager.getConfigPath(true);
+
+    logger.line();
+    logger.log(t('config.initGlobal'));
+    logger.line();
+
+    if (manager.globalConfigExists()) {
+        logger.warn(t('config.globalConfigExists'));
+        logger.info(t('config.globalConfigPath', {path: globalConfigPath}));
+        logger.line();
+        return;
+    }
+
+    // Create global config directory
+    manager.ensureConfigDir(true);
+
+    // Create default global config
+    const defaultConfig = manager.readConfigFile(true);
+    manager.writeConfigFile(defaultConfig, true);
+
+    logger.success(t('config.globalConfigCreated'));
+    logger.info(t('config.globalConfigPath', {path: globalConfigPath}));
+    logger.line();
+    logger.box(
+        `${logger.text.success('✓')} ${t('config.globalInitSuccess')}
+
+${logger.text.dim(t('config.globalConfigInfo'))}
+
+${logger.text.primary('quartz config set <key> <value> --global')} - ${t('config.setGlobalDesc')}`,
+        {title: '🌍 ' + t('config.globalConfig'), padding: 1}
+    );
+    logger.line();
+}
+
+/**
+ * Check if arguments contain --global flag
+ */
+function hasGlobalFlag(args: string[]): boolean {
+    return args.includes('--global') || args.includes('-g');
+}
+
+/**
+ * Remove --global flag from arguments
+ */
+function removeGlobalFlag(args: string[]): string[] {
+    return args.filter(arg => arg !== '--global' && arg !== '-g');
+}
+
+/**
  * Show runtime configuration information
  */
 function showRuntimeConfig() {
     const manager = getConfigManagerInstance();
     const hasOverrides = manager.hasRuntimeOverrides();
-    
+
     logger.line();
-    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle', { default: 'Runtime Configuration' })));
+    console.log(logger.text.bold('🔧 ' + t('config.runtimeConfigTitle')));
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
 
     const hasNotOverrides = !hasOverrides;
     if (hasNotOverrides) {
-        console.log(logger.text.dim(t('config.noRuntimeOverrides', { default: 'No runtime environment variable overrides detected.' })));
+        console.log(logger.text.dim(t('config.noRuntimeOverrides')));
         logger.line();
-        console.log(logger.text.dim(t('config.setEnvVarsHint', { default: 'Set environment variables with QUARTZ_ prefix to override configuration.' })));
+        console.log(logger.text.dim(t('config.setEnvVarsHint')));
     } else {
         const activeVars = getActiveRuntimeVars();
-        console.log(logger.text.success(t('config.activeOverrides', {
-            default: 'Active environment variable overrides:',
-            count: Object.keys(activeVars).length
-        })));
+        console.log(logger.text.success(t('config.activeOverrides', {count: Object.keys(activeVars).length})));
         logger.line();
-        
+
         for (const [key, value] of Object.entries(activeVars)) {
             const isSensitive = SENSITIVE_KEYS.includes(key as any);
             const displayValue = isSensitive ? formatSensitiveValue(value) : value;
             console.log(`  ${logger.text.primary(key)}: ${displayValue}`);
         }
     }
-    
+
     logger.line();
     logger.separator(SEPARATOR_LENGTH);
     logger.line();
-    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle', { default: 'Environment Variable Examples:' })));
+    console.log(logger.text.bold('📝 ' + t('config.envExampleTitle')));
     logger.line();
     console.log(logger.text.dim(generateEnvExample()));
     logger.line();
 }
+
+/**
+ * Command handler mapping table that maps command names to their corresponding handler functions.
+ * Supports multiple aliases pointing to the same handler function.
+ */
+const commandHandlers: Record<string, CommandHandler> = {
+    list: handleList,
+    ls: handleList,
+
+    set: handleSet,
+    get: handleGet,
+
+    init: handleInit,
+    setup: handleInit,
+
+    'save-profile': handleSaveProfile,
+    save: handleSaveProfile,
+
+    'load-profile': handleLoadProfile,
+    load: handleLoadProfile,
+
+    'list-profiles': handleListProfiles,
+    profiles: handleListProfiles,
+
+    'switch-profile': handleSwitchProfile,
+    switch: handleSwitchProfile,
+    use: handleSwitchProfile,
+
+    'active-profile': handleShowActiveProfile,
+    current: handleShowActiveProfile,
+    active: handleShowActiveProfile,
+
+    'delete-profile': handleDeleteProfile,
+    delete: handleDeleteProfile,
+    rm: handleDeleteProfile,
+
+    runtime: handleRuntimeConfig,
+    env: handleRuntimeConfig,
+    environment: handleRuntimeConfig,
+};
+
+/**
+ * Handle list command to display current configuration items.
+ */
+async function handleList() {
+    listConfig();
+}
+
+/**
+ * Handle set command to set the configuration value for the specified key.
+ * @param args - Command line argument array, should be in format [cmd, key, value]
+ */
+async function handleSet(args: string[]) {
+    if (args.length < 3) {
+        logger.error(t('config.errors.setUsage'));
+        process.exit(1);
+    }
+    setConfig(args[1], args[2]);
+}
+
+/**
+ * Handle get command to retrieve the configuration value for the specified key.
+ * @param args - Command line argument array, should be in format [cmd, key]
+ */
+async function handleGet(args: string[]) {
+    if (args.length < 2) {
+        logger.error(t('config.errors.getUsage'));
+        process.exit(1);
+    }
+    getConfig(args[1]);
+}
+
+/**
+ * Handle init command to initialize global configuration or start setup wizard.
+ * @param args - Command line argument array
+ * @param isGlobal - Whether to initialize in global mode
+ */
+async function handleInit(args: string[], isGlobal: boolean) {
+    isGlobal ? await initGlobalConfig() : await setupWizard();
+}
+
+/**
+ * Handle save-profile command to save current configuration as a profile with the specified name.
+ * @param args - Command line argument array, should be in format [cmd, profileName]
+ */
+async function handleSaveProfile(args: string[]) {
+    if (args.length < 2) {
+        logger.error(t('config.errors.saveProfileUsage'));
+        process.exit(1);
+    }
+    saveProfile(args[1]);
+}
+
+/**
+ * Handle load-profile command to load configuration from the specified profile.
+ * @param args - Command line argument array, should be in format [cmd, profileName]
+ */
+async function handleLoadProfile(args: string[]) {
+    if (args.length < 2) {
+        logger.error(t('config.errors.loadProfileUsage'));
+        process.exit(1);
+    }
+    loadProfile(args[1]);
+}
+
+/**
+ * Handle list-profiles command to list all saved configuration profiles.
+ */
+async function handleListProfiles() {
+    listProfiles();
+}
+
+/**
+ * Handle switch-profile command to switch to the specified profile.
+ * @param args - Command line argument array, should be in format [cmd, profileName]
+ */
+async function handleSwitchProfile(args: string[]) {
+    if (args.length < 2) {
+        logger.error(t('config.errors.switchProfileUsage'));
+        process.exit(1);
+    }
+    switchProfile(args[1]);
+}
+
+/**
+ * Handle active-profile command to display the name of the currently active profile.
+ */
+async function handleShowActiveProfile() {
+    showActiveProfile();
+}
+
+/**
+ * Handle delete-profile command to delete the specified profile.
+ * @param args - Command line argument array, should be in format [cmd, profileName]
+ */
+async function handleDeleteProfile(args: string[]) {
+    if (args.length < 2) {
+        logger.error(t('config.errors.deleteProfileUsage'));
+        process.exit(1);
+    }
+    deleteProfile(args[1]);
+}
+
+/**
+ * Handle runtime command to display runtime environment related configuration information.
+ */
+async function handleRuntimeConfig() {
+    showRuntimeConfig();
+}
+
 
 /**
  * Main configuration command handler
@@ -762,96 +1037,23 @@ function showRuntimeConfig() {
 export async function configCommand(args: string[]) {
     const subCommand = args[0];
 
-    if (!subCommand || subCommand === 'help' || subCommand === '-h' || subCommand === '--help') {
+    if (!subCommand || ['-h', '--help', 'help'].includes(subCommand)) {
         showHelp();
         return;
     }
 
-    switch (subCommand) {
-        case 'list':
-        case 'ls':
-            listConfig();
-            break;
+    const isGlobal = hasGlobalFlag(args);
+    const cleanArgs = removeGlobalFlag(args);
+    const handler = commandHandlers[subCommand];
 
-        case 'set':
-            if (args.length < 3) {
-                logger.error(t('config.errors.setUsage'));
-                process.exit(1);
-            }
-            setConfig(args[1], args[2]);
-            break;
-
-        case 'get':
-            if (args.length < 2) {
-                logger.error(t('config.errors.getUsage'));
-                process.exit(1);
-            }
-            getConfig(args[1]);
-            break;
-
-        case 'init':
-        case 'setup':
-            await setupWizard();
-            break;
-
-        case 'save-profile':
-        case 'save':
-            if (args.length < 2) {
-                logger.error(t('config.errors.saveProfileUsage'));
-                process.exit(1);
-            }
-            saveProfile(args[1]);
-            break;
-
-        case 'load-profile':
-        case 'load':
-            if (args.length < 2) {
-                logger.error(t('config.errors.loadProfileUsage'));
-                process.exit(1);
-            }
-            loadProfile(args[1]);
-            break;
-
-        case 'list-profiles':
-        case 'profiles':
-            listProfiles();
-            break;
-
-        case 'switch-profile':
-        case 'switch':
-        case 'use':
-            if (args.length < 2) {
-                logger.error(t('config.errors.switchProfileUsage'));
-                process.exit(1);
-            }
-            switchProfile(args[1]);
-            break;
-
-        case 'active-profile':
-        case 'current':
-        case 'active':
-            showActiveProfile();
-            break;
-
-        case 'delete-profile':
-        case 'delete':
-        case 'rm':
-            if (args.length < 2) {
-                logger.error(t('config.errors.deleteProfileUsage'));
-                process.exit(1);
-            }
-            deleteProfile(args[1]);
-            break;
-
-        case 'runtime':
-        case 'env':
-        case 'environment':
-            showRuntimeConfig();
-            break;
-
-        default:
-            logger.error(t('config.errors.unknownCommand', { command: subCommand }));
-            showHelp();
-            process.exit(1);
+    if (handler) {
+        if (isGlobal && ['set'].includes(subCommand)) {
+            logger.warn(t('config.globalSetNotImplemented'));
+        }
+        await handler(cleanArgs, isGlobal);
+    } else {
+        logger.error(t('config.errors.unknownCommand', {command: subCommand}));
+        showHelp();
+        process.exit(1);
     }
 }

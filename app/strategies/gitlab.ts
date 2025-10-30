@@ -1,5 +1,5 @@
 //app/strategies/gitlab.ts
-import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { BasePlatformStrategy, PullRequestResult, Issue } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
 
 /**
@@ -77,31 +77,37 @@ export class GitLabStrategy extends BasePlatformStrategy {
     }
 
     /**
-     * Close an issue
-     * @param owner Project owner name
-     * @param repo Repository name
-     * @param issueNumber Issue IID (internal ID) to close
-     * @throws Error when API request fails
+     * Fetch issues from GitLab repository.
+     * @param owner Project owner name.
+     * @param repo Repository name.
+     * @returns Returns a Promise that resolves to an array of issues.
+     * @throws Throws error when API request fails.
      */
-    async closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    async fetchIssues(owner: string, repo: string): Promise<Issue[]> {
         const gitlabUrl = this.config.url || 'https://gitlab.com';
         const projectPath = encodeURIComponent(`${owner}/${repo}`);
-        const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/issues/${issueNumber}`;
+        const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/issues?state=opened&per_page=20`;
 
         const response = await fetch(apiUrl, {
-            method: 'PUT',
             headers: {
-                'PRIVATE-TOKEN': this.config.token,
-                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.config.token}`,
             },
-            body: JSON.stringify({
-                state_event: 'close',
-            }),
         });
 
         if (!response.ok) {
-            const error = await response.json() as { message?: string; error?: string };
-            throw new Error(`Failed to close issue: ${error.message || error.error || response.statusText}`);
+            throw new Error(`Failed to fetch issues: ${response.statusText}`);
         }
+
+        const issues = await response.json() as Array<{
+            iid: number;
+            title: string;
+            labels: string[];
+        }>;
+
+        return issues.map(issue => ({
+            number: issue.iid,
+            title: issue.title,
+            labels: issue.labels,
+        }));
     }
 }

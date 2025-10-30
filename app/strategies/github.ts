@@ -1,5 +1,5 @@
 //app/strategies/github.ts
-import { BasePlatformStrategy, PullRequestResult } from "@/app/strategies/platform";
+import { BasePlatformStrategy, PullRequestResult, Issue } from "@/app/strategies/platform";
 import { PlatformConfig } from "@/types/config";
 import { PLATFORM_TYPES, JSON_FORMAT } from "@/constants";
 
@@ -99,32 +99,38 @@ export class GitHubStrategy extends BasePlatformStrategy {
     }
 
     /**
-     * Close an issue
-     * @param owner Repository owner name
-     * @param repo Repository name
-     * @param issueNumber Issue number to close
-     * @throws Error when API request fails
+     * Fetch issues from GitHub repository.
+     * @param owner Repository owner name.
+     * @param repo Repository name.
+     * @returns Returns a Promise that resolves to an array of issues.
+     * @throws Throws error when API request fails.
      */
-    async closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    async fetchIssues(owner: string, repo: string): Promise<Issue[]> {
         const apiUrl = this.config.url
-            ? `${this.config.url}/api/v3/repos/${owner}/${repo}/issues/${issueNumber}`
-            : `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`;
+            ? `${this.config.url}/api/v3/repos/${owner}/${repo}/issues?state=open&per_page=20`
+            : `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=20`;
 
         const response = await fetch(apiUrl, {
-            method: 'PATCH',
             headers: {
                 'Authorization': `token ${this.config.token}`,
                 'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                state: 'closed',
-            }),
         });
 
         if (!response.ok) {
-            const error = await response.json() as { message?: string };
-            throw new Error(`Failed to close issue: ${error.message || response.statusText}`);
+            throw new Error(`Failed to fetch issues: ${response.statusText}`);
         }
+
+        const issues = await response.json() as Array<{
+            number: number;
+            title: string;
+            labels: Array<{ name: string }>;
+        }>;
+
+        return issues.map(issue => ({
+            number: issue.number,
+            title: issue.title,
+            labels: issue.labels.map(l => l.name),
+        }));
     }
 }

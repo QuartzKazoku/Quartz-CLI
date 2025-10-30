@@ -1,3 +1,4 @@
+//constants/encoding.ts
 /**
  * @fileoverview Encoding and formatting constants for Quartz CLI
  * @description Defines encoding types and JSON formatting options

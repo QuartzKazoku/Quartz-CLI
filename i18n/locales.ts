@@ -1,4 +1,4 @@
-//cli/i18n/locales.ts
+//i18n/locales.ts
 /**
  * Multi-language type definitions and configuration
  * @module i18n/locales
@@ -177,6 +177,26 @@ export interface Translations {
     notSet: string;
     notConfigured: string;
     set: string;
+    updated: string;
+    priority: string;
+    activeSources: string;
+    runtimeOverridesActive: string;
+    runtimeConfigTitle: string;
+    noRuntimeOverrides: string;
+    setEnvVarsHint: string;
+    activeOverrides: string;
+    envExampleTitle: string;
+    runtimeDesc: string;
+    setGlobalDesc: string;
+    initGlobalDesc: string;
+    initGlobal: string;
+    globalConfigExists: string;
+    globalConfigPath: string;
+    globalConfigCreated: string;
+    globalInitSuccess: string;
+    globalConfigInfo: string;
+    globalConfig: string;
+    globalSetNotImplemented: string;
     keys: {
       apiKey: string;
       baseUrl: string;
@@ -252,6 +272,15 @@ export interface Translations {
     migrated: string;
     oldConfigReminder: string;
     gitignoreReminder: string;
+    globalConfigDetected: string;
+    canUseDirectly: string;
+    projectConfigOptional: string;
+    noGlobalConfig: string;
+    suggestGlobal: string;
+    confirmProjectConfig: string;
+    onlyNeededIf: string;
+    globalConfigHint: string;
+    globalConfigHint2: string;
   };
 
   // Error messages

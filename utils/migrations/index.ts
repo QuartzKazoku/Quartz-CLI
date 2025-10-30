@@ -1,3 +1,4 @@
+//utils/migrations/index.ts
 /**
  * 配置文件迁移注册中心
  *

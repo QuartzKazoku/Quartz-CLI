@@ -1,45 +1,17 @@
-//cli/commands/pr.ts
+//app/commands/pr.ts
 import OpenAI from 'openai';
 import {$} from '@/utils/shell';
 import fs from 'node:fs';
 import path from 'node:path';
 import {t} from '@/i18n';
 import {getPRPrompt} from '@/utils/prompt';
-import {getConfigManager} from '@/manager/config';
+import {configManager} from '@/manager/config';
 import {PlatformStrategy} from '@/app/strategies/platform';
 import {PlatformStrategyFactory} from "@/app/strategies/factory";
 import {logger} from '@/utils/logger';
 import {select} from '@/utils/enquirer';
-import {ENCODING, PLATFORM_TYPES} from '@/constants';
-
-/**
- * Get current branch name
- * @returns Current branch name
- */
-async function getCurrentBranch(): Promise<string> {
-    try {
-        return (await $`git branch --show-current`.text()).trim();
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
-
-/**
- * Get all local branches
- * @returns Array of branch names
- */
-async function getAllBranches(): Promise<string[]> {
-    try {
-        return (await $`git branch --format='%(refname:short)'`.text())
-            .trim()
-            .split('\n')
-            .filter(Boolean);
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        process.exit(1);
-    }
-}
+import {ENCODING} from '@/constants';
+import {GitCommandHelper} from '@/helpers/git';
 
 /**
  * Interactive branch selector using enquirer
@@ -47,7 +19,7 @@ async function getAllBranches(): Promise<string[]> {
  * @returns Selected branch name
  */
 async function selectBranch(currentBranch: string): Promise<string> {
-    const allBranches = await getAllBranches();
+    const allBranches = await GitCommandHelper.getAllBranches();
     const branches = allBranches.filter(b => b !== currentBranch);
 
     if (branches.length === 0) {
@@ -76,100 +48,15 @@ async function selectBranch(currentBranch: string): Promise<string> {
  */
 async function getRepoInfo(): Promise<{ owner: string; repo: string; platform: 'github' | 'gitlab' } | null> {
     try {
-        const remoteUrl = (await $`git remote get-url origin`.text()).trim();
+        const remoteUrl = await GitCommandHelper.getRemoteUrl();
         
         // Debug: 输出远程 URL
         logger.info(`🔍 Git Remote URL: ${remoteUrl}`);
 
-        // Parse GitHub URL
-        // Support formats:
-        // - git@github.com:owner/repo.git
-        // - git@github.com:/owner/repo.git (非标准格式，但需要支持)
-        // - https://github.com/owner/repo.git
-        const githubSshRegex = /git@github\.com::?\/?([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const githubHttpsRegex = /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const githubSshMatch = githubSshRegex.exec(remoteUrl);
-        const githubHttpsMatch = githubHttpsRegex.exec(remoteUrl);
-
-        if (githubSshMatch) {
-            return {owner: githubSshMatch[1], repo: githubSshMatch[2], platform: PLATFORM_TYPES.GITHUB};
-        } else if (githubHttpsMatch) {
-            return {owner: githubHttpsMatch[1], repo: githubHttpsMatch[2], platform: PLATFORM_TYPES.GITHUB};
-        }
-
-        // Parse GitLab URL
-        // Support formats:
-        // - git@gitlab.com:owner/repo.git
-        // - git@gitlab.com:/owner/repo.git (非标准格式，但需要支持)
-        // - https://gitlab.com/owner/repo.git
-        const gitlabSshRegex = /git@([^:]+)::?\/?([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const gitlabHttpsRegex = /https:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/;
-        const gitlabSshMatch = gitlabSshRegex.exec(remoteUrl);
-        const gitlabHttpsMatch = gitlabHttpsRegex.exec(remoteUrl);
-
-        if (gitlabSshMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabSshMatch[2], repo: gitlabSshMatch[3], platform: PLATFORM_TYPES.GITLAB};
-        } else if (gitlabHttpsMatch?.[1]?.includes('gitlab')) {
-            return {owner: gitlabHttpsMatch[2], repo: gitlabHttpsMatch[3], platform: PLATFORM_TYPES.GITLAB};
-        }
-
-        return null;
+        const {GitExecutor} = await import('@/utils/git');
+        return GitExecutor.parseRepoInfo(remoteUrl);
     } catch {
         return null;
-    }
-}
-
-/**
- * Get diff with base branch
- * @param baseBranch - Base branch name
- * @returns Git diff content
- */
-async function getDiffWithBase(baseBranch: string): Promise<string> {
-    try {
-        const diff = await $`git diff ${baseBranch}...HEAD`.text();
-
-        if (!diff) {
-            logger.error(t('pr.noDiff', {base: baseBranch}));
-            process.exit(1);
-        }
-
-        return diff;
-    } catch (error) {
-        logger.error(t('errors.gitError'), error);
-        logger.error(t('pr.ensureBranch', {base: baseBranch}));
-        process.exit(1);
-    }
-}
-
-/**
- * Get commit history since base branch
- * @param baseBranch - Base branch name
- * @returns Array of commit messages
- */
-async function getCommitHistory(baseBranch: string): Promise<string[]> {
-    try {
-        return (await $`git log ${baseBranch}..HEAD --pretty=format:"%s"`.text())
-            .trim()
-            .split('\n')
-            .filter(Boolean);
-    } catch {
-        return [];
-    }
-}
-
-/**
- * Get list of changed files since base branch
- * @param baseBranch - Base branch name
- * @returns Array of changed file paths
- */
-async function getChangedFiles(baseBranch: string): Promise<string[]> {
-    try {
-        return (await $`git diff ${baseBranch}...HEAD --name-only`.text())
-            .trim()
-            .split('\n')
-            .filter(Boolean);
-    } catch {
-        return [];
     }
 }
 
@@ -232,12 +119,7 @@ async function generatePRDescription(
  * @returns True if branch exists on remote
  */
 async function isBranchOnRemote(branch: string): Promise<boolean> {
-    try {
-        await $`git ls-remote --heads origin ${branch}`.text();
-        return true;
-    } catch {
-        return false;
-    }
+    return await GitCommandHelper.isBranchOnRemote(branch);
 }
 
 /**
@@ -245,11 +127,7 @@ async function isBranchOnRemote(branch: string): Promise<boolean> {
  * @param branch - Branch name
  */
 async function pushBranchToRemote(branch: string): Promise<void> {
-    try {
-        await $`git push -u origin ${branch}`.quiet();
-    } catch (error) {
-        throw new Error(`Failed to push branch: ${error}`);
-    }
+    await GitCommandHelper.pushBranch(branch);
 }
 
 /**
@@ -372,7 +250,6 @@ function validateConfiguration(config: any): void {
 export async function generatePR(args: string[]) {
     logger.section(t('pr.starting'));
 
-    const configManager = getConfigManager();
     const config = configManager.readConfig();
     
     // Validate configuration before proceeding
@@ -383,7 +260,7 @@ export async function generatePR(args: string[]) {
     const {base: specifiedBase, useGH, interactive} = parseArgs(args);
 
     // Get current branch
-    const currentBranch = await getCurrentBranch();
+    const currentBranch = await GitCommandHelper.getCurrentBranch();
 
     // Determine base branch
     let baseBranch: string;
@@ -413,9 +290,9 @@ export async function generatePR(args: string[]) {
     logger.line();
 
     // Get change information
-    const diff = await getDiffWithBase(baseBranch);
-    const commits = await getCommitHistory(baseBranch);
-    const files = await getChangedFiles(baseBranch);
+    const diff = await GitCommandHelper.getDiffWithBase(baseBranch);
+    const commits = await GitCommandHelper.getCommitHistory(baseBranch);
+    const files = await GitCommandHelper.getChangedFiles(baseBranch);
 
     logger.section(t('pr.statistics'));
     logger.listItem(`${logger.text.primary(commits.length.toString())} ${t('pr.commits')}`);

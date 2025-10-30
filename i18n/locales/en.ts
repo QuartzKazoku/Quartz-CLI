@@ -1,3 +1,4 @@
+//i18n/locales/en.ts
 // English translations
 import type { Translations } from '@/i18n/locales';
 
@@ -164,6 +165,26 @@ export const en: Translations = {
     notSet: '❌ {key} is not set',
     notConfigured: 'Not configured',
     set: '✅ Set {key}={value}',
+    updated: '✅ Configuration updated: {key}={value}',
+    priority: '\n📊 Configuration Priority: Environment Variables > Project Config > Global Config > Defaults',
+    activeSources: '\n🔍 Active Configuration Sources:',
+    runtimeOverridesActive: '⚡ Runtime Overrides (from Environment Variables):',
+    runtimeConfigTitle: 'Runtime Configuration (Environment Variables)',
+    noRuntimeOverrides: '   No runtime overrides active',
+    setEnvVarsHint: '   Set environment variables like OPENAI_API_KEY, OPENAI_BASE_URL, etc.',
+    activeOverrides: 'Active Overrides',
+    envExampleTitle: 'Environment Variable Examples',
+    runtimeDesc: 'Show runtime configuration (environment variables)',
+    setGlobalDesc: 'Set a global configuration value',
+    initGlobalDesc: 'Initialize global configuration',
+    initGlobal: 'Initialize global configuration',
+    globalConfigExists: '⚠️  Global configuration already exists',
+    globalConfigPath: '📁 Global configuration path: {path}',
+    globalConfigCreated: '✅ Global configuration created: {path}',
+    globalInitSuccess: '🎉 Global configuration initialized successfully!',
+    globalConfigInfo: '\n💡 You can now use Quartz in any project without running "quartz init"',
+    globalConfig: 'Global Configuration',
+    globalSetNotImplemented: '⚠️  Setting global configuration values is not yet implemented\n   Please edit the file directly: {path}',
     keys: {
       apiKey: 'OpenAI API Key',
       baseUrl: 'OpenAI API Base URL',
@@ -238,6 +259,15 @@ export const en: Translations = {
     migrated: '✅ Configuration migrated: {from} → {to}',
     oldConfigReminder: '💡 Tip: You can manually delete the old configuration file',
     gitignoreReminder: '💡 Consider adding configuration file to .gitignore:',
+    globalConfigDetected: '🌍 Global configuration detected',
+    canUseDirectly: '✓ You can use Quartz commands directly without project-specific config',
+    projectConfigOptional: '⚠️ Project configuration will override global settings',
+    noGlobalConfig: 'ℹ️  No global configuration found',
+    suggestGlobal: '💡 Tip: Run "quartz config init --global" to set up global configuration',
+    confirmProjectConfig: '   Then you can use Quartz in any project without project-specific initialization',
+    onlyNeededIf: '💡 Project configuration is optional and only needed if:',
+    globalConfigHint: '   • You want to override global settings for this project',
+    globalConfigHint2: '   • This project has different AI provider or platform requirements',
   },
 
   errors: {

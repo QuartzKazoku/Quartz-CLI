@@ -1,3 +1,4 @@
+//constants/index.ts
 /**
  * @fileoverview Constants module entry point for Quartz CLI
  * @description Centralizes and exports all constants from submodules for unified access
