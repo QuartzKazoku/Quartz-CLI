@@ -30,7 +30,7 @@ export class GitExecutor {
      * @returns Array of branch names
      */
     static async getAllBranches(): Promise<string[]> {
-        return (await $`git branch --format='%(refname:short)'`.text())
+        return (await $`git branch --format=%(refname:short)`.text())
             .trim()
             .split('\n')
             .filter(Boolean);
