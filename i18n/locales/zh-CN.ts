@@ -267,6 +267,8 @@ export const zhCN: Translations = {
 
     init: {
         starting: '🚀 初始化 Quartz 配置...',
+        interactiveMode: '📝 交互式初始化模式',
+        nonInteractiveMode: '⚡ 非交互式初始化模式',
         alreadyInitialized: '⚠️  Quartz 已经初始化',
         reinitializeHint: '💡 如果需要重新初始化，请先删除 .quartz 目录',
         dirExists: 'ℹ️  配置目录已存在: {dir}',
@@ -289,7 +291,7 @@ export const zhCN: Translations = {
         canUseDirectly: '✓ 你可以直接使用 Quartz 命令，无需项目特定配置',
         projectConfigOptional: '  仅当需要项目特定设置时才需要项目配置',
         noGlobalConfig: '💡 未发现全局配置',
-        suggestGlobal: '   建议使用 "quartz config init --global" 设置所有项目共享的配置',
+        suggestGlobal: '   建议使用 "quartz init --global" 设置所有项目共享的配置',
         confirmProjectConfig: '⚠️  项目配置将覆盖全局设置',
         onlyNeededIf: '   仅在需要项目特定设置时才创建项目配置',
         globalConfigHint: '💡 提示: 使用',

@@ -16,7 +16,7 @@ export enum CommandVerb {
     GENERATE = 'generate',
     REVIEW = 'review',
     COMMIT = 'commit',
-    SWITCH = 'switch',
+    USE = 'use',
     SAVE = 'save',
     LOAD = 'load',
     MANAGE = 'manage',

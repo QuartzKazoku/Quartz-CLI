@@ -8,8 +8,7 @@
 
 
 // Import all command definitions
-import { COMMANDS as INIT_COMMANDS } from './init';
-import { COMMANDS as CONFIG_COMMANDS } from './config';
+import { INIT_COMMANDS } from './init';
 import { COMMANDS as BRANCH_COMMANDS } from './branch';
 import { COMMANDS as COMMIT_COMMANDS } from './commit';
 import { COMMANDS as PR_COMMANDS } from './pr';
@@ -29,7 +28,6 @@ export * from './init';
  */
 export const ALL_COMMANDS: CommandDefinition[] = [
   ...INIT_COMMANDS,
-  ...CONFIG_COMMANDS,
   ...BRANCH_COMMANDS,
   ...COMMIT_COMMANDS,
   ...PR_COMMANDS,

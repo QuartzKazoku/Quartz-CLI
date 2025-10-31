@@ -301,6 +301,8 @@ export interface Translations {
   // Init command
   init: {
     starting: string;
+    interactiveMode: string;
+    nonInteractiveMode: string;
     alreadyInitialized: string;
     reinitializeHint: string;
     dirExists: string;

@@ -133,10 +133,10 @@ export const LIST_BRANCH: CommandDefinition = {
 };
 
 /**
- * Switch branch command definition
+ * Use branch command definition
  */
-export const SWITCH_BRANCH: CommandDefinition = {
-  verb: CommandVerb.SWITCH,
+export const USE_BRANCH: CommandDefinition = {
+  verb: CommandVerb.USE,
   object: CommandObject.BRANCH,
   description: 'Switch to a different Git branch',
   parameters: [
@@ -156,8 +156,8 @@ export const SWITCH_BRANCH: CommandDefinition = {
     },
   ],
   examples: [
-    'switch branch --name main',
-    'switch branch --name feature/new --create',
+    'use branch main',
+    'use branch feature/new --create',
   ],
   category: 'git-workflow',
   handler: async (context) => {
@@ -174,5 +174,5 @@ export const COMMANDS: CommandDefinition[] = [
   CREATE_BRANCH,
   DELETE_BRANCH,
   LIST_BRANCH,
-  SWITCH_BRANCH,
+  USE_BRANCH,
 ];
