@@ -1,5 +1,6 @@
 //app/index.ts
-import {branchCommand, configCommand, generateCommit, generatePR, initCommand, reviewCode} from '@/app/commands';
+import { CommandDispatcher, CommandParser, CommandRegistry, initializeCommandSystem } from '@/app/core';
+import { ALL_COMMANDS } from '@/app/core/commands';
 import {i18n} from '@/i18n';
 import {logger} from '@/utils/logger';
 import {checkAndMigrate, shouldSkipMigration} from '@/utils/hooks';
@@ -73,101 +74,110 @@ function getUsageText(): string {
   return '';
 }
 
-// Initialize language from config
-try {
-  if (configManager.configExists()) {
-    const config = configManager.readConfig();
-    i18n.set(config.language.ui as any);
-  } else {
+// Main execution function
+async function main() {
+  // Initialize language from config
+  try {
+    if (configManager.configExists()) {
+      const config = configManager.readConfig();
+      i18n.set(config.language.ui as any);
+    } else {
+      i18n.init();
+    }
+  } catch {
     i18n.init();
   }
-} catch {
-  i18n.init();
-}
-const t = i18n.t;
+  const t = i18n.t;
 
-// Get command line arguments
-const args = process.argv.slice(CLI.ARGS_START_INDEX);
+  // Initialize new command system
+  await initializeCommandSystem();
 
-// Handle help flag
-if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
-  getUsageText();
-  process.exit(0);
-}
+  const registry = new CommandRegistry();
+  const parser = new CommandParser();
+  const dispatcher = new CommandDispatcher();
 
-// Handle version flag
-if (args.includes('-v') || args.includes('--version')) {
-  const pkg = await import('../package.json');
-  logger.line();
-  logger.box(
-    `${logger.text.bold('Quartz CLI')}\n\n${logger.text.primary('Version:')} ${logger.text.success('v' + pkg.version)}\n\n${logger.text.dim('AI-Powered Git Workflow Assistant')}`,
-    { title: '📦 Version Info', padding: 1 }
-  );
-  logger.line();
-  process.exit(0);
-}
+  // Get command line arguments
+  const args = process.argv.slice(CLI.ARGS_START_INDEX);
 
-// Get command
-const command = args[0];
+  // Handle help flag using new system
+  if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
+    const parsedCommand = parser.parse(['help']);
+    const context = {
+      command: parsedCommand,
+      config: {},
+      logger: logger,
+      t: i18n.t,
+      cwd: process.cwd(),
+      env: process.env as Record<string, string>
+    };
+    
+    await dispatcher.dispatch(parsedCommand, context);
+    process.exit(0);
+  }
 
-// Check and run migrations if needed (skip for certain commands)
-if (!shouldSkipMigration(command)) {
+  // Handle version flag using new system
+  if (args.includes('-v') || args.includes('--version')) {
+    const parsedCommand = parser.parse(['version']);
+    const context = {
+      command: parsedCommand,
+      config: {},
+      logger: logger,
+      t: i18n.t,
+      cwd: process.cwd(),
+      env: process.env as Record<string, string>
+    };
+    
+    await dispatcher.dispatch(parsedCommand, context);
+    process.exit(0);
+  }
+
+  // Parse command using new system
+  const parsedCommand = parser.parse(args);
+  const context = {
+    command: parsedCommand,
+    config: {},
+    logger: logger,
+    t: i18n.t,
+    cwd: process.cwd(),
+    env: process.env as Record<string, string>
+  };
+
+  // Check and run migrations if needed (skip for certain commands)
+  if (!shouldSkipMigration(parsedCommand.verb)) {
+    try {
+      await checkAndMigrate();
+    } catch (error) {
+      logger.line();
+      logger.box(
+        `${logger.text.error(t('migration.failed'))}\n\n${error instanceof Error ? error.message : String(error)}`,
+        { title: '❌ Migration Error', padding: 1 }
+      );
+      logger.line();
+      process.exit(1);
+    }
+  }
+
+  // Execute command using new system
   try {
-    await checkAndMigrate();
+    await dispatcher.dispatch(parsedCommand, context);
   } catch (error) {
     logger.line();
     logger.box(
-      `${logger.text.error(t('migration.failed'))}\n\n${error instanceof Error ? error.message : String(error)}`,
-      { title: '❌ Migration Error', padding: 1 }
+      `${logger.text.error(t('common.error'))} ${logger.text.dim('Execution failed')}\n\n${error instanceof Error ? error.message : String(error)}`,
+      { title: '❌ Error', padding: 1 }
     );
     logger.line();
     process.exit(1);
   }
 }
 
-// Execute command
-try {
-  switch (command) {
-    // Initialize project
-    case 'init':
-      await initCommand(args.slice(1));
-      break;
-    // Config management
-    case 'config':
-      await configCommand(args.slice(1));
-      break;
-    // Branch management
-    case 'branch':
-      await branchCommand(args.slice(1));
-      break;
-    // Review code
-    case 'review':
-      await reviewCode(args.slice(1));
-      break;
-    // Generate commit message
-    case 'commit':
-      await generateCommit(args.slice(1));
-      break;
-    // Generate PR description
-    case 'pr':
-      await generatePR(args.slice(1));
-      break;
-    // Handle unknown command
-    default:
-      logger.line();
-      logger.box(
-        `${logger.text.error('Unknown command:')} ${logger.text.warning(command)}\n\n${logger.text.dim('Run')} ${logger.text.success('quartz --help')} ${logger.text.dim('to see available commands.')}`,
-        { title: '⚠️  Error', padding: 1 }
-      );
-      logger.line();
-      process.exit(1);
-  }
-} catch (error) {
+// Run main function
+main().catch(error => {
   logger.line();
   logger.box(
-    `${logger.text.error(t('common.error'))} ${logger.text.dim('Execution failed')}\n\n${error instanceof Error ? error.message : String(error)}`,
-    { title: '❌ Error', padding: 1 }
+    `${logger.text.error('Fatal error')}\n\n${error instanceof Error ? error.message : String(error)}`,
+    { title: '💀 Fatal Error', padding: 1 }
   );
   logger.line();
   process.exit(1);
-}
+});

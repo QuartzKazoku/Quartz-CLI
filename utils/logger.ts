@@ -16,6 +16,7 @@ export const logger = {
   warn: (message: string, ...args: any[]) => consola.warn(message, ...args),
   error: (message: string, ...args: any[]) => consola.error(message, ...args),
   log: (message: string, ...args: any[]) => consola.log(message, ...args),
+  debug: (message: string, ...args: any[]) => consola.debug(message, ...args),
 
   // Styled text
   text: {

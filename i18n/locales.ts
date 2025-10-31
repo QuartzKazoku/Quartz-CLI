@@ -49,6 +49,45 @@ export interface Translations {
     configDesc: string;
     initProject: string;
     initConfig: string;
+    helpTitle: string;
+    helpSystemDescription: string;
+    availableVerbs: string;
+    initVerb: string;
+    initVerbDesc: string;
+    configVerb: string;
+    configVerbDesc: string;
+    branchVerb: string;
+    branchVerbDesc: string;
+    commitVerb: string;
+    commitVerbDesc: string;
+    prVerb: string;
+    prVerbDesc: string;
+    reviewVerb: string;
+    reviewVerbDesc: string;
+    changelogVerb: string;
+    changelogVerbDesc: string;
+    helpVerb: string;
+    helpVerbDesc: string;
+    versionVerb: string;
+    versionVerbDesc: string;
+    helpUsageExamples: string;
+    helpShowAllVerbs: string;
+    helpShowVerbObjects: string;
+    helpShowCommandDetails: string;
+    helpShowVerbose: string;
+    helpObjectsForVerb: string;
+    helpVerbNotFound: string;
+    helpCommandNotFound: string;
+    helpCommandDetails: string;
+    helpCommandDescription: string;
+    helpParameters: string;
+    helpNoParameters: string;
+    helpExamples: string;
+    helpUsage: string;
+    versionTitle: string;
+    versionInfo: string;
+    versionDetails: string;
+    versionMoreInfo: string;
   };
 
   // Review command
@@ -94,6 +133,14 @@ export interface Translations {
     selectPrompt: string;
     generatingOptions: string;
     selectedMessage: string;
+    linkIssue: string;
+    fetchingIssues: string;
+    noIssues: string;
+    selectIssue: string;
+    linkedIssue: string;
+    closeIssue: string;
+    issueWillClose: string;
+    skipIssue: string;
   };
 
   // PR command
