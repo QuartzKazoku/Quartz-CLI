@@ -9,12 +9,7 @@
 
 // Import all command definitions
 import {INIT_COMMANDS} from './init';
-import {COMMANDS as BRANCH_COMMANDS} from './branch';
-import {COMMANDS as COMMIT_COMMANDS} from './commit';
-import {COMMANDS as PR_COMMANDS} from './pr';
-import {COMMANDS as REVIEW_COMMANDS} from './review';
-import {COMMANDS as CHANGELOG_COMMANDS} from './changelog';
-import {helpCommands as HELP_COMMANDS} from './help';
+import {HELPCommands as HELP_COMMANDS} from './help';
 import {CommandDefinition} from "@/app/core/interfaces";
 import {CommandObject, CommandVerb} from "@/app/core/enums";
 import {SHOW_COMMANDS} from "@/app/core/commands/show";
@@ -31,11 +26,6 @@ export * from './init';
  */
 export const ALL_COMMANDS: CommandDefinition[] = [
     ...INIT_COMMANDS,
-    ...BRANCH_COMMANDS,
-    ...COMMIT_COMMANDS,
-    ...PR_COMMANDS,
-    ...REVIEW_COMMANDS,
-    ...CHANGELOG_COMMANDS,
     ...HELP_COMMANDS,
     ...SHOW_COMMANDS,
     ...SET_COMMANDS,

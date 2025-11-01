@@ -140,7 +140,7 @@ ${t('cli.versionMoreInfo')}: https://github.com/quartz-cli/quartz-cli
 /**
  * Export help command definitions
  */
-export const helpCommands: CommandDefinition[] = [
+export const HELPCommands: CommandDefinition[] = [
   // quartz help
   {
     verb: CommandVerb.HELP,

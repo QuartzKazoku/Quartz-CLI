@@ -12,7 +12,6 @@ export enum CommandVerb {
     SHOW = 'show',
     SET = 'set',
     GET = 'get',
-    UPDATE = 'update',
     GENERATE = 'generate',
     REVIEW = 'review',
     COMMIT = 'commit',
