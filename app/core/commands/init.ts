@@ -553,7 +553,7 @@ const handleGlobalNonInteractive: CommandHandler = async (context) => {
 /**
  * Interactive init command handler
  */
-const interactiveInitHandler: CommandHandler = async (context) => {
+const initConfigHandler: CommandHandler = async (context) => {
     const {command} = context;
     const isGlobal = command.parameters.global || false;
     const skipInteractive = command.parameters.skip || false;
@@ -604,6 +604,6 @@ export const INIT_COMMANDS: CommandDefinition[] = [
             'init -g -s',
         ],
         category: 'initialization',
-        handler: interactiveInitHandler,
+        handler: initConfigHandler,
     },
 ];
