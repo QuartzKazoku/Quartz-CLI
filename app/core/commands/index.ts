@@ -15,6 +15,11 @@ import {CommandObject, CommandVerb} from "@/app/core/enums";
 import {SHOW_COMMANDS} from "@/app/core/commands/show";
 import {SET_COMMANDS} from "@/app/core/commands/set";
 import {GET_COMMANDS} from "@/app/core/commands/get";
+import {CREATE_COMMANDS} from "@/app/core/commands/create";
+import {DELETE_COMMANDS} from "@/app/core/commands/delete";
+import {LIST_COMMANDS} from "@/app/core/commands/list";
+import {USE_COMMANDS} from "@/app/core/commands/use";
+import {PROFILE_COMMANDS} from "@/app/core/commands/profile";
 
 // Re-export all command definitions
 export * from './init';
@@ -29,7 +34,11 @@ export const ALL_COMMANDS: CommandDefinition[] = [
     ...HELP_COMMANDS,
     ...SHOW_COMMANDS,
     ...SET_COMMANDS,
-    ...GET_COMMANDS
+    ...GET_COMMANDS,
+    ...CREATE_COMMANDS,
+    ...DELETE_COMMANDS,
+    ...LIST_COMMANDS,
+    ...USE_COMMANDS
 ];
 
 /**

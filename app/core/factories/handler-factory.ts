@@ -8,6 +8,7 @@ import {
     ShowConfigHandler,
     HelpHandler,
     InitHandler,
+    ProfileHandler,
     BaseHandler
 } from "@/app/core/handlers";
 
@@ -28,6 +29,41 @@ export class HandlerFactory {
      */
     static createSetConfigHandler(context: ExecutionContext): SetConfigHandler {
         return new SetConfigHandler(context);
+    }
+
+    /**
+     * Create handler for create profile command
+     */
+    static createCreateProfileHandler(context: ExecutionContext): ProfileHandler {
+        return new ProfileHandler(context);
+    }
+
+    /**
+     * Create handler for use profile command
+     */
+    static createUseProfileHandler(context: ExecutionContext): ProfileHandler {
+        return new ProfileHandler(context);
+    }
+
+    /**
+     * Create handler for list profile command
+     */
+    static createListProfileHandler(context: ExecutionContext): ProfileHandler {
+        return new ProfileHandler(context);
+    }
+
+    /**
+     * Create handler for delete profile command
+     */
+    static createDeleteProfileHandler(context: ExecutionContext): ProfileHandler {
+        return new ProfileHandler(context);
+    }
+
+    /**
+     * Create handler for set profile command (rename profile)
+     */
+    static createSetProfileHandler(context: ExecutionContext): ProfileHandler {
+        return new ProfileHandler(context);
     }
 
     /**
@@ -72,6 +108,32 @@ export class HandlerFactory {
             case CommandVerb.SET:
                 if (object === CommandObject.CONFIG) {
                     return this.createSetConfigHandler(context);
+                } else if (object === CommandObject.PROFILE) {
+                    return this.createSetProfileHandler(context);
+                }
+                break;
+            
+            case CommandVerb.CREATE:
+                if (object === CommandObject.PROFILE) {
+                    return this.createCreateProfileHandler(context);
+                }
+                break;
+            
+            case CommandVerb.USE:
+                if (object === CommandObject.PROFILE) {
+                    return this.createUseProfileHandler(context);
+                }
+                break;
+            
+            case CommandVerb.LIST:
+                if (object === CommandObject.PROFILE) {
+                    return this.createListProfileHandler(context);
+                }
+                break;
+            
+            case CommandVerb.DELETE:
+                if (object === CommandObject.PROFILE) {
+                    return this.createDeleteProfileHandler(context);
                 }
                 break;
             
@@ -96,16 +158,21 @@ export class HandlerFactory {
         throw new Error(`No handler found for command: ${verb} ${object}`);
     }
 
-    /**
+/**
      * Get all available handler types
      */
     static getAvailableHandlers(): string[] {
         return [
             'GetConfigHandler',
-            'SetConfigHandler', 
+            'SetConfigHandler',
             'ShowConfigHandler',
             'HelpHandler',
-            'InitHandler'
+            'InitHandler',
+            'CreateProfileHandler',
+            'UseProfileHandler',
+            'ListProfileHandler',
+            'DeleteProfileHandler',
+            'SetProfileHandler'
         ];
     }
 

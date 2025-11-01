@@ -15,6 +15,7 @@ export { ConfigUtils } from './base/config-utils';
 export { GetConfigHandler } from './config/get-config-handler';
 export { SetConfigHandler } from './config/set-config-handler';
 export { ShowConfigHandler } from './config/show-config-handler';
+export { ProfileHandler } from './config/profile-handler';
 
 // System handlers
 export { HelpHandler } from './system/help-handler';

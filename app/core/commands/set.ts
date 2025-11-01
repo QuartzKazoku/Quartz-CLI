@@ -14,6 +14,14 @@ const setConfigHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * Set profile command handler - renames a configuration profile
+ */
+const setProfileHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.SET, CommandObject.PROFILE, context);
+    await handler.execute();
+};
+
+/**
  * Export set command definitions
  */
 export const SET_COMMANDS: CommandDefinition[] = [
@@ -39,5 +47,37 @@ export const SET_COMMANDS: CommandDefinition[] = [
         ],
         category: 'configuration',
         handler: setConfigHandler
+    },
+    {
+        verb: CommandVerb.SET,
+        object: CommandObject.PROFILE,
+        description: 'Rename a configuration profile',
+        parameters: [
+            {
+                name: 'global',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Rename in global profiles instead of project profiles',
+                aliases: ['g'],
+            },
+            {
+                name: 'remote',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Rename in remote profiles instead of local profiles',
+                aliases: ['r'],
+            },
+        ],
+        examples: [
+            'set profile old-name new-name',
+            'set profile old-name new-name --global',
+            'set profile old-name new-name -g',
+            'set profile old-name new-name --remote',
+            'set profile old-name new-name -r',
+        ],
+        category: 'configuration',
+        handler: setProfileHandler
     },
 ];
