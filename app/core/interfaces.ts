@@ -31,7 +31,7 @@ export interface CommandDefinition {
     /** Command verb */
     verb: CommandVerb;
     /** Command object */
-    object: CommandObject;
+    object?: CommandObject;
     /** Command description */
     description: string;
     /** Parameter definitions */

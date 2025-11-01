@@ -1,99 +1,100 @@
 //app/core/commands/init.ts
-import { CommandDefinition } from '../interfaces';
-import { CommandVerb, CommandObject } from '../enums';
-import { CommandHandler } from '../types';
+import {CommandDefinition} from '../interfaces';
+import {CommandVerb, CommandObject} from '../enums';
+import {CommandHandler} from '../types';
 
 /**
- * Interactive init command handler (equivalent to old config command)
+ * Handle local interactive initialization
  */
-const interactiveInitHandler: CommandHandler = async (context) => {
-  const { logger, t } = context;
-  
-  logger.info(t('init.starting'));
-  logger.info(t('init.interactiveMode'));
-  logger.info('Would start interactive configuration wizard...');
+const handleLocalInteractive: CommandHandler = async (context) => {
+    const {logger, t} = context;
+    logger.info(t('init.starting'));
+    logger.info(t('init.interactiveMode'));
+    logger.info('Would start interactive configuration wizard for local config...');
 };
 
 /**
- * Non-interactive init command handler (equivalent to old init command)
+ * Handle local non-interactive initialization
  */
-const nonInteractiveInitHandler: CommandHandler = async (context) => {
-  const { logger, t } = context;
-  
-  logger.info(t('init.starting'));
-  logger.info(t('init.nonInteractiveMode'));
-  logger.info('Would initialize project with default settings...');
+const handleLocalNonInteractive: CommandHandler = async (context) => {
+    const {logger, t} = context;
+    logger.info(t('init.starting'));
+    logger.info(t('init.nonInteractiveMode'));
+    logger.info('Would start non-interactive configuration for local config...');
+};
+
+/**
+ * Handle global interactive initialization
+ */
+const handleGlobalInteractive: CommandHandler = async (context) => {
+    const {logger, t} = context;
+    logger.info(t('init.starting'));
+    logger.info(t('init.interactiveMode'));
+    logger.info('Would start interactive configuration wizard for global config...');
+};
+
+/**
+ * Handle global non-interactive initialization
+ */
+const handleGlobalNonInteractive: CommandHandler = async (context) => {
+    const {logger, t} = context;
+    logger.info(t('init.starting'));
+    logger.info(t('init.nonInteractiveMode'));
+    logger.info('Would start non-interactive configuration for global config...');
+};
+
+/**
+ * Interactive init command handler
+ */
+const interactiveInitHandler: CommandHandler = async (context) => {
+    const {command} = context;
+    const isGlobal = command.parameters.global || false;
+    const skipInteractive = command.parameters.skip || false;
+    if (isGlobal && skipInteractive) {
+        await handleGlobalNonInteractive(context);
+    } else if (isGlobal) {
+        await handleGlobalInteractive(context);
+    } else if (skipInteractive) {
+        await handleLocalNonInteractive(context);
+    } else {
+        await handleLocalInteractive(context);
+    }
 };
 
 /**
  * Export init command definitions
  */
 export const INIT_COMMANDS: CommandDefinition[] = [
-  // quartz init (interactive mode - equivalent to old config command)
-  {
-    verb: CommandVerb.INIT,
-    object: CommandObject.PROJECT,
-    description: 'Interactive project initialization',
-    parameters: [
-      {
-        name: 'skip',
-        type: 'boolean',
-        required: false,
-        defaultValue: false,
-        description: 'Skip interactive setup and use defaults',
-        aliases: ['s'],
-      },
-      {
-        name: 'global',
-        type: 'boolean',
-        required: false,
-        defaultValue: false,
-        description: 'Initialize global configuration',
-        aliases: ['g'],
-      },
-    ],
-    examples: [
-      'init',
-      'init --skip',
-      'init -s',
-      'init --global',
-      'init -g',
-    ],
-    category: 'initialization',
-    handler: interactiveInitHandler,
-  },
-  
-  // quartz init config (non-interactive mode - equivalent to old init command)
-  {
-    verb: CommandVerb.INIT,
-    object: CommandObject.CONFIG,
-    description: 'Non-interactive project initialization',
-    parameters: [
-      {
-        name: 'skip',
-        type: 'boolean',
-        required: false,
-        defaultValue: false,
-        description: 'Skip interactive setup and use defaults',
-        aliases: ['s'],
-      },
-      {
-        name: 'global',
-        type: 'boolean',
-        required: false,
-        defaultValue: false,
-        description: 'Initialize global configuration',
-        aliases: ['g'],
-      },
-    ],
-    examples: [
-      'init config',
-      'init config --skip',
-      'init config -s',
-      'init config --global',
-      'init config -g',
-    ],
-    category: 'initialization',
-    handler: nonInteractiveInitHandler,
-  },
+    {
+        verb: CommandVerb.INIT,
+        object: CommandObject.CONFIG,
+        description: 'Interactive Config initialization',
+        parameters: [
+            {
+                name: 'skip',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Skip interactive setup and use defaults',
+                aliases: ['s'],
+            },
+            {
+                name: 'global',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Initialize global configuration',
+                aliases: ['g'],
+            },
+        ],
+        examples: [
+            'init',
+            'init --skip',
+            'init -s',
+            'init --global',
+            'init -g',
+        ],
+        category: 'initialization',
+        handler: interactiveInitHandler,
+    },
 ];
