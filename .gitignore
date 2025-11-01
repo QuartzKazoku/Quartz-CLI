@@ -14,6 +14,14 @@ coverage/
 # Production
 dist/
 build/
+*.exe
+*.app
+*.dmg
+
+# Compiled executables
+quartz
+quartz-*
+!dist/.gitkeep
 
 # Environment variables
 .env
