@@ -1,18 +1,15 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'bunup';
 
 export default defineConfig({
   entry: ['app/index.ts'],
   format: ['esm'],
-  target: 'node18',
+  target: 'node',
   outDir: 'dist',
   clean: true,
-  shims: true,
   dts: true,
   sourcemap: true,
   splitting: false,
   treeshake: true,
   minify: false,
-  banner: {
-    js: '#!/usr/bin/env node',
-  },
+  banner: '#!/usr/bin/env node',
 });
