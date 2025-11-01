@@ -13,6 +13,14 @@ const showConfigHandler: CommandHandler = async (context) => {
     const isGlobal = command.parameters.global || false;
 
 };
+/**
+ * Interactive init command handler
+ */
+const showProfileHandler: CommandHandler = async (context) => {
+    const {command} = context;
+    const isGlobal = command.parameters.global || false;
+
+};
 
 /**
  * Export init command definitions
@@ -33,15 +41,15 @@ export const SHOW_COMMANDS: CommandDefinition[] = [
             },
         ],
         examples: [
-            'show',
-            'show --global',
-            'show -g',
+            'show config',
+            'show config --global',
+            'show config -g',
         ],
         category: 'show',
         handler: showConfigHandler
     }, {
         verb: CommandVerb.SHOW,
-        object: CommandObject.CONFIG,
+        object: CommandObject.PROFILE,
         description: 'show ',
         parameters: [
             {
@@ -51,26 +59,14 @@ export const SHOW_COMMANDS: CommandDefinition[] = [
                 defaultValue: false,
                 description: 'Initialize global configuration',
                 aliases: ['g'],
-            },
-            {
-                name: 'profile',
-                type: 'boolean',
-                required: false,
-                defaultValue: false,
-                description: 'Initialize global configuration',
-                aliases: ['p'],
-            },
+            }
         ],
         examples: [
-            'show',
-            'show --global',
-            'show -g',
-            'show --profile [name]',
-            'show -p [name]',
-            'show -g -p [name]',
-            'show --global --profile [name]',
+            'show profile',
+            'show profile --global',
+            'show profile -g',
         ],
         category: 'show',
-        handler: showConfigHandler
+        handler: showProfileHandler
     },
 ];

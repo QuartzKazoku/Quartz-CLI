@@ -41,5 +41,5 @@ export enum CommandObject {
     LANGUAGE = 'language',
     PLATFORM = 'platform',
     HELP = 'help',
-    VERSION = 'version',
+    VERSION = 'version'
 }
