@@ -18,6 +18,7 @@ import {helpCommands as HELP_COMMANDS} from './help';
 import {CommandDefinition} from "@/app/core/interfaces";
 import {CommandObject, CommandVerb} from "@/app/core/enums";
 import {SHOW_COMMANDS} from "@/app/core/commands/show";
+import {SET_COMMANDS} from "@/app/core/commands/set";
 
 // Re-export all command definitions
 export * from './init';
@@ -35,7 +36,8 @@ export const ALL_COMMANDS: CommandDefinition[] = [
     ...REVIEW_COMMANDS,
     ...CHANGELOG_COMMANDS,
     ...HELP_COMMANDS,
-    ...SHOW_COMMANDS
+    ...SHOW_COMMANDS,
+    ...SET_COMMANDS
 ];
 
 /**
