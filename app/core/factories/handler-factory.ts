@@ -9,6 +9,10 @@ import {
     HelpHandler,
     InitHandler,
     ProfileHandler,
+    BranchHandler,
+    ChangelogHandler,
+    ReviewHandler,
+    CommitHandler,
     BaseHandler
 } from "@/app/core/handlers";
 
@@ -67,6 +71,55 @@ export class HandlerFactory {
     }
 
     /**
+     * Create handler for create branch command
+     */
+    static createCreateBranchHandler(context: ExecutionContext): BranchHandler {
+        return new BranchHandler(context);
+    }
+
+    /**
+     * Create handler for use branch command
+     */
+    static createUseBranchHandler(context: ExecutionContext): BranchHandler {
+        return new BranchHandler(context);
+    }
+
+    /**
+     * Create handler for list branch command
+     */
+    static createListBranchHandler(context: ExecutionContext): BranchHandler {
+        return new BranchHandler(context);
+    }
+
+    /**
+     * Create handler for delete branch command
+     */
+    static createDeleteBranchHandler(context: ExecutionContext): BranchHandler {
+        return new BranchHandler(context);
+    }
+
+    /**
+     * Create handler for create changelog command
+     */
+    static createCreateChangelogHandler(context: ExecutionContext): ChangelogHandler {
+        return new ChangelogHandler(context);
+    }
+
+    /**
+     * Create handler for create review command
+     */
+    static createCreateReviewHandler(context: ExecutionContext): ReviewHandler {
+        return new ReviewHandler(context);
+    }
+
+    /**
+     * Create handler for create commit command
+     */
+    static createCreateCommitHandler(context: ExecutionContext): CommitHandler {
+        return new CommitHandler(context);
+    }
+
+    /**
      * Create handler for show config command
      */
     static createShowConfigHandler(context: ExecutionContext): ShowConfigHandler {
@@ -116,24 +169,38 @@ export class HandlerFactory {
             case CommandVerb.CREATE:
                 if (object === CommandObject.PROFILE) {
                     return this.createCreateProfileHandler(context);
+                } else if (object === CommandObject.BRANCH) {
+                    return this.createCreateBranchHandler(context);
+                } else if (object === CommandObject.CHANGELOG) {
+                    return this.createCreateChangelogHandler(context);
+                } else if (object === CommandObject.REVIEW) {
+                    return this.createCreateReviewHandler(context);
+                } else if (object === CommandObject.COMMIT) {
+                    return this.createCreateCommitHandler(context);
                 }
                 break;
             
             case CommandVerb.USE:
                 if (object === CommandObject.PROFILE) {
                     return this.createUseProfileHandler(context);
+                } else if (object === CommandObject.BRANCH) {
+                    return this.createUseBranchHandler(context);
                 }
                 break;
             
             case CommandVerb.LIST:
                 if (object === CommandObject.PROFILE) {
                     return this.createListProfileHandler(context);
+                } else if (object === CommandObject.BRANCH) {
+                    return this.createListBranchHandler(context);
                 }
                 break;
             
             case CommandVerb.DELETE:
                 if (object === CommandObject.PROFILE) {
                     return this.createDeleteProfileHandler(context);
+                } else if (object === CommandObject.BRANCH) {
+                    return this.createDeleteBranchHandler(context);
                 }
                 break;
             
@@ -172,7 +239,14 @@ export class HandlerFactory {
             'UseProfileHandler',
             'ListProfileHandler',
             'DeleteProfileHandler',
-            'SetProfileHandler'
+            'SetProfileHandler',
+            'CreateBranchHandler',
+            'UseBranchHandler',
+            'ListBranchHandler',
+            'DeleteBranchHandler',
+            'CreateChangelogHandler',
+            'CreateReviewHandler',
+            'CreateCommitHandler'
         ];
     }
 

@@ -17,6 +17,14 @@ export { SetConfigHandler } from './config/set-config-handler';
 export { ShowConfigHandler } from './config/show-config-handler';
 export { ProfileHandler } from './config/profile-handler';
 
+// Git handlers
+export { BranchHandler } from './git/branch-handler';
+export { ChangelogHandler } from './git/changelog-handler';
+
+// AI handlers
+export { ReviewHandler } from './ai/review-handler';
+export { CommitHandler } from './ai/commit-handler';
+
 // System handlers
 export { HelpHandler } from './system/help-handler';
 export { InitHandler } from './system/init-handler';

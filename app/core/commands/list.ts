@@ -13,6 +13,14 @@ const listProfileHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * List branch command handler - displays all available branches
+ */
+const listBranchHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.LIST, CommandObject.BRANCH, context);
+    await handler.execute();
+};
+
+/**
  * Export list command definitions
  */
 export const LIST_COMMANDS: CommandDefinition[] = [
@@ -47,5 +55,25 @@ export const LIST_COMMANDS: CommandDefinition[] = [
         ],
         category: 'configuration',
         handler: listProfileHandler
+    },
+    {
+        verb: CommandVerb.LIST,
+        object: CommandObject.BRANCH,
+        description: 'List all available branches',
+        parameters: [
+            {
+                name: 'remote',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'List remote branches instead of local branches',
+            },
+        ],
+        examples: [
+            'list branch',
+            'list branch --remote',
+        ],
+        category: 'git-workflow',
+        handler: listBranchHandler
     },
 ];

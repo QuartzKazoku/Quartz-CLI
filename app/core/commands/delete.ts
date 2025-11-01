@@ -13,6 +13,14 @@ const deleteProfileHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * Delete branch command handler - removes a branch
+ */
+const deleteBranchHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.DELETE, CommandObject.BRANCH, context);
+    await handler.execute();
+};
+
+/**
  * Export delete command definitions
  */
 export const DELETE_COMMANDS: CommandDefinition[] = [
@@ -47,5 +55,25 @@ export const DELETE_COMMANDS: CommandDefinition[] = [
         ],
         category: 'configuration',
         handler: deleteProfileHandler
+    },
+    {
+        verb: CommandVerb.DELETE,
+        object: CommandObject.BRANCH,
+        description: 'Delete a branch',
+        parameters: [
+            {
+                name: 'remote',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Delete remote branch instead of local branch',
+            },
+        ],
+        examples: [
+            'delete branch feature/new-feature',
+            'delete branch feature/new-feature --remote',
+        ],
+        category: 'git-workflow',
+        handler: deleteBranchHandler
     },
 ];

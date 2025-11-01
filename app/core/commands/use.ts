@@ -13,6 +13,14 @@ const useProfileHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * Use branch command handler - switches to a different branch
+ */
+const useBranchHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.USE, CommandObject.BRANCH, context);
+    await handler.execute();
+};
+
+/**
  * Export use command definitions
  */
 export const USE_COMMANDS: CommandDefinition[] = [
@@ -47,5 +55,25 @@ export const USE_COMMANDS: CommandDefinition[] = [
         ],
         category: 'configuration',
         handler: useProfileHandler
+    },
+    {
+        verb: CommandVerb.USE,
+        object: CommandObject.BRANCH,
+        description: 'Switch to a different branch',
+        parameters: [
+            {
+                name: 'remote',
+                type: 'boolean',
+                required: false,
+                defaultValue: false,
+                description: 'Switch to remote branch instead of local branch',
+            },
+        ],
+        examples: [
+            'use branch feature/new-feature',
+            'use branch feature/new-feature --remote',
+        ],
+        category: 'git-workflow',
+        handler: useBranchHandler
     },
 ];
