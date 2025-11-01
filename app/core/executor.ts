@@ -1,7 +1,7 @@
-//app/core/command-executor.ts
+//app/core/executor.ts
 
-import {CommandMiddleware} from "@/app/core/types";
-import {CommandDefinition, ExecutionContext, ExecutionResult, ParsedCommand} from "@/app/core/interfaces";
+import {CommandMiddleware} from "@/app/core/models";
+import {CommandDefinition, ExecutionContext, ExecutionResult, ParsedCommand} from "@/app/core/models";
 
 /**
  * Command Executor Implementation

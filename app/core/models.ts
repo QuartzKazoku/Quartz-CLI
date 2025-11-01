@@ -1,6 +1,61 @@
-//app/core/interfaces.ts
-import {CommandObject, CommandVerb} from "@/app/core/enums";
-import {CommandHandler, CommandMiddleware} from "@/app/core/types";
+//app/core/models.ts
+/**
+ * @fileoverview Core type definitions and models
+ * @description Consolidated type definitions for the command system
+ */
+
+/**
+ * Command verb enumeration
+ * Defines all possible action verbs in the command system
+ */
+export enum CommandVerb {
+    INIT = 'init',
+    CREATE = 'create',
+    DELETE = 'delete',
+    LIST = 'list',
+    SHOW = 'show',
+    SET = 'set',
+    GET = 'get',
+    GENERATE = 'generate',
+    REVIEW = 'review',
+    COMMIT = 'commit',
+    USE = 'use',
+    SAVE = 'save',
+    LOAD = 'load',
+    MANAGE = 'manage',
+    HELP = 'help',
+    VERSION = 'version',
+}
+
+/**
+ * Command object enumeration
+ * Defines all possible target objects in the command system
+ */
+export enum CommandObject {
+    PROJECT = 'project',
+    CONFIG = 'config',
+    PROFILE = 'profile',
+    BRANCH = 'branch',
+    COMMIT = 'commit',
+    PR = 'pr',
+    REVIEW = 'review',
+    CHANGELOG = 'changelog',
+    TOKEN = 'token',
+    LANGUAGE = 'language',
+    PLATFORM = 'platform',
+    HELP = 'help',
+    VERSION = 'version'
+}
+
+/**
+ * Command handler function type
+ */
+export type CommandHandler = (context: ExecutionContext) => Promise<void> | void;
+
+/**
+ * Command middleware function type
+ */
+export type CommandMiddleware = (context: ExecutionContext, next: () => Promise<void>) => Promise<void>;
 
 /**
  * Parameter definition interface
@@ -31,7 +86,7 @@ export interface CommandDefinition {
     /** Command verb */
     verb: CommandVerb;
     /** Command object */
-    object?: CommandObject;
+    object: CommandObject;
     /** Command description */
     description: string;
     /** Parameter definitions */

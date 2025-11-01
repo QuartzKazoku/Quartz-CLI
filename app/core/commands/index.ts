@@ -10,8 +10,8 @@
 // Import all command definitions
 import {INIT_COMMANDS} from './init';
 import {HELPCommands as HELP_COMMANDS} from './help';
-import {CommandDefinition} from "@/app/core/interfaces";
-import {CommandObject, CommandVerb} from "@/app/core/enums";
+import {CommandDefinition} from "@/app/core/models";
+import {CommandObject, CommandVerb} from "@/app/core/models";
 import {SHOW_COMMANDS} from "@/app/core/commands/show";
 import {SET_COMMANDS} from "@/app/core/commands/set";
 import {GET_COMMANDS} from "@/app/core/commands/get";

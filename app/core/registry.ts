@@ -1,8 +1,8 @@
 //app/core/registry.ts
 
 
-import {CommandDefinition, ICommandRegistry} from "@/app/core/interfaces";
-import {CommandObject, CommandVerb} from "@/app/core/enums";
+import {CommandDefinition, ICommandRegistry} from "@/app/core/models";
+import {CommandObject, CommandVerb} from "@/app/core/models";
 
 /**
  * Command Registry Implementation

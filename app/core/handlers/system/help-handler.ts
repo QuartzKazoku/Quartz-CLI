@@ -2,7 +2,7 @@
 
 import {BaseHandler} from '../base/base-handler';
 import {commandRegistry} from '@/app/core/registry';
-import {CommandObject, CommandVerb} from '@/app/core/enums';
+import {CommandObject, CommandVerb} from '@/app/core/models';
 
 /**
  * Help command handler

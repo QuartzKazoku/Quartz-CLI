@@ -6,17 +6,14 @@
  * @version 2.0.0
  */
 
-// Type definitions
-export * from './types';
+// Type definitions and enums
+export * from './models';
 
 // Core components
 export { CommandRegistry, commandRegistry } from './registry';
-export { VerbDispatcher } from './verb-dispatcher';
-export { ObjectRouter } from './object-router';
-export { ParameterParser } from './parameter-parser';
-export { CommandExecutor, BuiltinMiddleware, commandExecutor } from './command-executor';
-export { CommandParser, commandParser } from './command-parser';
-export { CommandDispatcher, commandDispatcher } from './command-dispatcher';
+export { CommandExecutor, BuiltinMiddleware, commandExecutor } from './executor';
+export { CommandParser, commandParser } from './parser';
+export { CommandDispatcher, commandDispatcher } from './dispatcher';
 
 // Command definitions
 export { ALL_COMMANDS } from './commands';

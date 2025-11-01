@@ -1,11 +1,11 @@
-//app/core/command-dispatcher.ts
+//app/core/dispatcher.ts
 import { 
   CommandMiddleware,
-} from './types';
-import { commandExecutor, BuiltinMiddleware } from './command-executor';
-import { commandParser } from './command-parser';
+} from './models';
+import { commandExecutor, BuiltinMiddleware } from './executor';
+import { commandParser } from './parser';
 import { commandRegistry } from './registry';
-import {CommandDefinition, ExecutionContext, ICommandDispatcher, ParsedCommand} from "@/app/core/interfaces";
+import {CommandDefinition, ExecutionContext, ICommandDispatcher, ParsedCommand} from "@/app/core/models";
 
 /**
  * Main Command Dispatcher Implementation

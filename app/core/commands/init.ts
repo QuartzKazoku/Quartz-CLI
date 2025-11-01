@@ -1,6 +1,6 @@
 //app/core/commands/init.ts
-import {CommandDefinition} from '../interfaces';
-import {CommandObject, CommandVerb} from '../enums';
+import {CommandDefinition} from '../models';
+import {CommandObject, CommandVerb} from '../models';
 import {CommandHandler} from '../types';
 import {HandlerFactory} from '@/app/core/factories';
 

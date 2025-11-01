@@ -1,7 +1,7 @@
 //app/core/commands/get.ts
 
-import {CommandDefinition} from "@/app/core/interfaces";
-import {CommandObject, CommandVerb} from "@/app/core/enums";
+import {CommandDefinition} from "@/app/core/models";
+import {CommandObject, CommandVerb} from "@/app/core/models";
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 

@@ -4,7 +4,7 @@ import {BaseHandler} from '../base/base-handler';
 import type {IConfigHandler} from '../base/config-handler-interface';
 import {ConfigUtils} from '../base/config-utils';
 import {getConfigManager} from "@/manager/config";
-import {ExecutionContext} from "@/app/core/interfaces";
+import {ExecutionContext} from "@/app/core/models";
 
 /**
  * Get configuration command handler

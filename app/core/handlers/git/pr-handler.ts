@@ -1,8 +1,8 @@
 //app/core/handlers/git/pr-handler.ts
 
 import {BaseHandler} from '../base/base-handler';
-import {ExecutionContext} from "@/app/core/interfaces";
-import {CommandVerb} from "@/app/core/enums";
+import {ExecutionContext} from "@/app/core/models";
+import {CommandVerb} from "@/app/core/models";
 
 /**
  * Pull Request management command handler
