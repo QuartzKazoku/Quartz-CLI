@@ -19,7 +19,6 @@ import {CREATE_COMMANDS} from "@/app/core/commands/create";
 import {DELETE_COMMANDS} from "@/app/core/commands/delete";
 import {LIST_COMMANDS} from "@/app/core/commands/list";
 import {USE_COMMANDS} from "@/app/core/commands/use";
-import {PROFILE_COMMANDS} from "@/app/core/commands/profile";
 
 // Re-export all command definitions
 export * from './init';
