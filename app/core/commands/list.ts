@@ -21,6 +21,14 @@ const listBranchHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * List PR command handler - displays current Pull Requests
+ */
+const listPrHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.LIST, CommandObject.PR, context);
+    await handler.execute();
+};
+
+/**
  * Export list command definitions
  */
 export const LIST_COMMANDS: CommandDefinition[] = [
@@ -75,5 +83,46 @@ export const LIST_COMMANDS: CommandDefinition[] = [
         ],
         category: 'git-workflow',
         handler: listBranchHandler
+    },
+    {
+        verb: CommandVerb.LIST,
+        object: CommandObject.PR,
+        description: 'List current Pull Requests',
+        parameters: [
+            {
+                name: 'state',
+                type: 'string',
+                required: false,
+                defaultValue: 'open',
+                description: 'PR state filter (open, closed, all)',
+                aliases: ['s'],
+            },
+            {
+                name: 'assignee',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Filter by assignee username',
+                aliases: ['a'],
+            },
+            {
+                name: 'author',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Filter by author username',
+                aliases: ['u'],
+            },
+        ],
+        examples: [
+            'list pr',
+            'list pr --state open',
+            'list pr -s open',
+            'list pr --state closed',
+            'list pr --assignee username',
+            'list pr -a username',
+        ],
+        category: 'git-workflow',
+        handler: listPrHandler
     },
 ];

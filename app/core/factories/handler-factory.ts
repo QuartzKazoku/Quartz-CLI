@@ -13,6 +13,7 @@ import {
     ChangelogHandler,
     ReviewHandler,
     CommitHandler,
+    PrHandler,
     BaseHandler
 } from "@/app/core/handlers";
 
@@ -120,6 +121,20 @@ export class HandlerFactory {
     }
 
     /**
+     * Create handler for create PR command
+     */
+    static createCreatePrHandler(context: ExecutionContext): PrHandler {
+        return new PrHandler(context);
+    }
+
+    /**
+     * Create handler for list PR command
+     */
+    static createListPrHandler(context: ExecutionContext): PrHandler {
+        return new PrHandler(context);
+    }
+
+    /**
      * Create handler for show config command
      */
     static createShowConfigHandler(context: ExecutionContext): ShowConfigHandler {
@@ -177,6 +192,8 @@ export class HandlerFactory {
                     return this.createCreateReviewHandler(context);
                 } else if (object === CommandObject.COMMIT) {
                     return this.createCreateCommitHandler(context);
+                } else if (object === CommandObject.PR) {
+                    return this.createCreatePrHandler(context);
                 }
                 break;
             
@@ -193,6 +210,8 @@ export class HandlerFactory {
                     return this.createListProfileHandler(context);
                 } else if (object === CommandObject.BRANCH) {
                     return this.createListBranchHandler(context);
+                } else if (object === CommandObject.PR) {
+                    return this.createListPrHandler(context);
                 }
                 break;
             
@@ -246,7 +265,9 @@ export class HandlerFactory {
             'DeleteBranchHandler',
             'CreateChangelogHandler',
             'CreateReviewHandler',
-            'CreateCommitHandler'
+            'CreateCommitHandler',
+            'CreatePrHandler',
+            'ListPrHandler'
         ];
     }
 

@@ -20,6 +20,7 @@ export { ProfileHandler } from './config/profile-handler';
 // Git handlers
 export { BranchHandler } from './git/branch-handler';
 export { ChangelogHandler } from './git/changelog-handler';
+export { PrHandler } from './git/pr-handler';
 
 // AI handlers
 export { ReviewHandler } from './ai/review-handler';

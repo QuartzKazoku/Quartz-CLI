@@ -45,6 +45,14 @@ const createCommitHandler: CommandHandler = async (context) => {
 };
 
 /**
+ * Create PR command handler - creates a Pull Request
+ */
+const createPrHandler: CommandHandler = async (context) => {
+    const handler = HandlerFactory.createHandler(CommandVerb.CREATE, CommandObject.PR, context);
+    await handler.execute();
+};
+
+/**
  * Export create command definitions
  */
 export const CREATE_COMMANDS: CommandDefinition[] = [
@@ -209,5 +217,53 @@ export const CREATE_COMMANDS: CommandDefinition[] = [
         ],
         category: 'ai-features',
         handler: createCommitHandler
+    },
+    {
+        verb: CommandVerb.CREATE,
+        object: CommandObject.PR,
+        description: 'Create a Pull Request',
+        parameters: [
+            {
+                name: 'title',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Pull Request title',
+                aliases: ['t'],
+            },
+            {
+                name: 'body',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Pull Request description/body',
+                aliases: ['b'],
+            },
+            {
+                name: 'base',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Base branch for the PR (default: main)',
+                aliases: ['b'],
+            },
+            {
+                name: 'head',
+                type: 'string',
+                required: false,
+                defaultValue: '',
+                description: 'Head branch for the PR (current branch)',
+                aliases: ['h'],
+            },
+        ],
+        examples: [
+            'create pr',
+            'create pr --title "Add new feature"',
+            'create pr -t "Add new feature"',
+            'create pr --title "Feature" --body "Description"',
+            'create pr --base develop --head feature/new-feature',
+        ],
+        category: 'git-workflow',
+        handler: createPrHandler
     },
 ];
