@@ -1,8 +1,5 @@
 //app/core/handlers/config/show-config-handler.ts
-
-import {BaseHandler} from '../base/base-handler';
-import type {IConfigHandler} from '../base/config-handler-interface';
-import {ConfigUtils} from '../base/config-utils';
+import {BaseHandler, ConfigUtils} from '@/app/core/handlers';
 import {getConfigManager} from "@/manager/config";
 import {CONFIG_ICONS, INDENT, SEPARATOR_LENGTH} from "@/constants/ui";
 import {getActiveRuntimeVars, logConfigurationSource} from "@/utils/runtime-config";
@@ -11,14 +8,14 @@ import {getActiveRuntimeVars, logConfigurationSource} from "@/utils/runtime-conf
  * Show configuration command handler
  * Handles displaying configuration values and profiles
  */
-export class ShowConfigHandler extends BaseHandler implements IConfigHandler {
+export class ShowConfigHandler extends BaseHandler {
     /**
      * Execute show config command
      */
     async execute(): Promise<void> {
         const isGlobal = this.getParameter('global', false);
         const object = this.command.object;
-        
+
         if (object === 'profile') {
             this.showProfileConfig(isGlobal);
         } else {
@@ -27,30 +24,16 @@ export class ShowConfigHandler extends BaseHandler implements IConfigHandler {
     }
 
     /**
-     * Get configuration value (not implemented for show handler)
-     */
-    getConfigValue(key: string, isGlobal?: boolean): void {
-        throw new Error('Get operation not supported by ShowConfigHandler');
-    }
-
-    /**
-     * Set configuration value (not implemented for show handler)
-     */
-    setConfigValue(key: string, value: string, isGlobal?: boolean): void {
-        throw new Error('Set operation not supported by ShowConfigHandler');
-    }
-
-    /**
      * Show all configuration values
      */
     showAllConfig(isGlobal: boolean = false): void {
         const manager = getConfigManager();
-        
+
         let config;
         let hasRuntimeOverrides;
         let hasGlobalConfig;
         let hasProjectConfig;
-        
+
         if (isGlobal) {
             // 显示全局配置
             config = manager.readConfig(undefined, true); // 读取全局配置，不应用运行时覆盖
@@ -90,10 +73,10 @@ export class ShowConfigHandler extends BaseHandler implements IConfigHandler {
      */
     showProfileConfig(isGlobal: boolean = false): void {
         const manager = getConfigManager();
-        
+
         let activeProfile;
         let config;
-        
+
         if (isGlobal) {
             // 显示全局profile
             const globalConfigFile = manager.readConfigFile(true);
@@ -112,16 +95,16 @@ export class ShowConfigHandler extends BaseHandler implements IConfigHandler {
         this.logger.log(this.t('config.currentProfile'));
         this.logger.separator(SEPARATOR_LENGTH);
         this.logger.line();
-        
+
         this.logger.log(`${' '.repeat(INDENT.LEVEL_1)}📦 ${this.logger.text.primary(activeProfile)}`);
         this.logger.line();
-        
+
         this.logger.log(this.t('config.configItems'));
         this.logger.line();
-        
+
         this.displayConfigItems(config);
         this.displayPlatforms(config);
-        
+
         this.logger.line();
     }
 
@@ -183,8 +166,8 @@ export class ShowConfigHandler extends BaseHandler implements IConfigHandler {
             const icon = CONFIG_ICONS[item.key] || '⚙️';
 
             if (value) {
-                const displayValue = ConfigUtils.isSensitiveKey(item.key) 
-                    ? ConfigUtils.formatSensitiveValue(value) 
+                const displayValue = ConfigUtils.isSensitiveKey(item.key)
+                    ? ConfigUtils.formatSensitiveValue(value)
                     : value;
                 console.log(`${' '.repeat(INDENT.LEVEL_1)}${icon}  ${this.logger.text.bold(item.label)}`);
                 console.log(`${' '.repeat(INDENT.LEVEL_3)}${this.logger.text.primary(displayValue)}`);

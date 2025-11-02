@@ -1,8 +1,6 @@
 //app/core/handlers/config/set-config-handler.ts
 
-import {BaseHandler} from '../base/base-handler';
-import type {IConfigHandler} from '../base/config-handler-interface';
-import {ConfigUtils} from '../base/config-utils';
+import {BaseHandler, ConfigUtils} from '@/app/core/handlers';
 import {getConfigManager} from "@/manager/config";
 import {CONFIG_KEYS, DEFAULT_VALUES} from "@/constants/config";
 import {PLATFORM_TYPES} from "@/constants/platform";
@@ -11,7 +9,7 @@ import {PLATFORM_TYPES} from "@/constants/platform";
  * Set configuration command handler
  * Handles setting configuration values
  */
-export class SetConfigHandler extends BaseHandler implements IConfigHandler {
+export class SetConfigHandler extends BaseHandler{
     /**
      * Execute set config command
      */
@@ -25,13 +23,6 @@ export class SetConfigHandler extends BaseHandler implements IConfigHandler {
         const value = args[1];
         
         this.setConfigValue(key, value, isGlobal);
-    }
-
-    /**
-     * Get configuration value (not implemented for set handler)
-     */
-    getConfigValue(key: string, isGlobal?: boolean): void {
-        throw new Error('Get operation not supported by SetConfigHandler');
     }
 
     /**
@@ -106,19 +97,5 @@ export class SetConfigHandler extends BaseHandler implements IConfigHandler {
         manager.writeConfig(config, isGlobal ? undefined : manager.getActiveProfile(), isGlobal);
         this.logger.log(this.t('config.set', {key, value: ConfigUtils.isSensitiveKey(key) ? '***' : value}));
         this.logger.success(this.t('config.updated'));
-    }
-
-    /**
-     * Show all configuration (not implemented for set handler)
-     */
-    showAllConfig(isGlobal?: boolean): void {
-        throw new Error('Show all operation not supported by SetConfigHandler');
-    }
-
-    /**
-     * Show profile configuration (not implemented for set handler)
-     */
-    showProfileConfig(isGlobal?: boolean): void {
-        throw new Error('Show profile operation not supported by SetConfigHandler');
     }
 }

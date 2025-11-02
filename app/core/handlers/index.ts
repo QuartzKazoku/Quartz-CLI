@@ -7,7 +7,6 @@
 
 // Base classes and interfaces
 export type { ICommandHandler } from './base/base-handler';
-export type { IConfigHandler } from './base/config-handler-interface';
 export { BaseHandler } from './base/base-handler';
 export { ConfigUtils } from './base/config-utils';
 
