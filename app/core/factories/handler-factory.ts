@@ -1,20 +1,19 @@
 //app/core/factories/handler-factory.ts
 
-import {ExecutionContext} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import {CommandObject, CommandVerb, ExecutionContext} from "@/app/core/models";
 import {
-    GetConfigHandler,
-    SetConfigHandler,
-    ShowConfigHandler,
-    HelpHandler,
-    InitHandler,
-    ProfileHandler,
+    BaseHandler,
     BranchHandler,
     ChangelogHandler,
-    ReviewHandler,
     CommitHandler,
+    GetConfigHandler,
+    HelpHandler,
+    InitHandler,
     PrHandler,
-    BaseHandler
+    ProfileHandler,
+    ReviewHandler,
+    SetConfigHandler,
+    ShowConfigHandler
 } from "@/app/core/handlers";
 
 /**
@@ -163,88 +162,202 @@ export class HandlerFactory {
     }
 
     /**
+     * Handle GET verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleGetVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.CONFIG:
+                return this.createGetConfigHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle SET verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleSetVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.CONFIG:
+                return this.createSetConfigHandler(context);
+            case CommandObject.PROFILE:
+                return this.createSetProfileHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle CREATE verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleCreateVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.PROFILE:
+                return this.createCreateProfileHandler(context);
+            case CommandObject.BRANCH:
+                return this.createCreateBranchHandler(context);
+            case CommandObject.CHANGELOG:
+                return this.createCreateChangelogHandler(context);
+            case CommandObject.REVIEW:
+                return this.createCreateReviewHandler(context);
+            case CommandObject.COMMIT:
+                return this.createCreateCommitHandler(context);
+            case CommandObject.PR:
+                return this.createCreatePrHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle USE verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleUseVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.PROFILE:
+                return this.createUseProfileHandler(context);
+            case CommandObject.BRANCH:
+                return this.createUseBranchHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle LIST verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleListVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.PROFILE:
+                return this.createListProfileHandler(context);
+            case CommandObject.BRANCH:
+                return this.createListBranchHandler(context);
+            case CommandObject.PR:
+                return this.createListPrHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle DELETE verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleDeleteVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.PROFILE:
+                return this.createDeleteProfileHandler(context);
+            case CommandObject.BRANCH:
+                return this.createDeleteBranchHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle SHOW verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleShowVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.CONFIG:
+                return this.createShowConfigHandler(context);
+            case CommandObject.PROFILE:
+                return this.createShowProfileHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Handle HELP verb commands
+     * @param _object
+     * @param context 
+     * @returns 
+     */
+    private static handleHelpVerb(_object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        // HELP verb doesn't use object parameter
+        return this.createHelpHandler(context);
+    }
+
+    /**
+     * Handle INIT verb commands
+     * @param object 
+     * @param context 
+     * @returns 
+     */
+    private static handleInitVerb(object: CommandObject, context: ExecutionContext): BaseHandler | null {
+        switch (object) {
+            case CommandObject.CONFIG:
+                return this.createInitHandler(context);
+            default:
+                return null;
+        }
+    }
+
+    /**
      * Create handler based on verb and object
      */
     static createHandler(verb: CommandVerb, object: CommandObject, context: ExecutionContext): BaseHandler {
+        let handler: BaseHandler | null = null;
+
         switch (verb) {
             case CommandVerb.GET:
-                if (object === CommandObject.CONFIG) {
-                    return this.createGetConfigHandler(context);
-                }
+                handler = this.handleGetVerb(object, context);
                 break;
-            
             case CommandVerb.SET:
-                if (object === CommandObject.CONFIG) {
-                    return this.createSetConfigHandler(context);
-                } else if (object === CommandObject.PROFILE) {
-                    return this.createSetProfileHandler(context);
-                }
+                handler = this.handleSetVerb(object, context);
                 break;
-            
             case CommandVerb.CREATE:
-                if (object === CommandObject.PROFILE) {
-                    return this.createCreateProfileHandler(context);
-                } else if (object === CommandObject.BRANCH) {
-                    return this.createCreateBranchHandler(context);
-                } else if (object === CommandObject.CHANGELOG) {
-                    return this.createCreateChangelogHandler(context);
-                } else if (object === CommandObject.REVIEW) {
-                    return this.createCreateReviewHandler(context);
-                } else if (object === CommandObject.COMMIT) {
-                    return this.createCreateCommitHandler(context);
-                } else if (object === CommandObject.PR) {
-                    return this.createCreatePrHandler(context);
-                }
+                handler = this.handleCreateVerb(object, context);
                 break;
-            
             case CommandVerb.USE:
-                if (object === CommandObject.PROFILE) {
-                    return this.createUseProfileHandler(context);
-                } else if (object === CommandObject.BRANCH) {
-                    return this.createUseBranchHandler(context);
-                }
+                handler = this.handleUseVerb(object, context);
                 break;
-            
             case CommandVerb.LIST:
-                if (object === CommandObject.PROFILE) {
-                    return this.createListProfileHandler(context);
-                } else if (object === CommandObject.BRANCH) {
-                    return this.createListBranchHandler(context);
-                } else if (object === CommandObject.PR) {
-                    return this.createListPrHandler(context);
-                }
+                handler = this.handleListVerb(object, context);
                 break;
-            
             case CommandVerb.DELETE:
-                if (object === CommandObject.PROFILE) {
-                    return this.createDeleteProfileHandler(context);
-                } else if (object === CommandObject.BRANCH) {
-                    return this.createDeleteBranchHandler(context);
-                }
+                handler = this.handleDeleteVerb(object, context);
                 break;
-            
             case CommandVerb.SHOW:
-                if (object === CommandObject.CONFIG) {
-                    return this.createShowConfigHandler(context);
-                } else if (object === CommandObject.PROFILE) {
-                    return this.createShowProfileHandler(context);
-                }
+                handler = this.handleShowVerb(object, context);
                 break;
-            
             case CommandVerb.HELP:
-                return this.createHelpHandler(context);
-            
-            case CommandVerb.INIT:
-                if (object === CommandObject.CONFIG) {
-                    return this.createInitHandler(context);
-                }
+                handler = this.handleHelpVerb(object, context);
                 break;
+            case CommandVerb.INIT:
+                handler = this.handleInitVerb(object, context);
+                break;
+        }
+
+        if (handler) {
+            return handler;
         }
 
         throw new Error(`No handler found for command: ${verb} ${object}`);
     }
 
-/**
+    /**
      * Get all available handler types
      */
     static getAvailableHandlers(): string[] {
