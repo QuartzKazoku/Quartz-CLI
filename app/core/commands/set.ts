@@ -1,7 +1,7 @@
 //app/core/commands/set.ts
 
-import {CommandDefinition} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import type {CommandDefinition} from "@/types";;
+import {CommandObject, CommandVerb} from "@/types";;
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -32,7 +32,7 @@ export const SET_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Set in global profile instead of current project profile',
@@ -55,7 +55,7 @@ export const SET_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Rename in global profiles instead of project profiles',
@@ -63,7 +63,7 @@ export const SET_COMMANDS: CommandDefinition[] = [
             },
             {
                 name: 'remote',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Rename in remote profiles instead of local profiles',

@@ -5,7 +5,7 @@ import {
 import { commandExecutor, BuiltinMiddleware } from './executor';
 import { commandParser } from './parser';
 import { commandRegistry } from './registry';
-import {CommandDefinition, ExecutionContext, ICommandDispatcher, ParsedCommand} from "@/app/core/models";
+import type {CommandDefinition, ExecutionContext, ICommandDispatcher, ParsedCommand} from "@/types";
 
 /**
  * Main Command Dispatcher Implementation

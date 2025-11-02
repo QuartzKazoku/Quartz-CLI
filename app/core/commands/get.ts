@@ -1,7 +1,7 @@
 //app/core/commands/get.ts
 
-import {CommandDefinition} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import {CommandObject, CommandVerb, ParameterType} from "@/types";
+import type {CommandDefinition} from "@/types";
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -24,7 +24,7 @@ export const GET_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Get from global profile only (ignore project config and environment variables)',

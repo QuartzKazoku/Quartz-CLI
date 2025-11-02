@@ -1,5 +1,5 @@
 //app/strategies/factory.ts
-import { PlatformConfig } from "@/types/config";
+import type { PlatformConfig } from "@/types";
 import { PlatformStrategy } from "./platform";
 import { GitHubStrategy } from "./github";
 import { GitLabStrategy } from "./gitlab";

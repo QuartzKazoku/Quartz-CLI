@@ -1,6 +1,6 @@
 //app/core/commands/list.ts
-import {CommandDefinition} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import {CommandObject, CommandVerb, ParameterType} from "@/types";
+import type {CommandDefinition} from "@/types";
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -39,7 +39,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'List global profiles instead of project profiles',
@@ -47,7 +47,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
             },
             {
                 name: 'remote',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'List remote profiles instead of local profiles',
@@ -71,7 +71,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'remote',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'List remote branches instead of local branches',
@@ -91,7 +91,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'state',
-                type: 'string',
+                type: ParameterType.STRING,
                 required: false,
                 defaultValue: 'open',
                 description: 'PR state filter (open, closed, all)',
@@ -99,7 +99,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
             },
             {
                 name: 'assignee',
-                type: 'string',
+                type: ParameterType.STRING,
                 required: false,
                 defaultValue: '',
                 description: 'Filter by assignee username',
@@ -107,7 +107,7 @@ export const LIST_COMMANDS: CommandDefinition[] = [
             },
             {
                 name: 'author',
-                type: 'string',
+                type: ParameterType.STRING,
                 required: false,
                 defaultValue: '',
                 description: 'Filter by author username',

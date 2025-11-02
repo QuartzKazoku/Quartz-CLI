@@ -6,8 +6,8 @@
  * @version 2.0.0
  */
 
-import {CommandObject, CommandVerb} from "@/app/core/models";
-import {CommandDefinition, ExecutionContext} from "@/app/core/models";
+import {CommandObject, CommandVerb} from "@/types";;
+import type {CommandDefinition, ExecutionContext} from "@/types";;
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -55,21 +55,21 @@ export const HELPCommands: CommandDefinition[] = [
     parameters: [
       {
         name: 'verb',
-        type: 'string',
+        type: ParameterType.STRING,
         required: false,
         description: 'Command verb to get help for',
         aliases: ['v']
       },
       {
         name: 'object',
-        type: 'string',
+        type: ParameterType.STRING,
         required: false,
         description: 'Command object to get help for',
         aliases: ['o']
       },
       {
         name: 'verbose',
-        type: 'boolean',
+        type: ParameterType.BOOLEAN,
         required: false,
         description: 'Show verbose help information',
         aliases: ['V']
@@ -93,7 +93,7 @@ export const HELPCommands: CommandDefinition[] = [
     parameters: [
       {
         name: 'verb',
-        type: 'string',
+        type: ParameterType.STRING,
         required: true,
         description: 'Command verb to get help for'
       }
@@ -115,13 +115,13 @@ export const HELPCommands: CommandDefinition[] = [
     parameters: [
       {
         name: 'verb',
-        type: 'string',
+        type: ParameterType.STRING,
         required: true,
         description: 'Command verb'
       },
       {
         name: 'object',
-        type: 'string',
+        type: ParameterType.STRING,
         required: true,
         description: 'Command object'
       }

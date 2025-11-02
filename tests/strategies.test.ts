@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GitHubStrategy } from '@/app/strategies/github';
 import { GitLabStrategy } from '@/app/strategies/gitlab';
-import { PlatformConfig } from '@/types/config';
+import type { PlatformConfig } from '@/types';
 
 // Mock shell module
 vi.mock('@/utils/shell', () => ({

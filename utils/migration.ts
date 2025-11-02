@@ -1,5 +1,5 @@
 //utils/migration.ts
-import type {Migration, MigrationResult} from '@/types/migration';
+import type {Migration, MigrationResult} from '@/types';
 import {logger} from '@/utils/logger';
 import {getConfigManager} from '@/manager/config';
 import {VERSION} from '@/constants';

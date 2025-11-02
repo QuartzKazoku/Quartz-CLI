@@ -1,6 +1,6 @@
 //app/strategies/gitlab.ts
 import { BasePlatformStrategy, PullRequestResult, Issue } from "@/app/strategies/platform";
-import { PlatformConfig } from "@/types/config";
+import type { PlatformConfig } from "@/types";
 
 /**
  * GitLab platform strategy implementation class for interacting with GitLab, including creating merge requests, checking branch status, and other operations.

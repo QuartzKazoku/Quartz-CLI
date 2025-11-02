@@ -1,8 +1,7 @@
 //app/core/registry.ts
 
 
-import {CommandDefinition, ICommandRegistry} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import type {CommandDefinition, ICommandRegistry, CommandObject, CommandVerb} from "@/types";
 
 /**
  * Command Registry Implementation

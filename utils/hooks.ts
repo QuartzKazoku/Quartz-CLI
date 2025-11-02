@@ -7,7 +7,7 @@ import {needsMigration, runMigrations} from '@/utils/migration';
 import '@/utils/migrations'; // Import to register all migrations
 import {logger} from '@/utils/logger';
 import {t} from '@/i18n';
-import {MigrationResult} from "@/types/migration";
+import type {MigrationResult} from '@/types';
 
 /**
  * Run migrations for a given scope (global or project) and handle logging.

@@ -1,8 +1,7 @@
 //manager/config.ts
 import fs from 'node:fs';
 import {parse as parseJsonc} from 'jsonc-parser';
-import type {PlatformConfig, QuartzConfig, QuartzConfigFile, QuartzProfile} from '@/types/config';
-import type {VersionMetadata} from '@/types/migration';
+import type {PlatformConfig, QuartzConfig, QuartzConfigFile, QuartzProfile, VersionMetadata} from '@/types';
 import {CONFIG_FILE, DEFAULT_VALUES, ENCODING, JSON_FORMAT, VERSION} from '@/constants';
 import {logger} from '@/utils/logger';
 import {ensureQuartzDir, getQuartzDir, getQuartzPath, getGlobalQuartzPath, getGlobalQuartzDir, globalConfigExists, projectConfigExists} from '@/utils/path';

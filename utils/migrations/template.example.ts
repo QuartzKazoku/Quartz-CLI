@@ -1,5 +1,5 @@
 //utils/migrations/template.example.ts
-import type {Migration} from '@/types/migration';
+import type {Migration} from '@/types';
 
 /**
  * Migration to version template.example

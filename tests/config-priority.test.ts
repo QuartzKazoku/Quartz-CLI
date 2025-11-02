@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {ConfigManager} from '@/manager/config';
-import type {QuartzConfig} from '@/types/config';
+import type {QuartzConfig} from '@/types';
 
 describe('Configuration Priority System', () => {
     let configManager: ConfigManager;

@@ -1,8 +1,8 @@
 //app/core/handlers/ai/commit-handler.ts
 
 import {BaseHandler} from '../base/base-handler';
-import {ExecutionContext} from "@/app/core/models";
-import {CommandVerb} from "@/app/core/models";
+import type {ExecutionContext} from "@/types";;
+import {CommandVerb} from "@/types";;
 
 /**
  * AI Commit management command handler

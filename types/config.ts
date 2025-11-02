@@ -1,11 +1,21 @@
 //types/config.ts
+/**
+ * @fileoverview Configuration type definitions
+ * @description Defines all configuration-related types for Quartz CLI
+ * @author Quartz CLI Team
+ * @version 1.0.0
+ * @since 2025-11-02
+ * @license MIT
+ */
+
+import type { PlatformType } from './enums';
 import type { VersionMetadata } from './migration';
 
 /**
  * Platform configuration interface
  */
 export interface PlatformConfig {
-  type: 'github' | 'gitlab';
+  type: PlatformType;
   url?: string;
   token: string;
 }

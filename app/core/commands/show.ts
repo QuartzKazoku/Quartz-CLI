@@ -1,7 +1,7 @@
 //app/core/commands/show.ts
 
-import {CommandDefinition} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import type {CommandDefinition} from "@/types";;
+import {CommandObject, CommandVerb} from "@/types";;
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -32,7 +32,7 @@ export const SHOW_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Show global configuration instead of project configuration',
@@ -53,7 +53,7 @@ export const SHOW_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Show global profile instead of project profile',

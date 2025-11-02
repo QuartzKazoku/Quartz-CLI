@@ -1,6 +1,6 @@
 //app/core/handlers/base/base-handler.ts
 
-import {ExecutionContext} from "@/app/core/models";
+import type {ExecutionContext} from "@/types";;
 
 /**
  * Base command handler interface

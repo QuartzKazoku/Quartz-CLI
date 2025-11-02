@@ -18,7 +18,7 @@
  * console.log(config.openai.apiKey); // Uses env var if set, otherwise from config file
  */
 
-import type {QuartzConfig} from '@/types/config';
+import type {QuartzConfig} from '@/types';
 import {DEFAULT_VALUES} from '@/constants/config';
 import {logger} from '@/utils/logger';
 

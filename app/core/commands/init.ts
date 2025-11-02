@@ -1,7 +1,7 @@
 //app/core/commands/init.ts
 import {CommandDefinition} from '../models';
 import {CommandObject, CommandVerb} from '../models';
-import {CommandHandler} from '../types';
+import {CommandHandler} from '@/app/core';
 import {HandlerFactory} from '@/app/core/factories';
 
 /**

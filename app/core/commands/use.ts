@@ -1,6 +1,6 @@
 //app/core/commands/use.ts
-import {CommandDefinition} from "@/app/core/models";
-import {CommandObject, CommandVerb} from "@/app/core/models";
+import type {CommandDefinition} from "@/types";;
+import {CommandObject, CommandVerb} from "@/types";;
 import {CommandHandler} from "@/app/core";
 import {HandlerFactory} from "@/app/core/factories/handler-factory";
 
@@ -31,7 +31,7 @@ export const USE_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'global',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Use global profile instead of project profile',
@@ -39,7 +39,7 @@ export const USE_COMMANDS: CommandDefinition[] = [
             },
             {
                 name: 'remote',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Use remote profile instead of local profile',
@@ -63,7 +63,7 @@ export const USE_COMMANDS: CommandDefinition[] = [
         parameters: [
             {
                 name: 'remote',
-                type: 'boolean',
+                type: ParameterType.BOOLEAN,
                 required: false,
                 defaultValue: false,
                 description: 'Switch to remote branch instead of local branch',
